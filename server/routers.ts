@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { fetchRealThreatData } from "./threatApi";
 import { fetchThreatOfTheDay } from "./cveApi";
+import { fetchWeeklyBriefing } from "./weeklyBriefingApi";
 
 export const appRouter = router({
   system: systemRouter,
@@ -24,6 +25,10 @@ export const appRouter = router({
     /** Fetch Threat of the Day spotlight from CISA KEV + NVD */
     threatOfTheDay: publicProcedure.query(async () => {
       return fetchThreatOfTheDay();
+    }),
+    /** Fetch Weekly Threat Briefing aggregated data */
+    weeklyBriefing: publicProcedure.query(async () => {
+      return fetchWeeklyBriefing();
     }),
   }),
 });

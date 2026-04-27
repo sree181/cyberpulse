@@ -26,3 +26,10 @@
 - [x] Design cinematic spotlight component with auto-rotation
 - [x] Integrate spotlight panel into the main command center layout
 - [x] Add educational descriptions with CVSS score, affected systems, and MITRE mapping
+- [x] Add "Weekly Threat Briefing" summary panel with aggregated weekly trends
+- [x] Build backend endpoint to compute weekly threat statistics and trends
+- [x] Design rotating infographic slides (top vectors, geo trends, severity breakdown, key takeaway)
+- [x] Integrate the briefing panel into the main command center layout
+- [x] Add smooth slide transitions and auto-rotation for passive viewing
+- [x] Add error/cached/empty UI states to WeeklyBriefing for API failures
+- [x] Add severity breakdown slide to Weekly Briefing

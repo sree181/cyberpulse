@@ -20,6 +20,7 @@ import Heartbeat from '@/components/Heartbeat';
 import TimeSeriesChart from '@/components/TimeSeriesChart';
 import PortHeatmap from '@/components/PortHeatmap';
 import ThreatSpotlight from '@/components/ThreatSpotlight';
+import WeeklyBriefing from '@/components/WeeklyBriefing';
 
 export default function Home() {
   return (
@@ -57,7 +58,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CENTER — Globe (top) + Time Series + Bottom Row (Network + Spotlight) */}
+          {/* CENTER — Globe (top) + Time Series + Bottom Row (Network + Spotlight + Briefing) */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Globe — primary visual */}
             <div className="flex-[6] relative overflow-hidden">
@@ -67,15 +68,19 @@ export default function Home() {
             <div className="h-[100px] border-t border-[#00F0FF]/10 relative overflow-hidden shrink-0">
               <TimeSeriesChart />
             </div>
-            {/* Bottom row: Network Topology + Threat Spotlight side by side */}
+            {/* Bottom row: Network Topology + Threat Spotlight + Weekly Briefing */}
             <div className="flex-[3] border-t border-[#00F0FF]/10 flex overflow-hidden">
-              {/* Network Topology — left half */}
-              <div className="flex-1 relative overflow-hidden">
+              {/* Network Topology — left third */}
+              <div className="flex-[1] relative overflow-hidden">
                 <NetworkTopology />
               </div>
-              {/* Threat Spotlight — right half */}
-              <div className="flex-1 border-l border-[#00F0FF]/10 relative overflow-hidden bg-[#050510]/60">
+              {/* Threat Spotlight — center third */}
+              <div className="flex-[1] border-l border-[#00F0FF]/10 relative overflow-hidden bg-[#050510]/60">
                 <ThreatSpotlight />
+              </div>
+              {/* Weekly Briefing — right third */}
+              <div className="flex-[1] border-l border-[#FFD700]/08 relative overflow-hidden bg-[#050510]/40">
+                <WeeklyBriefing />
               </div>
             </div>
           </div>
