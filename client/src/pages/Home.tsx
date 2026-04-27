@@ -17,6 +17,8 @@ import MitreHeatmap from '@/components/MitreHeatmap';
 import AttackTypeChart from '@/components/AttackTypeChart';
 import GeoSourceChart from '@/components/GeoSourceChart';
 import Heartbeat from '@/components/Heartbeat';
+import TimeSeriesChart from '@/components/TimeSeriesChart';
+import PortHeatmap from '@/components/PortHeatmap';
 
 export default function Home() {
   return (
@@ -24,7 +26,7 @@ export default function Home() {
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#050510] relative">
         {/* Animated grid background */}
         <div 
-          className="absolute inset-0 pointer-events-none opacity-[0.025] z-0"
+          className="absolute inset-0 pointer-events-none opacity-[0.02] z-0"
           style={{
             backgroundImage: `
               linear-gradient(rgba(0,240,255,0.4) 1px, transparent 1px),
@@ -54,11 +56,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CENTER — Globe (top 70%) + Network Topology (bottom 30%) */}
+          {/* CENTER — Globe (top) + Time Series + Network Topology (bottom) */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Globe — primary visual */}
-            <div className="flex-[7] relative overflow-hidden">
+            <div className="flex-[6] relative overflow-hidden">
               <ThreatGlobe />
+            </div>
+            {/* Time Series Chart */}
+            <div className="h-[100px] border-t border-[#00F0FF]/10 relative overflow-hidden shrink-0">
+              <TimeSeriesChart />
             </div>
             {/* Network Topology — secondary visual */}
             <div className="flex-[3] border-t border-[#00F0FF]/10 relative overflow-hidden">
@@ -66,10 +72,13 @@ export default function Home() {
             </div>
           </div>
 
-          {/* RIGHT PANEL — MITRE Heatmap + Threat Feed */}
+          {/* RIGHT PANEL — MITRE Heatmap + Port Heatmap + Threat Feed */}
           <div className="w-[20%] min-w-[240px] flex flex-col border-l border-[#00F0FF]/10 bg-[#050510]/80">
             <div className="flex-[2] overflow-hidden">
               <MitreHeatmap />
+            </div>
+            <div className="border-t border-[#00F0FF]/10 flex-[1.5] overflow-hidden">
+              <PortHeatmap />
             </div>
             <div className="border-t border-[#00F0FF]/10 flex-[3] overflow-hidden">
               <ThreatFeed />

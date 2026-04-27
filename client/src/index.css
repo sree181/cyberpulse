@@ -249,3 +249,44 @@
 .font-data {
   font-family: 'JetBrains Mono', monospace;
 }
+
+/* Critical alert flash */
+@keyframes critical-flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(255, 20, 147, 0.05); }
+}
+
+.animate-critical-flash {
+  animation: critical-flash 2s ease-in-out infinite;
+}
+
+/* Data stream effect */
+@keyframes data-stream {
+  0% { opacity: 0; transform: translateY(-5px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(5px); }
+}
+
+.animate-data-stream {
+  animation: data-stream 3s ease-in-out;
+}
+
+/* Glow text */
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.text-glow-magenta {
+  text-shadow: 0 0 10px rgba(255, 20, 147, 0.5), 0 0 20px rgba(255, 20, 147, 0.2);
+}
+
+/* Horizontal scan line for panels */
+@keyframes h-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-h-scan {
+  animation: h-scan 3s linear infinite;
+}

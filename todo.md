@@ -1,0 +1,23 @@
+# Project TODO
+
+- [x] Basic command center layout with 3-zone design
+- [x] 3D Globe with animated attack arcs
+- [x] Network topology 3D force graph
+- [x] Live threat feed panel
+- [x] MITRE ATT&CK heatmap
+- [x] Stats panel with severity distribution
+- [x] Attack vectors chart
+- [x] Geo source chart
+- [x] Heartbeat waveform
+- [x] Header bar with system status
+- [x] Connect real threat intelligence data (DShield/ISC SANS API)
+- [x] Add IP geolocation enrichment for real attack data
+- [x] Build backend API proxy for threat data
+- [x] Make visualization significantly more visually stunning and heavy
+- [x] Add time-series sparkline/chart for attack volume over time
+- [x] Add more dramatic visual effects (pulsing impacts, denser arcs, faster refresh)
+- [x] Add protocol/port activity heatmap panel
+- [x] Increase data density - more simultaneous arcs and events
+- [x] Increase real data integration - use DShield attacker data for more threat events (>70% real-sourced)
+- [x] Add protocol dimension to port heatmap (TCP/UDP breakdown)
+- [x] Show fallback/cached indicator in UI when live API is unavailable

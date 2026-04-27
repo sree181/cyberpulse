@@ -1,6 +1,6 @@
 /**
  * Heartbeat — EKG-style waveform showing network health
- * Persistent bottom bar that pulses with network activity.
+ * ENHANCED: Triple-wave with threat-responsive intensity, magenta critical wave
  */
 import { useEffect, useRef } from 'react';
 import { useThreatData } from '@/contexts/ThreatContext';
@@ -26,36 +26,34 @@ export default function Heartbeat() {
 
       ctx.clearRect(0, 0, displayW, displayH);
       
-      // Draw the waveform
       const midY = displayH / 2;
       const intensity = Math.min(stats.attacksPerMinute / 30, 1);
       
+      // Primary cyan wave
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(0, 240, 255, ${0.3 + intensity * 0.5})`;
+      ctx.strokeStyle = `rgba(0, 240, 255, ${0.35 + intensity * 0.5})`;
       ctx.lineWidth = 1.5;
       ctx.shadowColor = '#00F0FF';
-      ctx.shadowBlur = 4 + intensity * 8;
+      ctx.shadowBlur = 6 + intensity * 10;
 
-      offsetRef.current += 1.5;
+      offsetRef.current += 1.8;
 
       for (let x = 0; x < displayW; x++) {
         const t = (x + offsetRef.current) * 0.02;
-        // Combine multiple sine waves for EKG-like pattern
         const spike = Math.sin(t * 3) > 0.95 ? Math.sin(t * 3) * 12 * (1 + intensity) : 0;
         const base = Math.sin(t) * 2 + Math.sin(t * 2.3) * 1.5;
         const noise = Math.sin(t * 7) * 0.5 * intensity;
         const y = midY + base + spike + noise;
-        
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
-      // Draw a second, fainter wave
+      // Secondary faint cyan wave
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(0, 240, 255, ${0.1 + intensity * 0.15})`;
+      ctx.strokeStyle = `rgba(0, 240, 255, ${0.08 + intensity * 0.12})`;
       ctx.lineWidth = 0.5;
-      ctx.shadowBlur = 2;
 
       for (let x = 0; x < displayW; x++) {
         const t = (x + offsetRef.current * 0.7) * 0.015;
@@ -65,12 +63,42 @@ export default function Heartbeat() {
       }
       ctx.stroke();
 
+      // Third magenta wave — critical threat indicator
+      if (stats.critical > 0) {
+        const critIntensity = Math.min(stats.critical / 10, 1);
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(255, 20, 147, ${0.1 + critIntensity * 0.3})`;
+        ctx.lineWidth = 0.8;
+        ctx.shadowColor = '#FF1493';
+        ctx.shadowBlur = 4;
+
+        for (let x = 0; x < displayW; x++) {
+          const t = (x + offsetRef.current * 1.2) * 0.025;
+          const y = midY + Math.sin(t * 1.5) * 2.5 + Math.sin(t * 3.7) * 1;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // Status text
+      ctx.font = '8px "JetBrains Mono", monospace';
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+      ctx.fillText('NETWORK HEALTH', 6, displayH - 3);
+
+      const healthPct = (100 - intensity * 30).toFixed(0);
+      ctx.fillStyle = intensity > 0.7 ? 'rgba(255, 0, 64, 0.5)' : 'rgba(0, 255, 136, 0.4)';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${healthPct}%`, displayW - 6, displayH - 3);
+      ctx.textAlign = 'left';
+
       animRef.current = requestAnimationFrame(draw);
     };
 
     draw();
     return () => cancelAnimationFrame(animRef.current);
-  }, [stats.attacksPerMinute]);
+  }, [stats.attacksPerMinute, stats.critical]);
 
   return (
     <div className="w-full h-full relative">
