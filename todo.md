@@ -21,3 +21,8 @@
 - [x] Increase real data integration - use DShield attacker data for more threat events (>70% real-sourced)
 - [x] Add protocol dimension to port heatmap (TCP/UDP breakdown)
 - [x] Show fallback/cached indicator in UI when live API is unavailable
+- [x] Add "Threat of the Day" spotlight panel with real CVE data
+- [x] Build backend endpoint to fetch CVE data from free API (NVD/CISA KEV)
+- [x] Design cinematic spotlight component with auto-rotation
+- [x] Integrate spotlight panel into the main command center layout
+- [x] Add educational descriptions with CVSS score, affected systems, and MITRE mapping

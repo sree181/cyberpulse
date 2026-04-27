@@ -19,6 +19,7 @@ import GeoSourceChart from '@/components/GeoSourceChart';
 import Heartbeat from '@/components/Heartbeat';
 import TimeSeriesChart from '@/components/TimeSeriesChart';
 import PortHeatmap from '@/components/PortHeatmap';
+import ThreatSpotlight from '@/components/ThreatSpotlight';
 
 export default function Home() {
   return (
@@ -56,7 +57,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CENTER — Globe (top) + Time Series + Network Topology (bottom) */}
+          {/* CENTER — Globe (top) + Time Series + Bottom Row (Network + Spotlight) */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Globe — primary visual */}
             <div className="flex-[6] relative overflow-hidden">
@@ -66,9 +67,16 @@ export default function Home() {
             <div className="h-[100px] border-t border-[#00F0FF]/10 relative overflow-hidden shrink-0">
               <TimeSeriesChart />
             </div>
-            {/* Network Topology — secondary visual */}
-            <div className="flex-[3] border-t border-[#00F0FF]/10 relative overflow-hidden">
-              <NetworkTopology />
+            {/* Bottom row: Network Topology + Threat Spotlight side by side */}
+            <div className="flex-[3] border-t border-[#00F0FF]/10 flex overflow-hidden">
+              {/* Network Topology — left half */}
+              <div className="flex-1 relative overflow-hidden">
+                <NetworkTopology />
+              </div>
+              {/* Threat Spotlight — right half */}
+              <div className="flex-1 border-l border-[#00F0FF]/10 relative overflow-hidden bg-[#050510]/60">
+                <ThreatSpotlight />
+              </div>
             </div>
           </div>
 

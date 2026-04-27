@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { fetchRealThreatData } from "./threatApi";
+import { fetchThreatOfTheDay } from "./cveApi";
 
 export const appRouter = router({
   system: systemRouter,
@@ -19,6 +20,10 @@ export const appRouter = router({
     /** Fetch real-time threat intelligence from DShield + geolocation */
     realData: publicProcedure.query(async () => {
       return fetchRealThreatData();
+    }),
+    /** Fetch Threat of the Day spotlight from CISA KEV + NVD */
+    threatOfTheDay: publicProcedure.query(async () => {
+      return fetchThreatOfTheDay();
     }),
   }),
 });
