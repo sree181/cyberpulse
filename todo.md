@@ -33,3 +33,16 @@
 - [x] Add smooth slide transitions and auto-rotation for passive viewing
 - [x] Add error/cached/empty UI states to WeeklyBriefing for API failures
 - [x] Add severity breakdown slide to Weekly Briefing
+- [x] UI/UX Redesign: Audit current visual issues (cognitive overload, competing elements, inconsistent hierarchy)
+- [x] UI/UX Redesign: Establish new design system (restrained color palette, typography scale, spacing tokens)
+- [x] UI/UX Redesign: Simplify layout grid — reduce panel count, increase whitespace, clear visual hierarchy
+- [x] UI/UX Redesign: Redesign Header — minimal, elegant, less cluttered
+- [x] UI/UX Redesign: Redesign Globe panel — cleaner, less visual noise
+- [x] UI/UX Redesign: Redesign Stats/Analytics panels — unified card system, less competing colors
+- [x] UI/UX Redesign: Redesign Threat Feed — cleaner typography, less color noise
+- [x] UI/UX Redesign: Redesign MITRE Heatmap — subtler, integrated
+- [x] UI/UX Redesign: Redesign Port Activity panel — cohesive with new system
+- [x] UI/UX Redesign: Redesign bottom panels (Topology, Spotlight, Briefing) — unified treatment
+- [x] UI/UX Redesign: Polish transitions, micro-interactions, and final cohesion
+- [x] Fix status display logic — show LIVE/CACHED correctly based on API response timing
+- [x] Ensure all panels handle loading/empty states gracefully and consistently

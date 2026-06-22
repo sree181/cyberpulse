@@ -1,6 +1,9 @@
 /**
  * NetworkTopology — 3D Force-Directed Graph
- * ENHANCED: More nodes, threat-responsive particles, glowing critical paths
+ * 
+ * Redesign: Monochromatic node palette (cyan shades only), 
+ * subtle link colors, no legend clutter. Let the 3D structure
+ * communicate the network hierarchy visually.
  */
 import { useEffect, useRef, useMemo } from 'react';
 import ForceGraph3D from '3d-force-graph';
@@ -22,32 +25,22 @@ interface NetworkLink {
 }
 
 const NETWORK_NODES: NetworkNode[] = [
-  { id: 'fw1', name: 'PERIMETER-FW', type: 'firewall', group: 0, val: 20 },
-  { id: 'fw2', name: 'INTERNAL-FW', type: 'firewall', group: 0, val: 16 },
-  { id: 'rt1', name: 'CORE-ROUTER', type: 'router', group: 1, val: 16 },
-  { id: 'rt2', name: 'DIST-ROUTER', type: 'router', group: 1, val: 12 },
-  { id: 'web1', name: 'WEB-SRV-01', type: 'server', group: 2, val: 10 },
-  { id: 'web2', name: 'WEB-SRV-02', type: 'server', group: 2, val: 10 },
-  { id: 'web3', name: 'WEB-SRV-03', type: 'server', group: 2, val: 10 },
-  { id: 'app1', name: 'APP-SRV-01', type: 'server', group: 3, val: 10 },
-  { id: 'app2', name: 'APP-SRV-02', type: 'server', group: 3, val: 10 },
-  { id: 'api1', name: 'API-GATEWAY', type: 'server', group: 3, val: 12 },
-  { id: 'db1', name: 'DB-PRIMARY', type: 'database', group: 4, val: 18 },
-  { id: 'db2', name: 'DB-REPLICA', type: 'database', group: 4, val: 14 },
-  { id: 'db3', name: 'CACHE-REDIS', type: 'database', group: 4, val: 10 },
-  { id: 'mail', name: 'MAIL-SRV', type: 'server', group: 5, val: 8 },
-  { id: 'dns', name: 'DNS-SRV', type: 'server', group: 5, val: 8 },
-  { id: 'vpn', name: 'VPN-GW', type: 'server', group: 1, val: 12 },
-  { id: 'cloud', name: 'CLOUD-GW', type: 'cloud', group: 6, val: 14 },
-  { id: 'siem', name: 'SIEM-SENSOR', type: 'server', group: 5, val: 10 },
-  { id: 'hp1', name: 'HONEYPOT-SSH', type: 'honeypot', group: 8, val: 8 },
-  { id: 'hp2', name: 'HONEYPOT-WEB', type: 'honeypot', group: 8, val: 8 },
-  { id: 'iot1', name: 'IOT-SENSOR-1', type: 'iot', group: 9, val: 5 },
-  { id: 'iot2', name: 'IOT-SENSOR-2', type: 'iot', group: 9, val: 5 },
-  { id: 'ep1', name: 'WORKSTATION-A', type: 'endpoint', group: 7, val: 6 },
-  { id: 'ep2', name: 'WORKSTATION-B', type: 'endpoint', group: 7, val: 6 },
-  { id: 'ep3', name: 'WORKSTATION-C', type: 'endpoint', group: 7, val: 6 },
-  { id: 'ep4', name: 'WORKSTATION-D', type: 'endpoint', group: 7, val: 6 },
+  { id: 'fw1', name: 'PERIMETER-FW', type: 'firewall', group: 0, val: 18 },
+  { id: 'fw2', name: 'INTERNAL-FW', type: 'firewall', group: 0, val: 14 },
+  { id: 'rt1', name: 'CORE-ROUTER', type: 'router', group: 1, val: 14 },
+  { id: 'rt2', name: 'DIST-ROUTER', type: 'router', group: 1, val: 10 },
+  { id: 'web1', name: 'WEB-SRV-01', type: 'server', group: 2, val: 8 },
+  { id: 'web2', name: 'WEB-SRV-02', type: 'server', group: 2, val: 8 },
+  { id: 'app1', name: 'APP-SRV-01', type: 'server', group: 3, val: 8 },
+  { id: 'app2', name: 'APP-SRV-02', type: 'server', group: 3, val: 8 },
+  { id: 'api1', name: 'API-GATEWAY', type: 'server', group: 3, val: 10 },
+  { id: 'db1', name: 'DB-PRIMARY', type: 'database', group: 4, val: 14 },
+  { id: 'db2', name: 'DB-REPLICA', type: 'database', group: 4, val: 10 },
+  { id: 'cloud', name: 'CLOUD-GW', type: 'cloud', group: 6, val: 12 },
+  { id: 'vpn', name: 'VPN-GW', type: 'server', group: 1, val: 10 },
+  { id: 'ep1', name: 'WORKSTATION-A', type: 'endpoint', group: 7, val: 5 },
+  { id: 'ep2', name: 'WORKSTATION-B', type: 'endpoint', group: 7, val: 5 },
+  { id: 'ep3', name: 'WORKSTATION-C', type: 'endpoint', group: 7, val: 5 },
 ];
 
 const BASE_LINKS: Omit<NetworkLink, 'particles'>[] = [
@@ -56,42 +49,30 @@ const BASE_LINKS: Omit<NetworkLink, 'particles'>[] = [
   { source: 'fw2', target: 'rt2', type: 'normal' },
   { source: 'rt1', target: 'web1', type: 'normal' },
   { source: 'rt1', target: 'web2', type: 'normal' },
-  { source: 'rt1', target: 'web3', type: 'normal' },
   { source: 'rt2', target: 'app1', type: 'normal' },
   { source: 'rt2', target: 'app2', type: 'normal' },
   { source: 'rt2', target: 'api1', type: 'normal' },
   { source: 'api1', target: 'db1', type: 'normal' },
   { source: 'app1', target: 'db1', type: 'normal' },
-  { source: 'app2', target: 'db1', type: 'normal' },
-  { source: 'app1', target: 'db3', type: 'normal' },
   { source: 'db1', target: 'db2', type: 'normal' },
-  { source: 'rt1', target: 'mail', type: 'normal' },
-  { source: 'rt1', target: 'dns', type: 'normal' },
   { source: 'rt1', target: 'vpn', type: 'normal' },
   { source: 'rt1', target: 'cloud', type: 'normal' },
-  { source: 'rt2', target: 'siem', type: 'normal' },
-  { source: 'fw1', target: 'hp1', type: 'normal' },
-  { source: 'fw1', target: 'hp2', type: 'normal' },
-  { source: 'rt2', target: 'iot1', type: 'normal' },
-  { source: 'rt2', target: 'iot2', type: 'normal' },
   { source: 'vpn', target: 'ep1', type: 'normal' },
   { source: 'vpn', target: 'ep2', type: 'normal' },
   { source: 'vpn', target: 'ep3', type: 'normal' },
-  { source: 'vpn', target: 'ep4', type: 'normal' },
-  { source: 'web1', target: 'api1', type: 'normal' },
-  { source: 'web2', target: 'api1', type: 'normal' },
   { source: 'cloud', target: 'api1', type: 'normal' },
 ];
 
+// Monochromatic palette — different opacities of cyan
 const NODE_COLORS: Record<string, string> = {
-  firewall: '#FF0040',
-  server: '#00F0FF',
-  database: '#FFD700',
-  endpoint: '#00FF88',
-  router: '#FF6600',
-  cloud: '#8B00FF',
-  honeypot: '#FF1493',
-  iot: '#00BFFF',
+  firewall: 'rgba(100, 200, 220, 0.9)',
+  server: 'rgba(100, 200, 220, 0.6)',
+  database: 'rgba(180, 220, 230, 0.8)',
+  endpoint: 'rgba(100, 200, 220, 0.35)',
+  router: 'rgba(140, 210, 225, 0.75)',
+  cloud: 'rgba(120, 190, 210, 0.65)',
+  iot: 'rgba(100, 200, 220, 0.4)',
+  honeypot: 'rgba(100, 200, 220, 0.5)',
 };
 
 export default function NetworkTopology() {
@@ -103,7 +84,7 @@ export default function NetworkTopology() {
     const recentCount = threats.slice(0, 15).length;
     const threatIntensity = Math.min(recentCount / 15, 1);
     
-    const criticalPaths = new Set(['fw1', 'rt1', 'db1', 'hp1', 'hp2']);
+    const criticalPaths = new Set(['fw1', 'rt1', 'db1']);
     
     const links: NetworkLink[] = BASE_LINKS.map(link => {
       const isCriticalPath = criticalPaths.has(link.source as string) || criticalPaths.has(link.target as string);
@@ -112,8 +93,8 @@ export default function NetworkTopology() {
         ...link,
         type: isDbPath && threatIntensity > 0.5 ? 'critical' as const : 
               isCriticalPath && threatIntensity > 0.2 ? 'threat' as const : 'normal' as const,
-        particles: isDbPath ? Math.ceil(threatIntensity * 5) : 
-                   isCriticalPath ? Math.ceil(threatIntensity * 3) : 1,
+        particles: isDbPath ? Math.ceil(threatIntensity * 3) : 
+                   isCriticalPath ? Math.ceil(threatIntensity * 2) : 1,
       };
     });
 
@@ -126,40 +107,40 @@ export default function NetworkTopology() {
     const graph = ForceGraph3D()
       .backgroundColor('#00000000')
       .showNavInfo(false)
-      .nodeColor((node: any) => NODE_COLORS[node.type] || '#00F0FF')
+      .nodeColor((node: any) => NODE_COLORS[node.type] || 'rgba(100, 200, 220, 0.5)')
       .nodeVal('val')
-      .nodeLabel((node: any) => `<div style="color:#00F0FF;font-family:JetBrains Mono,monospace;font-size:10px;background:rgba(5,5,16,0.95);padding:3px 6px;border:1px solid rgba(0,240,255,0.3);border-radius:1px;white-space:nowrap">${node.name}<br/><span style="color:#8899aa;font-size:8px">${node.type.toUpperCase()}</span></div>`)
-      .nodeOpacity(0.9)
-      .nodeResolution(16)
+      .nodeLabel('')
+      .nodeOpacity(0.85)
+      .nodeResolution(12)
       .linkColor((link: any) => {
-        if (link.type === 'critical') return '#FF004088';
-        if (link.type === 'threat') return '#FF004044';
-        return '#00F0FF18';
+        if (link.type === 'critical') return 'rgba(200, 80, 80, 0.5)';
+        if (link.type === 'threat') return 'rgba(200, 80, 80, 0.25)';
+        return 'rgba(100, 200, 220, 0.08)';
       })
       .linkWidth((link: any) => {
-        if (link.type === 'critical') return 2;
-        if (link.type === 'threat') return 1.2;
-        return 0.4;
+        if (link.type === 'critical') return 1.5;
+        if (link.type === 'threat') return 0.8;
+        return 0.3;
       })
-      .linkOpacity(0.7)
-      .linkDirectionalParticles((link: any) => link.particles || 1)
-      .linkDirectionalParticleSpeed(0.008)
-      .linkDirectionalParticleWidth((link: any) => link.type === 'critical' ? 3 : 2)
+      .linkOpacity(0.6)
+      .linkDirectionalParticles((link: any) => link.particles || 0)
+      .linkDirectionalParticleSpeed(0.006)
+      .linkDirectionalParticleWidth((link: any) => link.type === 'critical' ? 2 : 1.5)
       .linkDirectionalParticleColor((link: any) => {
-        if (link.type === 'critical') return '#FF0040';
-        if (link.type === 'threat') return '#FF6600';
-        return '#00F0FF44';
+        if (link.type === 'critical') return 'rgba(200, 80, 80, 0.7)';
+        if (link.type === 'threat') return 'rgba(200, 120, 80, 0.5)';
+        return 'rgba(100, 200, 220, 0.2)';
       })
-      .linkCurvature(0.15)
+      .linkCurvature(0.1)
       (containerRef.current);
 
     graph.graphData(graphData);
-    graph.cameraPosition({ x: 0, y: 0, z: 300 });
+    graph.cameraPosition({ x: 0, y: 0, z: 280 });
     
     const controls = graph.controls();
     if (controls) {
       controls.autoRotate = true;
-      controls.autoRotateSpeed = 0.5;
+      controls.autoRotateSpeed = 0.4;
       controls.enableZoom = false;
       controls.enablePan = false;
     }
@@ -187,30 +168,14 @@ export default function NetworkTopology() {
   }, [graphData]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full overflow-hidden rounded-lg">
       <div ref={containerRef} className="w-full h-full" />
-      {/* Title overlay */}
-      <div className="absolute top-2 left-3 z-10">
-        <div className="font-data text-[10px] tracking-[0.2em] uppercase text-[#00F0FF]/50">
-          Internal Network Topology
-        </div>
-        <div className="font-data text-[7px] tracking-wider text-[#8899aa]/30 mt-0.5">
-          {NETWORK_NODES.length} NODES &middot; {BASE_LINKS.length} LINKS &middot; REAL-TIME TRAFFIC
-        </div>
+      {/* Minimal label */}
+      <div className="absolute bottom-2 left-3 z-10">
+        <span className="font-data text-caption text-[var(--color-cp-text-tertiary)]">
+          {NETWORK_NODES.length} nodes · {BASE_LINKS.length} links
+        </span>
       </div>
-      {/* Legend */}
-      <div className="absolute bottom-2 left-3 z-10 flex items-center gap-3 flex-wrap">
-        {Object.entries(NODE_COLORS).map(([type, color]) => (
-          <div key={type} className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}44` }} />
-            <span className="font-data text-[7px] tracking-wider uppercase text-[#8899aa]/50">
-              {type}
-            </span>
-          </div>
-        ))}
-      </div>
-      {/* Top gradient */}
-      <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-[#050510] to-transparent pointer-events-none z-[5]" />
     </div>
   );
 }

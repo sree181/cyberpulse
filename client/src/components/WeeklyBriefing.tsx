@@ -1,60 +1,46 @@
 /**
- * WeeklyBriefing — Rotating infographic panel for faculty context
+ * WeeklyBriefing — Rotating infographic panel
  * 
- * Displays 6 slides that auto-rotate every 12 seconds:
- * 1. Weekly Overview — headline metrics + mini sparkline
- * 2. Top Attack Vectors — horizontal bar chart by service category
- * 3. Geographic Origins — ranked country list with flag indicators
- * 4. Port Activity Analysis — risk-classified port bars
- * 5. Vulnerability Landscape — recent CISA KEV additions
- * 6. Key Takeaways — analyst insights + recommendation
+ * Redesign: Single accent color (amber for briefing differentiation from
+ * the cyan-dominant threat data). Clean typography, no glowing effects,
+ * restrained bar charts. Professional enough for faculty.
  */
 import { trpc } from '@/lib/trpc';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const SLIDE_INTERVAL = 12000; // 12 seconds per slide
-
-// ─── Color constants ─────────────────────────────────────────────────────────
-const CYAN = '#00F0FF';
-const MAGENTA = '#FF1493';
-const RED = '#FF0040';
-const AMBER = '#FFD700';
-const GREEN = '#00FF88';
-const ORANGE = '#FF6600';
+const SLIDE_INTERVAL = 12000;
 
 export default function WeeklyBriefing() {
   const { data, isLoading, error } = trpc.threats.weeklyBriefing.useQuery(undefined, {
-    refetchInterval: 15 * 60 * 1000, // 15 min
+    refetchInterval: 15 * 60 * 1000,
     retry: 2,
   });
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const progressRef = useRef(0);
-  const progressAnimRef = useRef<number>(0);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const slideStartRef = useRef(Date.now());
+  const progressAnimRef = useRef<number>(0);
 
   const slides = data?.slides || [];
   const totalSlides = slides.length;
 
-  // Auto-rotate slides
+  // Auto-rotate
   useEffect(() => {
     if (totalSlides <= 1) return;
     slideStartRef.current = Date.now();
-    
     const interval = setInterval(() => {
       setIsTransitioning(true);
       setTimeout(() => {
         setCurrentSlide(prev => (prev + 1) % totalSlides);
         slideStartRef.current = Date.now();
         setIsTransitioning(false);
-      }, 350);
+      }, 300);
     }, SLIDE_INTERVAL);
     return () => clearInterval(interval);
   }, [totalSlides]);
 
-  // Animate progress bar
+  // Progress bar animation
   useEffect(() => {
     const animate = () => {
       const elapsed = Date.now() - slideStartRef.current;
@@ -70,25 +56,18 @@ export default function WeeklyBriefing() {
 
   if (isLoading) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-        <div className="w-6 h-6 border border-[#FFD700]/20 border-t-[#FFD700]/60 rounded-full animate-spin" />
-        <div className="font-data text-[9px] text-[#FFD700]/25 animate-pulse tracking-[0.2em]">
-          COMPILING WEEKLY BRIEFING...
-        </div>
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="text-body text-[var(--color-cp-text-tertiary)]">Compiling briefing...</span>
       </div>
     );
   }
 
   if (error || slides.length === 0) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-4">
-        <div className="w-1.5 h-1.5 rounded-full bg-[#FF6600] shadow-[0_0_6px_rgba(255,102,0,0.5)]" />
-        <div className="font-data text-[9px] text-[#FF6600]/40 tracking-[0.15em] text-center">
-          BRIEFING UNAVAILABLE
-        </div>
-        <div className="font-data text-[7px] text-[#8899aa]/25 text-center leading-[1.3]">
-          {error ? 'Data sources temporarily unreachable. Retrying...' : 'Awaiting sufficient data for weekly analysis.'}
-        </div>
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="text-body text-[var(--color-cp-text-tertiary)]">
+          {error ? 'Briefing unavailable' : 'Awaiting data...'}
+        </span>
       </div>
     );
   }
@@ -96,49 +75,33 @@ export default function WeeklyBriefing() {
   const slide = slides[currentSlide];
 
   return (
-    <div className={`w-full h-full flex flex-col relative overflow-hidden transition-opacity duration-350 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#FFD700]/30 to-transparent" />
-      
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 pt-2 pb-1 shrink-0">
+      <div className="cp-panel-header">
         <div className="flex items-center gap-2">
-          <div className={`w-1.5 h-1.5 rounded-full ${
-            data?.dataFreshness === 'live' 
-              ? 'bg-[#FFD700] shadow-[0_0_6px_rgba(255,215,0,0.5)]' 
-              : data?.dataFreshness === 'partial' 
-                ? 'bg-[#FF6600] shadow-[0_0_6px_rgba(255,102,0,0.4)]' 
-                : 'bg-[#8899aa] shadow-[0_0_4px_rgba(136,153,170,0.3)]'
-          }`} />
-          <span className="font-data text-[8px] tracking-[0.2em] uppercase text-[#FFD700]/60">
-            Weekly Briefing
-          </span>
+          <span className="text-label text-[var(--color-cp-text-tertiary)]">Weekly Briefing</span>
           {data?.dataFreshness && data.dataFreshness !== 'live' && (
-            <span className={`font-data text-[6px] px-1 py-0 rounded-sm border ${
-              data.dataFreshness === 'partial' 
-                ? 'text-[#FF6600]/50 border-[#FF6600]/20 bg-[#FF6600]/05' 
-                : 'text-[#8899aa]/40 border-[#8899aa]/15 bg-[#8899aa]/05'
-            }`}>
-              {data.dataFreshness === 'partial' ? 'PARTIAL' : 'CACHED'}
+            <span className="text-caption text-[var(--color-cp-text-tertiary)] opacity-50">
+              ({data.dataFreshness})
             </span>
           )}
         </div>
-        <div className="font-data text-[7px] text-[#8899aa]/30">
-          {data?.weekLabel || ''} — {currentSlide + 1}/{totalSlides}
-        </div>
+        <span className="text-caption text-[var(--color-cp-text-tertiary)]">
+          {currentSlide + 1}/{totalSlides}
+        </span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-[2px] mx-3 bg-[#FFD700]/08 rounded-full overflow-hidden shrink-0">
+      <div className="h-[2px] mx-3 bg-[var(--color-cp-border)] rounded-full overflow-hidden">
         <div 
           ref={progressBarRef}
-          className="h-full bg-gradient-to-r from-[#FFD700]/40 to-[#FFD700]/80 rounded-full transition-none"
-          style={{ width: '0%' }}
+          className="h-full rounded-full transition-none"
+          style={{ width: '0%', backgroundColor: 'var(--color-cp-accent)' }}
         />
       </div>
 
       {/* Slide content */}
-      <div className="flex-1 px-3 pt-1.5 pb-2 overflow-hidden">
+      <div className={`cp-panel-body flex-1 overflow-hidden transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {slide?.type === 'overview' && <OverviewSlide data={slide.data} title={slide.title} subtitle={slide.subtitle} />}
         {slide?.type === 'top-vectors' && <TopVectorsSlide data={slide.data} />}
         {slide?.type === 'geo-trends' && <GeoTrendsSlide data={slide.data} />}
@@ -149,14 +112,12 @@ export default function WeeklyBriefing() {
       </div>
 
       {/* Slide dots */}
-      <div className="flex items-center justify-center gap-1.5 pb-1.5 shrink-0">
-        {slides.map((_, i) => (
+      <div className="flex justify-center gap-1 py-2 border-t border-[var(--color-cp-border)]">
+        {slides.map((_: any, i: number) => (
           <div
             key={i}
-            className={`h-1 rounded-full transition-all duration-300 ${
-              i === currentSlide 
-                ? 'w-4 bg-[#FFD700] shadow-[0_0_4px_rgba(255,215,0,0.5)]' 
-                : 'w-1 bg-[#FFD700]/15'
+            className={`w-1 h-1 rounded-full transition-all duration-300 ${
+              i === currentSlide ? 'bg-[var(--color-cp-accent)]' : 'bg-[var(--color-cp-border)]'
             }`}
           />
         ))}
@@ -168,62 +129,57 @@ export default function WeeklyBriefing() {
 // ─── Slide Components ────────────────────────────────────────────────────────
 
 function OverviewSlide({ data, title, subtitle }: { data: any; title: string; subtitle: string }) {
-  const trendColor = data.trendDirection === 'increasing' ? RED : data.trendDirection === 'decreasing' ? GREEN : CYAN;
-  const trendArrow = data.trendDirection === 'increasing' ? '▲' : data.trendDirection === 'decreasing' ? '▼' : '━';
+  const trendColor = data.trendDirection === 'increasing' 
+    ? 'var(--color-cp-critical)' 
+    : data.trendDirection === 'decreasing' 
+      ? 'var(--color-cp-low)' 
+      : 'var(--color-cp-accent)';
+  const trendArrow = data.trendDirection === 'increasing' ? '↑' : data.trendDirection === 'decreasing' ? '↓' : '→';
   
   return (
     <div className="h-full flex flex-col">
-      <div className="font-data text-[11px] font-bold text-[#FFD700]/80 tracking-wider">{title}</div>
-      <div className="font-data text-[7px] text-[#8899aa]/40 mt-0.5">{subtitle}</div>
+      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">{title}</div>
+      <div className="text-caption text-[var(--color-cp-text-tertiary)] mt-0.5">{subtitle}</div>
       
-      {/* Metric cards */}
-      <div className="grid grid-cols-3 gap-2 mt-2">
-        <MetricCard label="Total Events" value={formatNumber(data.totalRecords)} color={CYAN} />
-        <MetricCard label="Unique Sources" value={formatNumber(data.totalSources)} color={ORANGE} />
-        <MetricCard label="Targets Hit" value={formatNumber(data.totalTargets)} color={MAGENTA} />
+      {/* Metrics */}
+      <div className="grid grid-cols-3 gap-2 mt-3">
+        <MetricCard label="Total Events" value={formatNumber(data.totalRecords)} />
+        <MetricCard label="Unique Sources" value={formatNumber(data.totalSources)} />
+        <MetricCard label="Targets" value={formatNumber(data.totalTargets)} />
       </div>
 
-      {/* Trend + KEV row */}
-      <div className="flex items-center gap-3 mt-2">
-        <div className="flex items-center gap-1.5">
-          <span className="font-data text-[10px] font-bold" style={{ color: trendColor }}>
+      {/* Trend */}
+      <div className="flex items-center gap-3 mt-3">
+        <div className="flex items-center gap-1">
+          <span className="font-data text-body font-medium" style={{ color: trendColor }}>
             {trendArrow} {data.trendPercent > 0 ? '+' : ''}{data.trendPercent}%
           </span>
-          <span className="font-data text-[7px] text-[#8899aa]/40">week trend</span>
+          <span className="text-caption text-[var(--color-cp-text-tertiary)]">vs last week</span>
         </div>
-        <div className="w-[1px] h-3 bg-[#FFD700]/10" />
+        <div className="w-px h-3 bg-[var(--color-cp-border)]" />
         <div className="flex items-center gap-1">
-          <span className="font-data text-[10px] font-bold text-[#FF0040]">{data.newKEVs}</span>
-          <span className="font-data text-[7px] text-[#8899aa]/40">new KEVs</span>
+          <span className="font-data text-body font-medium severity-critical">{data.newKEVs}</span>
+          <span className="text-caption text-[var(--color-cp-text-tertiary)]">new KEVs</span>
         </div>
-        {data.ransomwareKEVs > 0 && (
-          <>
-            <div className="w-[1px] h-3 bg-[#FFD700]/10" />
-            <div className="flex items-center gap-1">
-              <span className="font-data text-[10px] font-bold text-[#FF1493]">{data.ransomwareKEVs}</span>
-              <span className="font-data text-[7px] text-[#8899aa]/40">ransomware</span>
-            </div>
-          </>
-        )}
       </div>
 
-      {/* Mini sparkline from daily breakdown */}
-      <div className="flex-1 flex items-end gap-[3px] mt-2 pb-1">
+      {/* Mini sparkline */}
+      <div className="flex-1 flex items-end gap-[2px] mt-3 pb-1">
         {(data.dailyBreakdown || []).map((d: any, i: number) => {
           const max = Math.max(...(data.dailyBreakdown || []).map((x: any) => x.records), 1);
-          const height = Math.max((d.records / max) * 100, 5);
+          const height = Math.max((d.records / max) * 100, 4);
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
               <div 
-                className="w-full rounded-t-sm min-h-[3px]"
+                className="w-full rounded-t-sm"
                 style={{ 
                   height: `${height}%`,
-                  background: `linear-gradient(to top, ${CYAN}20, ${CYAN}60)`,
-                  boxShadow: `0 0 4px ${CYAN}20`,
+                  backgroundColor: 'var(--color-cp-accent)',
+                  opacity: 0.3 + (height / 100) * 0.5,
                 }}
               />
-              <span className="font-data text-[5px] text-[#8899aa]/25">
-                {d.date?.slice(5) || ''}
+              <span className="font-data text-[7px] text-[var(--color-cp-text-tertiary)] opacity-50">
+                {d.date?.slice(8) || ''}
               </span>
             </div>
           );
@@ -235,36 +191,33 @@ function OverviewSlide({ data, title, subtitle }: { data: any; title: string; su
 
 function TopVectorsSlide({ data }: { data: any }) {
   const vectors = data.vectors || [];
-  const colors = [RED, ORANGE, AMBER, CYAN, GREEN, MAGENTA];
   
   return (
     <div className="h-full flex flex-col">
-      <div className="font-data text-[11px] font-bold text-[#FFD700]/80 tracking-wider">Top Attack Vectors</div>
-      <div className="font-data text-[7px] text-[#8899aa]/40 mt-0.5">Classified by targeted service category</div>
+      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Top Attack Vectors</div>
+      <div className="text-caption text-[var(--color-cp-text-tertiary)] mt-0.5">By targeted service</div>
       
-      <div className="flex-1 flex flex-col justify-center gap-[6px] mt-1.5">
-        {vectors.map((v: any, i: number) => (
+      <div className="flex-1 flex flex-col justify-center gap-2 mt-2">
+        {vectors.map((v: any) => (
           <div key={v.name} className="flex items-center gap-2">
-            <div className="w-[90px] shrink-0 text-right">
-              <span className="font-data text-[8px] text-[#8899aa]/50 truncate block">{v.name}</span>
-            </div>
-            <div className="flex-1 h-[10px] bg-[#0a0a1a] rounded-sm overflow-hidden relative">
+            <span className="font-data text-caption text-[var(--color-cp-text-secondary)] w-[80px] text-right truncate">
+              {v.name}
+            </span>
+            <div className="flex-1 h-[5px] bg-[var(--color-cp-base)] rounded-full overflow-hidden">
               <div 
-                className="h-full rounded-sm transition-all duration-1000"
+                className="h-full rounded-full transition-all duration-1000"
                 style={{ 
                   width: `${v.percent}%`,
-                  background: `linear-gradient(90deg, ${colors[i % colors.length]}40, ${colors[i % colors.length]}90)`,
-                  boxShadow: `0 0 6px ${colors[i % colors.length]}30`,
+                  backgroundColor: 'var(--color-cp-accent)',
+                  opacity: 0.5 + (v.percent / 100) * 0.5,
                 }}
               />
             </div>
-            <span className="font-data text-[8px] text-[#8899aa]/40 w-[30px] text-right">{v.percent}%</span>
+            <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] w-[30px] text-right tabular-nums">
+              {v.percent}%
+            </span>
           </div>
         ))}
-      </div>
-      
-      <div className="font-data text-[7px] text-[#8899aa]/25 mt-1">
-        Total: {formatNumber(data.totalCount)} events across {vectors.length} categories
       </div>
     </div>
   );
@@ -273,43 +226,37 @@ function TopVectorsSlide({ data }: { data: any }) {
 function GeoTrendsSlide({ data }: { data: any }) {
   const countries = data.countries || [];
   const maxReports = Math.max(...countries.map((c: any) => c.reports), 1);
-  
-  const flagColors: Record<string, string> = {
-    CN: '#FF0040', US: '#00F0FF', RU: '#FF6600', IN: '#FFD700', BR: '#00FF88',
-    DE: '#FF1493', KR: '#00BFFF', NL: '#FF8C00', GB: '#8B00FF', FR: '#00F0FF',
-  };
 
   return (
     <div className="h-full flex flex-col">
-      <div className="font-data text-[11px] font-bold text-[#FFD700]/80 tracking-wider">Geographic Origins</div>
-      <div className="font-data text-[7px] text-[#8899aa]/40 mt-0.5">
-        Top source countries — {data.totalCountries} countries detected
+      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Geographic Origins</div>
+      <div className="text-caption text-[var(--color-cp-text-tertiary)] mt-0.5">
+        {data.totalCountries} countries detected
       </div>
       
-      <div className="flex-1 flex flex-col justify-center gap-[5px] mt-1.5">
-        {countries.slice(0, 6).map((c: any, i: number) => {
-          const barWidth = Math.max((c.reports / maxReports) * 100, 5);
-          const color = flagColors[c.code] || CYAN;
+      <div className="flex-1 flex flex-col justify-center gap-1.5 mt-2">
+        {countries.slice(0, 6).map((c: any) => {
+          const barWidth = Math.max((c.reports / maxReports) * 100, 4);
           return (
             <div key={c.code} className="flex items-center gap-2">
-              <div className="w-[16px] shrink-0 flex items-center justify-center">
-                <span className="font-data text-[9px] font-bold" style={{ color }}>{c.code}</span>
-              </div>
-              <div className="w-[65px] shrink-0">
-                <span className="font-data text-[7px] text-[#8899aa]/50 truncate block">{c.name}</span>
-              </div>
-              <div className="flex-1 h-[8px] bg-[#0a0a1a] rounded-sm overflow-hidden">
+              <span className="font-data text-caption text-[var(--color-cp-accent)] w-[20px] font-medium">
+                {c.code}
+              </span>
+              <span className="text-caption text-[var(--color-cp-text-tertiary)] w-[60px] truncate">
+                {c.name}
+              </span>
+              <div className="flex-1 h-[4px] bg-[var(--color-cp-base)] rounded-full overflow-hidden">
                 <div 
-                  className="h-full rounded-sm"
+                  className="h-full rounded-full"
                   style={{ 
                     width: `${barWidth}%`,
-                    background: `linear-gradient(90deg, ${color}30, ${color}70)`,
-                    boxShadow: `0 0 4px ${color}20`,
+                    backgroundColor: 'var(--color-cp-accent)',
+                    opacity: 0.4 + (barWidth / 100) * 0.5,
                   }}
                 />
               </div>
-              <span className="font-data text-[7px] text-[#8899aa]/35 w-[35px] text-right">
-                {c.attackers} IPs
+              <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] w-[35px] text-right tabular-nums">
+                {c.attackers}
               </span>
             </div>
           );
@@ -321,44 +268,46 @@ function GeoTrendsSlide({ data }: { data: any }) {
 
 function PortAnalysisSlide({ data }: { data: any }) {
   const ports = data.ports || [];
-  const riskColors: Record<string, string> = { high: RED, medium: AMBER, standard: CYAN };
-  const riskLabels: Record<string, string> = { high: 'HIGH RISK', medium: 'WEB', standard: 'STD' };
 
   return (
     <div className="h-full flex flex-col">
-      <div className="font-data text-[11px] font-bold text-[#FFD700]/80 tracking-wider">Port Activity Analysis</div>
-      <div className="font-data text-[7px] text-[#8899aa]/40 mt-0.5">
-        {data.highRiskCount} high-risk ports · {data.webCount} web ports targeted
+      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Port Activity</div>
+      <div className="text-caption text-[var(--color-cp-text-tertiary)] mt-0.5">
+        {data.highRiskCount} high-risk · {data.webCount} web ports
       </div>
       
-      <div className="flex-1 flex flex-col justify-center gap-[4px] mt-1.5">
-        {ports.slice(0, 7).map((p: any) => {
-          const color = riskColors[p.riskLevel] || CYAN;
-          return (
-            <div key={p.port} className="flex items-center gap-1.5">
-              <div className="w-[40px] shrink-0 text-right">
-                <span className="font-data text-[8px]" style={{ color }}>{p.service}</span>
-              </div>
-              <div className="px-1 py-0 rounded-sm border" style={{ borderColor: `${color}30`, backgroundColor: `${color}08` }}>
-                <span className="font-data text-[5px]" style={{ color: `${color}80` }}>
-                  {riskLabels[p.riskLevel]}
-                </span>
-              </div>
-              <div className="flex-1 h-[7px] bg-[#0a0a1a] rounded-sm overflow-hidden">
-                <div 
-                  className="h-full rounded-sm"
-                  style={{ 
-                    width: `${p.intensity}%`,
-                    background: `linear-gradient(90deg, ${color}30, ${color}80)`,
-                  }}
-                />
-              </div>
-              <span className="font-data text-[6px] text-[#8899aa]/30 w-[30px] text-right">
-                {formatNumber(p.records)}
-              </span>
+      <div className="flex-1 flex flex-col justify-center gap-1.5 mt-2">
+        {ports.slice(0, 7).map((p: any) => (
+          <div key={p.port} className="flex items-center gap-2">
+            <span className="font-data text-caption text-[var(--color-cp-text-secondary)] w-[45px] text-right truncate">
+              {p.service}
+            </span>
+            <span className={`text-[8px] px-1 rounded ${
+              p.riskLevel === 'high' ? 'severity-critical bg-[var(--color-cp-critical)]/10' :
+              p.riskLevel === 'medium' ? 'severity-medium bg-[var(--color-cp-medium)]/10' :
+              'text-[var(--color-cp-text-tertiary)] bg-[var(--color-cp-elevated)]'
+            }`}>
+              {p.riskLevel === 'high' ? 'HIGH' : p.riskLevel === 'medium' ? 'MED' : 'STD'}
+            </span>
+            <div className="flex-1 h-[4px] bg-[var(--color-cp-base)] rounded-full overflow-hidden">
+              <div 
+                className="h-full rounded-full"
+                style={{ 
+                  width: `${p.intensity}%`,
+                  backgroundColor: p.riskLevel === 'high' 
+                    ? 'var(--color-cp-critical)' 
+                    : p.riskLevel === 'medium' 
+                      ? 'var(--color-cp-medium)' 
+                      : 'var(--color-cp-accent)',
+                  opacity: 0.6,
+                }}
+              />
             </div>
-          );
-        })}
+            <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] w-[30px] text-right tabular-nums">
+              {formatNumber(p.records)}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -370,50 +319,116 @@ function CVESummarySlide({ data }: { data: any }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="font-data text-[11px] font-bold text-[#FFD700]/80 tracking-wider">Vulnerability Landscape</div>
-      <div className="font-data text-[7px] text-[#8899aa]/40 mt-0.5">CISA KEV — Recent actively exploited additions</div>
+      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Vulnerability Landscape</div>
+      <div className="text-caption text-[var(--color-cp-text-tertiary)] mt-0.5">CISA KEV — Recent additions</div>
       
-      {/* Summary metrics */}
+      {/* Summary */}
       <div className="flex items-center gap-3 mt-2">
         <div className="flex items-center gap-1">
-          <span className="font-data text-[14px] font-bold text-[#FF0040]">{data.totalNew}</span>
-          <span className="font-data text-[7px] text-[#8899aa]/40">new CVEs</span>
+          <span className="font-data text-[14px] font-medium severity-critical">{data.totalNew}</span>
+          <span className="text-caption text-[var(--color-cp-text-tertiary)]">new CVEs</span>
         </div>
         {data.ransomwareCount > 0 && (
           <>
-            <div className="w-[1px] h-4 bg-[#FFD700]/10" />
+            <div className="w-px h-3 bg-[var(--color-cp-border)]" />
             <div className="flex items-center gap-1">
-              <span className="font-data text-[14px] font-bold text-[#FF1493]">{data.ransomwareCount}</span>
-              <span className="font-data text-[7px] text-[#8899aa]/40">ransomware-linked</span>
+              <span className="font-data text-[14px] font-medium severity-high">{data.ransomwareCount}</span>
+              <span className="text-caption text-[var(--color-cp-text-tertiary)]">ransomware</span>
             </div>
           </>
         )}
       </div>
 
       {/* CVE list */}
-      <div className="flex-1 flex flex-col gap-[4px] mt-2 overflow-hidden">
+      <div className="flex-1 flex flex-col gap-1.5 mt-2 overflow-hidden">
         {cves.slice(0, 4).map((c: any) => (
-          <div key={c.cveId} className="flex items-center gap-2 py-[2px]">
-            <span className="font-data text-[8px] text-[#FF0040]/80 shrink-0">{c.cveId}</span>
+          <div key={c.cveId} className="flex items-center gap-2">
+            <span className="font-data text-caption severity-critical">{c.cveId}</span>
             {c.isRansomware && (
-              <span className="font-data text-[5px] text-[#FF1493] px-1 py-0 border border-[#FF1493]/30 rounded-sm bg-[#FF1493]/08">
-                RANSOM
-              </span>
+              <span className="text-[7px] px-1 rounded severity-high bg-[var(--color-cp-high)]/10">RANSOM</span>
             )}
-            <span className="font-data text-[7px] text-[#8899aa]/40 truncate">
+            <span className="text-caption text-[var(--color-cp-text-tertiary)] truncate">
               {c.vendor} — {c.product}
             </span>
           </div>
         ))}
       </div>
 
-      {/* Top affected vendors */}
+      {/* Top vendors */}
       {vendors.length > 0 && (
-        <div className="mt-1 pt-1 border-t border-[#FFD700]/05">
-          <span className="font-data text-[6px] text-[#8899aa]/25 tracking-wider">TOP VENDORS: </span>
-          <span className="font-data text-[7px] text-[#FF6600]/50">
-            {vendors.map((v: any) => `${v.vendor} (${v.count})`).join(' · ')}
+        <div className="pt-1.5 border-t border-[var(--color-cp-border)]">
+          <span className="text-caption text-[var(--color-cp-text-tertiary)]">
+            Top: {vendors.map((v: any) => `${v.vendor} (${v.count})`).join(' · ')}
           </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SeverityBreakdownSlide({ data }: { data: any }) {
+  const severities = [
+    { label: 'Critical', count: data.critical, percent: data.criticalPercent, cls: 'severity-critical' },
+    { label: 'High', count: data.high, percent: data.highPercent, cls: 'severity-high' },
+    { label: 'Medium', count: data.medium, percent: data.mediumPercent, cls: 'severity-medium' },
+    { label: 'Low', count: data.low, percent: data.lowPercent, cls: 'severity-low' },
+  ];
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Severity Distribution</div>
+      <div className="text-caption text-[var(--color-cp-text-tertiary)] mt-0.5">Weekly classification</div>
+
+      {/* Stacked bar */}
+      <div className="h-[8px] mt-3 flex rounded-full overflow-hidden bg-[var(--color-cp-base)]">
+        {severities.map(s => (
+          s.percent > 0 && (
+            <div
+              key={s.label}
+              className="h-full transition-all duration-1000"
+              style={{
+                width: `${s.percent}%`,
+                backgroundColor: s.label === 'Critical' ? 'var(--color-cp-critical)' :
+                  s.label === 'High' ? 'var(--color-cp-high)' :
+                  s.label === 'Medium' ? 'var(--color-cp-medium)' :
+                  'var(--color-cp-low)',
+                opacity: 0.7,
+              }}
+            />
+          )
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div className="grid grid-cols-4 gap-2 mt-3">
+        {severities.map(s => (
+          <div key={s.label} className="text-center">
+            <div className={`font-data text-[14px] font-light ${s.cls}`}>{s.percent}%</div>
+            <div className="text-caption text-[var(--color-cp-text-tertiary)]">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Daily trend */}
+      {(data.dailySeverity || []).length > 0 && (
+        <div className="flex-1 flex items-end gap-[2px] mt-3 pb-1">
+          {(data.dailySeverity || []).map((d: any, i: number) => {
+            const dayTotal = d.critical + d.high + d.medium + d.low;
+            const maxDay = Math.max(...(data.dailySeverity || []).map((x: any) => x.critical + x.high + x.medium + x.low), 1);
+            const height = Math.max((dayTotal / maxDay) * 100, 4);
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                <div
+                  className="w-full rounded-t-sm"
+                  style={{ 
+                    height: `${height}%`, 
+                    backgroundColor: 'var(--color-cp-accent)',
+                    opacity: 0.3 + (height / 100) * 0.4,
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -422,38 +437,25 @@ function CVESummarySlide({ data }: { data: any }) {
 
 function KeyTakeawaySlide({ data }: { data: any }) {
   const insights = data.insights || [];
-  const threatLevel = data.threatLevel || { status: 'green', color: GREEN };
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center gap-2">
-        <div className="font-data text-[11px] font-bold text-[#FFD700]/80 tracking-wider">Key Takeaways</div>
-        <div 
-          className="px-1.5 py-0.5 rounded-sm border"
-          style={{ borderColor: `${threatLevel.color}40`, backgroundColor: `${threatLevel.color}10` }}
-        >
-          <span className="font-data text-[7px] uppercase tracking-wider" style={{ color: threatLevel.color }}>
-            {threatLevel.status}
-          </span>
-        </div>
-      </div>
+      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Key Takeaways</div>
       
       {/* Insights */}
-      <div className="flex-1 flex flex-col gap-[6px] mt-2 overflow-hidden">
+      <div className="flex-1 flex flex-col gap-2 mt-3 overflow-hidden">
         {insights.slice(0, 4).map((insight: string, i: number) => (
-          <div key={i} className="flex gap-1.5">
-            <div className="w-1 h-1 rounded-full mt-[4px] shrink-0" style={{ backgroundColor: `${AMBER}60` }} />
-            <p className="font-body text-[8px] text-[#8899aa]/50 leading-[1.35]">{insight}</p>
+          <div key={i} className="flex gap-2">
+            <div className="w-1 h-1 rounded-full mt-1.5 shrink-0 bg-[var(--color-cp-accent)] opacity-50" />
+            <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed">{insight}</p>
           </div>
         ))}
       </div>
 
       {/* Recommendation */}
-      <div className="mt-auto pt-1.5 border-t border-[#FFD700]/08">
-        <div className="font-data text-[6px] text-[#FFD700]/30 tracking-[0.15em] uppercase mb-0.5">
-          Recommendation
-        </div>
-        <p className="font-body text-[7px] text-[#FFD700]/40 leading-[1.3]">
+      <div className="mt-auto pt-2 border-t border-[var(--color-cp-border)]">
+        <span className="text-caption text-[var(--color-cp-text-tertiary)] block mb-0.5">Recommendation</span>
+        <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed">
           {data.recommendation}
         </p>
       </div>
@@ -461,86 +463,13 @@ function KeyTakeawaySlide({ data }: { data: any }) {
   );
 }
 
-function SeverityBreakdownSlide({ data }: { data: any }) {
-  const severities = [
-    { label: 'CRITICAL', count: data.critical, percent: data.criticalPercent, color: '#FF0040' },
-    { label: 'HIGH', count: data.high, percent: data.highPercent, color: '#FF6600' },
-    { label: 'MEDIUM', count: data.medium, percent: data.mediumPercent, color: '#FFD700' },
-    { label: 'LOW', count: data.low, percent: data.lowPercent, color: '#00FF88' },
-  ];
-  const dailySeverity = data.dailySeverity || [];
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="font-data text-[11px] font-bold text-[#FFD700]/80 tracking-wider">Severity Distribution</div>
-      <div className="font-data text-[7px] text-[#8899aa]/40 mt-0.5">Weekly threat severity classification</div>
-
-      {/* Stacked bar */}
-      <div className="h-[14px] mt-2 flex rounded-sm overflow-hidden">
-        {severities.map(s => (
-          s.percent > 0 && (
-            <div
-              key={s.label}
-              className="h-full transition-all duration-1000"
-              style={{
-                width: `${s.percent}%`,
-                backgroundColor: s.color,
-                opacity: 0.7,
-              }}
-            />
-          )
-        ))}
-      </div>
-
-      {/* Severity cards */}
-      <div className="grid grid-cols-4 gap-1.5 mt-2">
-        {severities.map(s => (
-          <div key={s.label} className="p-1 rounded-sm border bg-[#0a0a1a]/50" style={{ borderColor: `${s.color}15` }}>
-            <div className="font-data text-[5px] tracking-wider" style={{ color: `${s.color}60` }}>{s.label}</div>
-            <div className="font-data text-[11px] font-bold" style={{ color: s.color }}>{s.percent}%</div>
-            <div className="font-data text-[6px] text-[#8899aa]/25">{formatNumber(s.count)}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Daily severity trend mini bars */}
-      {dailySeverity.length > 0 && (
-        <div className="flex-1 flex flex-col mt-2">
-          <div className="font-data text-[6px] text-[#8899aa]/25 tracking-wider mb-1">DAILY TREND</div>
-          <div className="flex-1 flex items-end gap-[3px]">
-            {dailySeverity.map((d: any, i: number) => {
-              const dayTotal = d.critical + d.high + d.medium + d.low;
-              const maxDay = Math.max(...dailySeverity.map((x: any) => x.critical + x.high + x.medium + x.low), 1);
-              const height = Math.max((dayTotal / maxDay) * 100, 5);
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                  <div
-                    className="w-full rounded-t-sm flex flex-col-reverse overflow-hidden"
-                    style={{ height: `${height}%` }}
-                  >
-                    <div style={{ height: `${dayTotal > 0 ? (d.low / dayTotal) * 100 : 25}%`, backgroundColor: '#00FF8840' }} />
-                    <div style={{ height: `${dayTotal > 0 ? (d.medium / dayTotal) * 100 : 25}%`, backgroundColor: '#FFD70050' }} />
-                    <div style={{ height: `${dayTotal > 0 ? (d.high / dayTotal) * 100 : 25}%`, backgroundColor: '#FF660060' }} />
-                    <div style={{ height: `${dayTotal > 0 ? (d.critical / dayTotal) * 100 : 25}%`, backgroundColor: '#FF004070' }} />
-                  </div>
-                  <span className="font-data text-[5px] text-[#8899aa]/20">{d.date?.slice(5) || ''}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
+function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-1.5 rounded-sm border border-[#FFD700]/08 bg-[#0a0a1a]/50">
-      <div className="font-data text-[6px] text-[#8899aa]/30 tracking-wider uppercase">{label}</div>
-      <div className="font-data text-[13px] font-bold mt-0.5" style={{ color }}>{value}</div>
+    <div className="p-2 rounded bg-[var(--color-cp-elevated)] border border-[var(--color-cp-border)]">
+      <div className="text-caption text-[var(--color-cp-text-tertiary)]">{label}</div>
+      <div className="font-data text-body text-[var(--color-cp-text-primary)] font-medium mt-0.5">{value}</div>
     </div>
   );
 }

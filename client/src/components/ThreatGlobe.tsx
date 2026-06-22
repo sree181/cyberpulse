@@ -1,7 +1,9 @@
 /**
  * ThreatGlobe — The centerpiece 3D globe visualization
- * ENHANCED: Denser arcs, impact point explosions, hexagonal grid overlay,
- * source point markers, and more dramatic visual effects.
+ * 
+ * Redesign: Clean, cinematic globe. No scan lines, no vignette overlays,
+ * no competing text overlays. Let the globe speak for itself.
+ * Subtle atmosphere, restrained arc colors, clean target rings.
  */
 import { useEffect, useRef, useMemo } from 'react';
 import Globe from 'globe.gl';
@@ -10,18 +12,18 @@ import { useThreatData } from '@/contexts/ThreatContext';
 export default function ThreatGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<any>(null);
-  const { activeArcs, isLive, realDataStatus } = useThreatData();
+  const { activeArcs } = useThreatData();
 
   const arcsData = useMemo(() => activeArcs.map(arc => ({
     startLat: arc.startLat,
     startLng: arc.startLng,
     endLat: arc.endLat,
     endLng: arc.endLng,
-    color: arc.color,
-    stroke: arc.stroke,
+    color: ['rgba(100, 200, 220, 0.6)', 'rgba(100, 200, 220, 0.05)'],
+    stroke: Math.min(arc.stroke * 0.6, 1.2),
   })), [activeArcs]);
 
-  // Source points — show glowing dots at attack origins
+  // Source points — subtle dots at attack origins
   const pointsData = useMemo(() => {
     const seen = new Set<string>();
     return activeArcs.filter(arc => {
@@ -32,38 +34,20 @@ export default function ThreatGlobe() {
     }).map(arc => ({
       lat: arc.startLat,
       lng: arc.startLng,
-      color: arc.color,
-      size: 0.15 + arc.stroke * 0.08,
+      color: 'rgba(100, 200, 220, 0.5)',
+      size: 0.12,
       altitude: 0.005,
     }));
   }, [activeArcs]);
 
-  // Target ring data for the 5 target locations
+  // Target ring data — subtle pulsing at target locations
   const ringsData = useMemo(() => [
-    { lat: 38.9072, lng: -77.0369, color: '#00F0FF', maxR: 4, propagationSpeed: 3, repeatPeriod: 800 },
-    { lat: 37.3861, lng: -122.0839, color: '#00F0FF', maxR: 4, propagationSpeed: 3, repeatPeriod: 800 },
-    { lat: 50.1109, lng: 8.6821, color: '#00F0FF', maxR: 4, propagationSpeed: 3, repeatPeriod: 800 },
-    { lat: 1.3521, lng: 103.8198, color: '#00F0FF', maxR: 4, propagationSpeed: 3, repeatPeriod: 800 },
-    { lat: 51.5074, lng: -0.1278, color: '#00F0FF', maxR: 4, propagationSpeed: 3, repeatPeriod: 800 },
+    { lat: 38.9072, lng: -77.0369, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 37.3861, lng: -122.0839, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 50.1109, lng: 8.6821, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 1.3521, lng: 103.8198, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 51.5074, lng: -0.1278, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
   ], []);
-
-  // Target label data
-  const labelsData = useMemo(() => [
-    { lat: 38.9072, lng: -77.0369, text: 'US-EAST HQ', color: 'rgba(0,240,255,0.8)', size: 0.6 },
-    { lat: 37.3861, lng: -122.0839, text: 'US-WEST DC', color: 'rgba(0,240,255,0.8)', size: 0.6 },
-    { lat: 50.1109, lng: 8.6821, text: 'EU-CENTRAL', color: 'rgba(0,240,255,0.8)', size: 0.6 },
-    { lat: 1.3521, lng: 103.8198, text: 'APAC DC', color: 'rgba(0,240,255,0.8)', size: 0.6 },
-    { lat: 51.5074, lng: -0.1278, text: 'UK OFFICE', color: 'rgba(0,240,255,0.8)', size: 0.6 },
-  ], []);
-
-  // Hex bin data — create a subtle hex grid overlay showing attack density
-  const hexBinData = useMemo(() => {
-    return activeArcs.map(arc => ({
-      lat: arc.startLat,
-      lng: arc.startLng,
-      weight: arc.stroke,
-    }));
-  }, [activeArcs]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -72,59 +56,39 @@ export default function ThreatGlobe() {
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
       .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-      .atmosphereColor('#00F0FF')
-      .atmosphereAltitude(0.22)
-      // Arcs — attack trajectories
+      .atmosphereColor('rgba(100, 200, 220, 0.4)')
+      .atmosphereAltitude(0.18)
+      // Arcs
       .arcsData([])
       .arcColor('color')
       .arcStroke('stroke')
-      .arcDashLength(0.6)
-      .arcDashGap(0.15)
-      .arcDashAnimateTime(1400)
-      .arcAltitudeAutoScale(0.4)
-      // Points — attack source markers
+      .arcDashLength(0.5)
+      .arcDashGap(0.2)
+      .arcDashAnimateTime(1800)
+      .arcAltitudeAutoScale(0.35)
+      // Points
       .pointsData([])
       .pointColor('color')
       .pointAltitude('altitude')
       .pointRadius('size')
-      // Rings — target pulsing
+      // Rings
       .ringsData(ringsData)
       .ringColor('color')
-      .ringMaxRadius(4)
-      .ringPropagationSpeed(3)
-      .ringRepeatPeriod(800)
-      // Labels — target names
-      .labelsData(labelsData)
-      .labelText('text')
-      .labelSize('size')
-      .labelColor('color')
-      .labelDotRadius(0.4)
-      .labelDotOrientation(() => 'right' as any)
-      .labelAltitude(0.015)
-      .labelResolution(2)
+      .ringMaxRadius(3)
+      .ringPropagationSpeed(2)
+      .ringRepeatPeriod(1200)
       (containerRef.current);
 
-    // Camera settings — slightly closer for more drama
-    globe.pointOfView({ lat: 20, lng: -15, altitude: 1.8 });
+    // Camera
+    globe.pointOfView({ lat: 25, lng: -10, altitude: 2.0 });
     
-    // Auto-rotate
+    // Auto-rotate — slow, contemplative
     const controls = globe.controls();
     if (controls) {
       controls.autoRotate = true;
-      controls.autoRotateSpeed = 0.3;
+      controls.autoRotateSpeed = 0.2;
       controls.enableZoom = false;
       controls.enablePan = false;
-    }
-
-    // Enhance Three.js scene
-    const scene = globe.scene();
-    if (scene) {
-      // Add ambient light for better globe illumination
-      const THREE = (window as any).THREE || {};
-      try {
-        // Darken the background slightly
-        scene.background = null;
-      } catch {}
     }
 
     globeRef.current = globe;
@@ -142,7 +106,7 @@ export default function ThreatGlobe() {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [ringsData, labelsData]);
+  }, [ringsData]);
 
   // Update arcs and points data
   useEffect(() => {
@@ -153,51 +117,19 @@ export default function ThreatGlobe() {
   }, [arcsData, pointsData]);
 
   return (
-    <div className="relative w-full h-full">
-      {/* Animated scan line overlay */}
-      <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-[0.03]">
-        <div 
-          className="w-full h-[2px] bg-gradient-to-r from-transparent via-[#00F0FF] to-transparent"
-          style={{
-            animation: 'scanline 4s linear infinite',
-          }}
-        />
-      </div>
-
-      {/* Vignette overlay for cinematic depth */}
-      <div 
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 50%, rgba(5,5,16,0.6) 100%)',
-        }}
-      />
-
+    <div className="relative w-full h-full overflow-hidden rounded-lg">
       {/* Globe container */}
       <div 
         ref={containerRef} 
         className="w-full h-full"
-        style={{ background: 'transparent' }}
       />
 
-      {/* Live data indicator */}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500'}`} />
-        <span className="text-[9px] font-mono text-white/40 uppercase tracking-wider">
-          {realDataStatus}
+      {/* Minimal bottom info */}
+      <div className="absolute bottom-3 left-4 z-10">
+        <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] tabular-nums">
+          {activeArcs.length} active vectors
         </span>
       </div>
-
-      {/* Arc count indicator */}
-      <div className="absolute top-3 right-3 z-20">
-        <span className="text-[9px] font-mono text-[#00F0FF]/40 uppercase tracking-wider">
-          {activeArcs.length} ACTIVE VECTORS
-        </span>
-      </div>
-
-      {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#050510] to-transparent pointer-events-none z-10" />
-      {/* Top gradient */}
-      <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-[#050510]/50 to-transparent pointer-events-none z-10" />
     </div>
   );
 }
