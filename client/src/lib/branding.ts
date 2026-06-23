@@ -18,7 +18,7 @@ export const BRANDING = {
   institutionName: 'CYBERPULSE',
   
   /** Subtitle shown below the institution name */
-  subtitle: 'IS&A Data Immersion Lab',
+  subtitle: 'BASY Data Immersion Lab',
   
   /** Path to the institution logo (use manus-upload-file --webdev for permanent URLs) */
   logoUrl: '/manus-storage/auburn-university-logo_e4d96d5f.png',
