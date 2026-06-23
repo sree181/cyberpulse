@@ -1,12 +1,15 @@
 /**
- * ThreatSpotlight — "Threat of the Day" panel
+ * ThreatSpotlight — Enhanced with AI Vulnerability Priority Scoring
  * 
- * Redesign: Clean card layout, no animated borders, no pulsing gauges.
- * Typography-driven hierarchy. Severity communicated through a single
- * colored dot and score, not through glowing effects.
+ * Two modes:
+ *   1. "CVE Spotlight" — rotating CISA KEV entries (existing)
+ *   2. "AI Priority" — LLM-ranked patch priority list (new)
+ * 
+ * Auto-toggles between modes, with a subtle tab indicator.
  */
 import { trpc } from '@/lib/trpc';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'wouter';
 
 interface SpotlightCVE {
   cveId: string;
@@ -52,26 +55,44 @@ export default function ThreatSpotlight() {
     retry: 2,
   });
 
+  const { data: aiPriority, isLoading: aiLoading } = trpc.ai.vulnPriority.useQuery(undefined, {
+    refetchInterval: 30 * 60 * 1000,
+    retry: 1,
+  });
+
+  const [mode, setMode] = useState<'cve' | 'ai'>('cve');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const allCVEs: SpotlightCVE[] = data?.recentCVEs || [];
   const currentCVE = allCVEs[currentIndex] || data?.spotlight;
+  const aiItems = aiPriority?.prioritizedList || [];
 
-  // Auto-rotate
+  // Auto-rotate CVEs and toggle modes
   useEffect(() => {
-    if (allCVEs.length <= 1) return;
     const interval = setInterval(() => {
       setIsTransitioning(true);
       setTimeout(() => {
-        setCurrentIndex(prev => (prev + 1) % allCVEs.length);
+        if (mode === 'cve') {
+          const nextIdx = (currentIndex + 1) % Math.max(allCVEs.length, 1);
+          if (nextIdx === 0 && aiItems.length > 0) {
+            // After full CVE rotation, show AI priority
+            setMode('ai');
+          } else {
+            setCurrentIndex(nextIdx);
+          }
+        } else {
+          // After AI view, go back to CVE
+          setMode('cve');
+          setCurrentIndex(0);
+        }
         setIsTransitioning(false);
       }, 300);
     }, ROTATION_INTERVAL);
     return () => clearInterval(interval);
-  }, [allCVEs.length]);
+  }, [mode, currentIndex, allCVEs.length, aiItems.length]);
 
-  if (isLoading || !currentCVE) {
+  if (isLoading || (!currentCVE && mode === 'cve')) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-2">
         <div className="w-4 h-4 border border-[var(--color-cp-border)] border-t-[var(--color-cp-accent)] rounded-full animate-spin" />
@@ -82,85 +103,203 @@ export default function ThreatSpotlight() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header with mode tabs */}
       <div className="cp-panel-header">
-        <span className="text-label text-[var(--color-cp-text-tertiary)]">
-          {currentIndex === 0 ? 'Threat of the Day' : 'Threat Spotlight'}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => { setMode('cve'); setIsTransitioning(false); }}
+            className={`text-label transition-colors cursor-pointer ${
+              mode === 'cve' ? 'text-[var(--color-cp-accent)]' : 'text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-text-secondary)]'
+            }`}
+          >
+            CVE Spotlight
+          </button>
+          <div className="w-px h-3 bg-[var(--color-cp-border)]" />
+          <button
+            onClick={() => { setMode('ai'); setIsTransitioning(false); }}
+            className={`text-label flex items-center gap-1 transition-colors cursor-pointer ${
+              mode === 'ai' ? 'text-violet-400' : 'text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-text-secondary)]'
+            }`}
+          >
+            <div className="w-1 h-1 rounded-full bg-violet-500" />
+            AI Priority
+          </button>
+        </div>
         <span className="text-caption text-[var(--color-cp-text-tertiary)]">
-          {currentIndex + 1}/{allCVEs.length}
+          {mode === 'cve' ? `${currentIndex + 1}/${allCVEs.length}` : `${aiItems.length} ranked`}
         </span>
       </div>
 
       {/* Content */}
       <div className={`cp-panel-body flex-1 flex flex-col overflow-hidden transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-        {/* CVE ID + Score row */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${getSeverityDotClass(currentCVE.severity)}`} />
-            <span className="font-data text-body text-[var(--color-cp-text-primary)] font-medium">
-              {currentCVE.cveId}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className={`font-data text-[13px] font-light ${getSeverityClass(currentCVE.severity)}`}>
-              {currentCVE.cvssScore ? currentCVE.cvssScore.toFixed(1) : 'N/A'}
-            </span>
-            <span className="text-caption text-[var(--color-cp-text-tertiary)]">CVSS</span>
-          </div>
-        </div>
-
-        {/* Vendor / Product */}
-        <div className="text-caption text-[var(--color-cp-text-secondary)] mb-1.5">
-          {currentCVE.vendor} — {currentCVE.product}
-        </div>
-
-        {/* Tags */}
-        <div className="flex gap-1.5 mb-2 flex-wrap">
-          {currentCVE.isActivelyExploited && (
-            <span className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-critical)]/10 severity-critical">
-              Actively Exploited
-            </span>
-          )}
-          {currentCVE.isRansomwareRelated && (
-            <span className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-high)]/10 severity-high">
-              Ransomware
-            </span>
-          )}
-          {currentCVE.cwes.slice(0, 2).map((cwe, i) => (
-            <span key={`${cwe}-${i}`} className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-elevated)] text-[var(--color-cp-text-tertiary)]">
-              {cwe}
-            </span>
-          ))}
-        </div>
-
-        {/* Description */}
-        <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed line-clamp-3 mb-2">
-          {currentCVE.description}
-        </p>
-
-        {/* Analyst Note */}
-        <div className="mt-auto pt-2 border-t border-[var(--color-cp-border)]">
-          <span className="text-caption text-[var(--color-cp-text-tertiary)] block mb-0.5">Analyst Note</span>
-          <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed line-clamp-2">
-            {currentCVE.educationalNote}
-          </p>
-        </div>
+        {mode === 'cve' && currentCVE && <CVEView cve={currentCVE} />}
+        {mode === 'ai' && <AIPriorityView items={aiItems} isLoading={aiLoading} confidence={aiPriority?.modelConfidence} />}
       </div>
 
-      {/* Rotation dots */}
+      {/* Footer */}
       <div className="flex justify-center gap-1 py-2 border-t border-[var(--color-cp-border)]">
-        {allCVEs.slice(0, 10).map((cve, i) => (
-          <div
-            key={`dot-${cve.cveId || i}`}
-            className={`w-1 h-1 rounded-full transition-all duration-300 ${
-              i === currentIndex 
-                ? 'bg-[var(--color-cp-accent)]' 
-                : 'bg-[var(--color-cp-border)]'
-            }`}
-          />
-        ))}
+        {mode === 'cve' ? (
+          allCVEs.slice(0, 10).map((cve, i) => (
+            <div
+              key={`dot-${cve.cveId || i}`}
+              className={`w-1 h-1 rounded-full transition-all duration-300 ${
+                i === currentIndex ? 'bg-[var(--color-cp-accent)]' : 'bg-[var(--color-cp-border)]'
+              }`}
+            />
+          ))
+        ) : (
+          <Link href="/ai" className="text-[8px] text-violet-400 hover:text-violet-300 transition-colors">
+            View full AI analysis →
+          </Link>
+        )}
       </div>
     </div>
+  );
+}
+
+// ─── CVE View (existing) ────────────────────────────────────────────────────
+
+function CVEView({ cve }: { cve: SpotlightCVE }) {
+  return (
+    <>
+      {/* CVE ID + Score row */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${getSeverityDotClass(cve.severity)}`} />
+          <span className="font-data text-body text-[var(--color-cp-text-primary)] font-medium">
+            {cve.cveId}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className={`font-data text-[13px] font-light ${getSeverityClass(cve.severity)}`}>
+            {cve.cvssScore ? cve.cvssScore.toFixed(1) : 'N/A'}
+          </span>
+          <span className="text-caption text-[var(--color-cp-text-tertiary)]">CVSS</span>
+        </div>
+      </div>
+
+      {/* Vendor / Product */}
+      <div className="text-caption text-[var(--color-cp-text-secondary)] mb-1.5">
+        {cve.vendor} — {cve.product}
+      </div>
+
+      {/* Tags */}
+      <div className="flex gap-1.5 mb-2 flex-wrap">
+        {cve.isActivelyExploited && (
+          <span className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-critical)]/10 severity-critical">
+            Actively Exploited
+          </span>
+        )}
+        {cve.isRansomwareRelated && (
+          <span className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-high)]/10 severity-high">
+            Ransomware
+          </span>
+        )}
+        {cve.cwes.slice(0, 2).map((cwe, i) => (
+          <span key={`${cwe}-${i}`} className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-elevated)] text-[var(--color-cp-text-tertiary)]">
+            {cwe}
+          </span>
+        ))}
+      </div>
+
+      {/* Description */}
+      <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed line-clamp-3 mb-2">
+        {cve.description}
+      </p>
+
+      {/* Analyst Note */}
+      <div className="mt-auto pt-2 border-t border-[var(--color-cp-border)]">
+        <span className="text-caption text-[var(--color-cp-text-tertiary)] block mb-0.5">Analyst Note</span>
+        <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed line-clamp-2">
+          {cve.educationalNote}
+        </p>
+      </div>
+    </>
+  );
+}
+
+// ─── AI Priority View (new) ─────────────────────────────────────────────────
+
+function AIPriorityView({ items, isLoading, confidence }: { items: any[]; isLoading: boolean; confidence?: number }) {
+  if (isLoading || items.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-4 h-4 border border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+          <span className="text-caption text-[var(--color-cp-text-tertiary)]">Running LLM risk analysis...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show top 3 in the compact panel
+  const topItems = items.slice(0, 3);
+  const urgencyColors: Record<string, string> = {
+    immediate: 'var(--color-cp-critical)',
+    high: 'var(--color-cp-high)',
+    moderate: 'var(--color-cp-medium)',
+    routine: 'var(--color-cp-low)',
+  };
+
+  return (
+    <>
+      {/* Confidence header */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-caption text-[var(--color-cp-text-tertiary)]">Patch Priority (AI-Ranked)</span>
+        <span className="font-data text-[9px] text-violet-400">{confidence || 0}% confidence</span>
+      </div>
+
+      {/* Top 3 priority items */}
+      <div className="flex-1 flex flex-col gap-1.5 overflow-hidden">
+        {topItems.map((item, index) => {
+          const urgencyColor = urgencyColors[item.urgency] || 'var(--color-cp-text-tertiary)';
+          return (
+            <div key={item.cveId} className="p-2 rounded bg-[var(--color-cp-elevated)] border border-[var(--color-cp-border)]">
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)]">#{index + 1}</span>
+                  <span className="font-data text-[10px] text-[var(--color-cp-text-primary)] font-medium">{item.cveId}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="text-[8px] px-1 py-0.5 rounded font-medium uppercase"
+                    style={{ backgroundColor: `color-mix(in oklch, ${urgencyColor} 15%, transparent)`, color: urgencyColor }}
+                  >
+                    {item.urgency}
+                  </span>
+                  {/* Mini risk gauge */}
+                  <div className="relative w-5 h-5">
+                    <svg className="w-5 h-5 -rotate-90" viewBox="0 0 20 20">
+                      <circle cx="10" cy="10" r="7" fill="none" stroke="var(--color-cp-border)" strokeWidth="2" />
+                      <circle
+                        cx="10" cy="10" r="7" fill="none"
+                        stroke={urgencyColor}
+                        strokeWidth="2"
+                        strokeDasharray={`${(item.riskScore / 100) * 44} 44`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center font-data text-[6px]" style={{ color: urgencyColor }}>
+                      {item.riskScore}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[8px] text-[var(--color-cp-text-secondary)] leading-relaxed line-clamp-1">
+                {item.recommendedAction}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="mt-auto pt-2 border-t border-[var(--color-cp-border)]">
+        <p className="text-[8px] text-[var(--color-cp-text-tertiary)] leading-relaxed">
+          <span className="text-violet-400 font-medium">Model: </span>
+          LLM multi-factor scoring (CVSS + Exploitation + Ransomware + CWE + Recency)
+        </p>
+      </div>
+    </>
   );
 }

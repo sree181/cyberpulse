@@ -55,3 +55,9 @@
 - [x] Globe: Inactivity timeout (15s) returns to overview after zoom interaction
 - [x] Globe: Zoomed-in map detail view showing attack location on Google Maps panel
 - [x] Globe: Redesign arcs with sophisticated cinematic rendering (smooth glowing trails, proper visual weight, museum-quality)
+- [x] AI Model: Vulnerability Priority Scoring — LLM-powered risk ranking (CVSS + exploitation + ransomware + CWE)
+- [x] AI Model: LLM Threat Narrative Generator — contextual analyst prose replacing static briefing text
+- [x] AI Model: Attack-to-CVE Linkage — connects live attack patterns to specific exploited CVEs
+- [x] Design professional frontend panels for all three AI models
+- [x] Integrate AI panels into the main dashboard layout with cohesive design
+- [x] Add tRPC endpoints for all three AI model services

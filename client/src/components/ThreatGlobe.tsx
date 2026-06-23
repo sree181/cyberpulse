@@ -16,6 +16,7 @@ import Globe from 'globe.gl';
 import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
 import { MapView } from '@/components/Map';
+import { trpc } from '@/lib/trpc';
 
 // Attack type legend entries
 const LEGEND_ITEMS = [
@@ -402,36 +403,9 @@ export default function ThreatGlobe() {
             />
           )}
 
-          {/* Map overlay info card */}
+          {/* Map overlay info card with CVE linkage */}
           {zoomedArc && (
-            <div className="absolute bottom-3 left-3 right-3 z-30 bg-[var(--color-cp-surface)]/95 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md px-3 py-2">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div 
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: zoomedArc.color }}
-                />
-                <span className="font-data text-body font-medium text-[var(--color-cp-text-primary)]">
-                  {zoomedArc.attackType}
-                </span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-                  zoomedArc.severity === 'critical' ? 'bg-[var(--color-cp-critical)]/15 severity-critical' :
-                  zoomedArc.severity === 'high' ? 'bg-[var(--color-cp-high)]/15 severity-high' :
-                  'bg-[var(--color-cp-medium)]/15 severity-medium'
-                }`}>
-                  {zoomedArc.severity.toUpperCase()}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption font-data">
-                <div className="text-[var(--color-cp-text-tertiary)]">Source IP</div>
-                <div className="text-[var(--color-cp-text-secondary)] font-mono">{zoomedArc.sourceIp}</div>
-                <div className="text-[var(--color-cp-text-tertiary)]">Location</div>
-                <div className="text-[var(--color-cp-text-secondary)]">{zoomedArc.sourceCity}, {zoomedArc.sourceCountry}</div>
-                <div className="text-[var(--color-cp-text-tertiary)]">Target</div>
-                <div className="text-[var(--color-cp-text-secondary)]">{zoomedArc.targetName}</div>
-                <div className="text-[var(--color-cp-text-tertiary)]">Port / Protocol</div>
-                <div className="text-[var(--color-cp-text-secondary)]">:{zoomedArc.port} ({zoomedArc.protocol})</div>
-              </div>
-            </div>
+            <ZoomedArcInfoCard arc={zoomedArc} />
           )}
         </div>
       </div>
@@ -498,6 +472,86 @@ export default function ThreatGlobe() {
           <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-30">
             Click arc to inspect
           </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ZOOMED ARC INFO CARD — Shows attack details + CVE linkage
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function ZoomedArcInfoCard({ arc }: { arc: ArcData }) {
+  const { data: linkageData } = trpc.ai.attackLinkage.useQuery(undefined, {
+    refetchInterval: 15 * 60 * 1000,
+    retry: 1,
+  });
+
+  // Find linkage for this attack type
+  const matchedLinkage = useMemo(() => {
+    if (!linkageData?.linkages) return null;
+    return linkageData.linkages.find(
+      (l: any) => l.attackType === arc.attackType || l.port === arc.port
+    );
+  }, [linkageData, arc.attackType, arc.port]);
+
+  return (
+    <div className="absolute bottom-3 left-3 right-3 z-30 bg-[var(--color-cp-surface)]/95 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md px-3 py-2">
+      {/* Attack header */}
+      <div className="flex items-center gap-2 mb-1.5">
+        <div 
+          className="w-2.5 h-2.5 rounded-full"
+          style={{ backgroundColor: arc.color }}
+        />
+        <span className="font-data text-body font-medium text-[var(--color-cp-text-primary)]">
+          {arc.attackType}
+        </span>
+        <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+          arc.severity === 'critical' ? 'bg-[var(--color-cp-critical)]/15 severity-critical' :
+          arc.severity === 'high' ? 'bg-[var(--color-cp-high)]/15 severity-high' :
+          'bg-[var(--color-cp-medium)]/15 severity-medium'
+        }`}>
+          {arc.severity.toUpperCase()}
+        </span>
+      </div>
+
+      {/* Attack details grid */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption font-data">
+        <div className="text-[var(--color-cp-text-tertiary)]">Source IP</div>
+        <div className="text-[var(--color-cp-text-secondary)] font-mono">{arc.sourceIp}</div>
+        <div className="text-[var(--color-cp-text-tertiary)]">Location</div>
+        <div className="text-[var(--color-cp-text-secondary)]">{arc.sourceCity}, {arc.sourceCountry}</div>
+        <div className="text-[var(--color-cp-text-tertiary)]">Target</div>
+        <div className="text-[var(--color-cp-text-secondary)]">{arc.targetName}</div>
+        <div className="text-[var(--color-cp-text-tertiary)]">Port / Protocol</div>
+        <div className="text-[var(--color-cp-text-secondary)]">:{arc.port} ({arc.protocol})</div>
+      </div>
+
+      {/* CVE Linkage section — only shows if we have a match */}
+      {matchedLinkage && (
+        <div className="mt-2 pt-2 border-t border-[var(--color-cp-border)]">
+          <div className="flex items-center gap-1.5 mb-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+            <span className="text-[9px] text-violet-400 font-medium uppercase tracking-wider">Linked CVEs</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(matchedLinkage.linkedCVEs || []).slice(0, 3).map((cve: any) => (
+              <div key={cve.cveId} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--color-cp-elevated)] border border-[var(--color-cp-border)]">
+                <span className="font-data text-[9px] text-[var(--color-cp-text-primary)]">{cve.cveId}</span>
+                {cve.cvssScore && (
+                  <span className="font-data text-[8px] text-[var(--color-cp-high)]">{cve.cvssScore.toFixed(1)}</span>
+                )}
+                <span className="font-data text-[8px] text-violet-400">{cve.confidence}%</span>
+              </div>
+            ))}
+          </div>
+          {matchedLinkage.mitreTechnique && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[8px] text-[var(--color-cp-text-tertiary)]">MITRE:</span>
+              <span className="text-[8px] text-[var(--color-cp-text-secondary)] font-data">{matchedLinkage.mitreTechnique}</span>
+            </div>
+          )}
         </div>
       )}
     </div>

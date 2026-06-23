@@ -9,6 +9,7 @@
 import { useThreatData } from '@/contexts/ThreatContext';
 import { useEffect, useState } from 'react';
 import { BRANDING } from '@/lib/branding';
+import { Link } from 'wouter';
 
 export default function HeaderBar() {
   const { stats, isLive, realDataStatus } = useThreatData();
@@ -73,6 +74,14 @@ export default function HeaderBar() {
           <span className="font-data text-[14px] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.attacksPerMinute}</span>
           <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>ATK/MIN</span>
         </div>
+        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
+        {/* AI Insights link */}
+        <Link href="/ai" className="flex items-center gap-1.5 group">
+          <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-live-pulse" />
+          <span className="text-label text-[var(--color-cp-text-tertiary)] group-hover:text-violet-400 transition-colors" style={{ fontSize: '8px' }}>
+            AI MODELS
+          </span>
+        </Link>
       </div>
 
       {/* Right: Status + Time */}

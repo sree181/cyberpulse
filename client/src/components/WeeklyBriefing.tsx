@@ -7,6 +7,7 @@
  */
 import { trpc } from '@/lib/trpc';
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'wouter';
 
 const SLIDE_INTERVAL = 12000;
 
@@ -108,7 +109,7 @@ export default function WeeklyBriefing() {
         {slide?.type === 'port-analysis' && <PortAnalysisSlide data={slide.data} />}
         {slide?.type === 'cve-summary' && <CVESummarySlide data={slide.data} />}
         {slide?.type === 'severity-breakdown' && <SeverityBreakdownSlide data={slide.data} />}
-        {slide?.type === 'key-takeaway' && <KeyTakeawaySlide data={slide.data} />}
+        {slide?.type === 'key-takeaway' && <AIKeyTakeawaySlide fallbackData={slide.data} />}
       </div>
 
       {/* Slide dots */}
@@ -435,29 +436,85 @@ function SeverityBreakdownSlide({ data }: { data: any }) {
   );
 }
 
-function KeyTakeawaySlide({ data }: { data: any }) {
-  const insights = data.insights || [];
+function AIKeyTakeawaySlide({ fallbackData }: { fallbackData: any }) {
+  const { data: aiNarrative, isLoading } = trpc.ai.narrative.useQuery(undefined, {
+    refetchInterval: 15 * 60 * 1000,
+    retry: 1,
+  });
+
+  // If AI narrative is loading or failed, show the static fallback
+  if (isLoading || !aiNarrative) {
+    const insights = fallbackData?.insights || [];
+    return (
+      <div className="h-full flex flex-col">
+        <div className="flex items-center gap-2">
+          <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Key Takeaways</div>
+          {isLoading && <div className="w-2 h-2 border border-[var(--color-cp-accent)]/50 border-t-[var(--color-cp-accent)] rounded-full animate-spin" />}
+        </div>
+        <div className="flex-1 flex flex-col gap-2 mt-3 overflow-hidden">
+          {insights.slice(0, 4).map((insight: string, i: number) => (
+            <div key={`insight-${i}-${insight.slice(0, 20)}`} className="flex gap-2">
+              <div className="w-1 h-1 rounded-full mt-1.5 shrink-0 bg-[var(--color-cp-accent)] opacity-50" />
+              <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed">{insight}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-auto pt-2 border-t border-[var(--color-cp-border)]">
+          <span className="text-caption text-[var(--color-cp-text-tertiary)] block mb-0.5">Recommendation</span>
+          <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed">{fallbackData?.recommendation}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // AI-generated narrative
+  const toneColors: Record<string, string> = {
+    calm: 'var(--color-cp-low)',
+    cautious: 'var(--color-cp-medium)',
+    urgent: 'var(--color-cp-high)',
+    critical: 'var(--color-cp-critical)',
+  };
+  const toneColor = toneColors[aiNarrative.tone] || 'var(--color-cp-text-tertiary)';
 
   return (
     <div className="h-full flex flex-col">
-      <div className="text-body text-[var(--color-cp-text-primary)] font-medium">Key Takeaways</div>
-      
-      {/* Insights */}
-      <div className="flex-1 flex flex-col gap-2 mt-3 overflow-hidden">
-        {insights.slice(0, 4).map((insight: string, i: number) => (
-          <div key={`insight-${i}-${insight.slice(0, 20)}`} className="flex gap-2">
-            <div className="w-1 h-1 rounded-full mt-1.5 shrink-0 bg-[var(--color-cp-accent)] opacity-50" />
-            <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed">{insight}</p>
+      {/* Header with AI badge */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-live-pulse" />
+          <span className="text-body text-[var(--color-cp-text-primary)] font-medium">AI Analyst Brief</span>
+        </div>
+        <span
+          className="text-[8px] px-1 py-0.5 rounded font-medium uppercase tracking-wider"
+          style={{ backgroundColor: `color-mix(in oklch, ${toneColor} 15%, transparent)`, color: toneColor }}
+        >
+          {aiNarrative.tone}
+        </span>
+      </div>
+
+      {/* Narrative excerpt */}
+      <div className="flex-1 mt-2 overflow-hidden">
+        <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed line-clamp-4">
+          {aiNarrative.narrative?.split('\n\n')[0] || ''}
+        </p>
+      </div>
+
+      {/* Key findings */}
+      <div className="flex flex-col gap-1 mt-2">
+        {(aiNarrative.keyFindings || []).slice(0, 2).map((finding: string, i: number) => (
+          <div key={`ai-finding-${i}`} className="flex gap-1.5">
+            <div className="w-1 h-1 rounded-full mt-1.5 shrink-0 bg-emerald-500 opacity-60" />
+            <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed line-clamp-1">{finding}</p>
           </div>
         ))}
       </div>
 
-      {/* Recommendation */}
-      <div className="mt-auto pt-2 border-t border-[var(--color-cp-border)]">
-        <span className="text-caption text-[var(--color-cp-text-tertiary)] block mb-0.5">Recommendation</span>
-        <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed">
-          {data.recommendation}
-        </p>
+      {/* Footer link to full AI page */}
+      <div className="mt-auto pt-2 border-t border-[var(--color-cp-border)] flex items-center justify-between">
+        <span className="text-[8px] text-[var(--color-cp-text-tertiary)]">{aiNarrative.wordCount} words generated</span>
+        <Link href="/ai" className="text-[8px] text-violet-400 hover:text-violet-300 transition-colors">
+          View full AI analysis →
+        </Link>
       </div>
     </div>
   );
