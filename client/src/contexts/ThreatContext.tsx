@@ -39,6 +39,8 @@ interface ThreatContextType {
   portActivity: PortActivity[];
   isLive: boolean;
   realDataStatus: string;
+  selectedArc: ArcData | null;
+  setSelectedArc: (arc: ArcData | null) => void;
 }
 
 export interface ArcData {
@@ -49,6 +51,14 @@ export interface ArcData {
   color: string;
   stroke: number;
   id: string;
+  attackType: string;
+  severity: string;
+  sourceIp: string;
+  sourceCountry: string;
+  sourceCity: string;
+  targetName: string;
+  port: number;
+  protocol: string;
 }
 
 const ThreatContext = createContext<ThreatContextType | null>(null);
@@ -67,6 +77,7 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
   const [portActivity, setPortActivity] = useState<PortActivity[]>([]);
   const [isLive, setIsLive] = useState(false);
   const [realDataStatus, setRealDataStatus] = useState('Initializing...');
+  const [selectedArc, setSelectedArc] = useState<ArcData | null>(null);
   const countryCountsRef = useRef<Record<string, number>>({});
   const attackCountsRef = useRef<Record<string, number>>({});
   const minuteCountRef = useRef<number[]>([]);
@@ -149,6 +160,14 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
       color: colors[threat.attackType] || BRANDING.accentColor,
       stroke: severityStroke,
       id: threat.id,
+      attackType: threat.attackType,
+      severity: threat.severity,
+      sourceIp: threat.sourceIp,
+      sourceCountry: threat.sourceCountry,
+      sourceCity: threat.sourceCity,
+      targetName: threat.targetName,
+      port: threat.port,
+      protocol: threat.protocol,
     };
 
     setActiveArcs(prev => {
@@ -224,7 +243,8 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
   return (
     <ThreatContext.Provider value={{ 
       threats, recentThreats, stats, activeArcs, tacticCounts,
-      timeSeries, portActivity, isLive, realDataStatus
+      timeSeries, portActivity, isLive, realDataStatus,
+      selectedArc, setSelectedArc
     }}>
       {children}
     </ThreatContext.Provider>

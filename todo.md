@@ -49,3 +49,9 @@
 - [x] Add university logo placeholder in the header
 - [x] Make primary accent color configurable via CSS custom property or env variable
 - [x] Add branding configuration section for easy school customization (Auburn University applied)
+- [x] Globe: Make arcs directional (gradient opacity from source to target, projectile-style dash animation)
+- [x] Globe: Color-code arcs by attack type (5-color palette with legend)
+- [x] Globe: Hybrid zoom — auto-zoom on critical attacks every 30s + click-to-zoom on arcs
+- [x] Globe: Inactivity timeout (15s) returns to overview after zoom interaction
+- [x] Globe: Zoomed-in map detail view showing attack location on Google Maps panel
+- [x] Globe: Redesign arcs with sophisticated cinematic rendering (smooth glowing trails, proper visual weight, museum-quality)
