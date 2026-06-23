@@ -3,6 +3,7 @@
  * Generates realistic-looking cyber threat data for the immersive display.
  * Uses real-world geographic coordinates and attack type distributions.
  */
+import { BRANDING } from './branding';
 
 export interface ThreatEvent {
   id: string;
@@ -30,25 +31,10 @@ export type AttackType =
 
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
 
-export const ATTACK_COLORS: Record<AttackType, string> = {
-  'DDoS': '#FF0040',
-  'SSH Brute Force': '#00F0FF',
-  'SQL Injection': '#FF6600',
-  'Phishing': '#FFD700',
-  'Ransomware': '#FF1493',
-  'Port Scan': '#00FF88',
-  'XSS': '#FF8C00',
-  'Malware C2': '#8B00FF',
-  'DNS Tunneling': '#00BFFF',
-  'Credential Stuffing': '#FF4500',
-};
+// Colors imported from centralized branding config
+export const ATTACK_COLORS: Record<AttackType, string> = BRANDING.attackColors as Record<AttackType, string>;
 
-export const SEVERITY_COLORS: Record<Severity, string> = {
-  critical: '#FF1493',
-  high: '#FF0040',
-  medium: '#FFA500',
-  low: '#00FF88',
-};
+export const SEVERITY_COLORS: Record<Severity, string> = BRANDING.severityColors;
 
 // Real-world attack source locations (weighted by known threat actor regions)
 const ATTACK_SOURCES = [

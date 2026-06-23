@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import { generateThreat, type ThreatEvent, type Severity, type AttackType } from '@/lib/threatEngine';
 import { trpc } from '@/lib/trpc';
+import { BRANDING } from '@/lib/branding';
 
 interface ThreatStats {
   total: number;
@@ -138,25 +139,14 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
 
     // Arc with enhanced visuals
     const severityStroke = threat.severity === 'critical' ? 3 : threat.severity === 'high' ? 2.2 : 1.2;
-    const colors: Record<string, string> = {
-      'DDoS': '#FF0040',
-      'SSH Brute Force': '#00F0FF',
-      'SQL Injection': '#FF6600',
-      'Phishing': '#FFD700',
-      'Ransomware': '#FF1493',
-      'Port Scan': '#00FF88',
-      'XSS': '#FF8C00',
-      'Malware C2': '#8B00FF',
-      'DNS Tunneling': '#00BFFF',
-      'Credential Stuffing': '#FF4500',
-    };
+    const colors = BRANDING.attackColors as Record<string, string>;
 
     const newArc: ArcData = {
       startLat: threat.sourceLat,
       startLng: threat.sourceLng,
       endLat: threat.targetLat,
       endLng: threat.targetLng,
-      color: colors[threat.attackType] || '#00F0FF',
+      color: colors[threat.attackType] || BRANDING.accentColor,
       stroke: severityStroke,
       id: threat.id,
     };

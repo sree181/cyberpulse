@@ -1,5 +1,6 @@
 /**
  * GeoSourceChart — Top attack source countries/regions
+ * Auburn branded: severity colors for ranking
  */
 import { useMemo } from 'react';
 import { useThreatData } from '@/contexts/ThreatContext';
@@ -30,8 +31,8 @@ export default function GeoSourceChart() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-1.5 border-b border-[#00F0FF]/10 shrink-0">
-        <div className="font-data text-[10px] tracking-[0.2em] uppercase text-[#00F0FF]/60">
+      <div className="px-3 py-1.5 border-b border-[var(--color-cp-border)] shrink-0">
+        <div className="font-data text-[10px] tracking-[0.2em] uppercase text-[var(--color-cp-text-tertiary)]">
           Top Sources
         </div>
       </div>
@@ -39,7 +40,8 @@ export default function GeoSourceChart() {
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {countryCounts.map(([code, count], i) => {
           const pct = (count / maxCount) * 100;
-          const color = i < 2 ? '#FF0040' : i < 4 ? '#FFA500' : '#00F0FF';
+          // Auburn severity palette: critical red for top, orange for mid, muted for lower
+          const color = i < 2 ? '#C81E1E' : i < 4 ? '#DD550C' : '#EE7624';
           
           return (
             <div key={code}>
@@ -48,7 +50,7 @@ export default function GeoSourceChart() {
                   <span className="font-data text-[9px] font-bold" style={{ color }}>
                     {code}
                   </span>
-                  <span className="font-data text-[7px] text-[#8899aa]/35 truncate">
+                  <span className="font-data text-[7px] text-[var(--color-cp-text-tertiary)] truncate">
                     {COUNTRY_NAMES[code] || code}
                   </span>
                 </div>
@@ -56,13 +58,12 @@ export default function GeoSourceChart() {
                   {count}
                 </span>
               </div>
-              <div className="h-[3px] bg-[#0a0a1a] overflow-hidden">
+              <div className="h-[3px] bg-[var(--color-cp-base)] overflow-hidden rounded-full">
                 <div 
-                  className="h-full transition-all duration-700 ease-out"
+                  className="h-full transition-all duration-700 ease-out rounded-full"
                   style={{ 
                     width: `${pct}%`, 
                     backgroundColor: color,
-                    boxShadow: `0 0 4px ${color}33`,
                   }}
                 />
               </div>

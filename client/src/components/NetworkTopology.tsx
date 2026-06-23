@@ -1,11 +1,12 @@
 /**
  * NetworkTopology — 3D Force-Directed Graph
  * 
- * Redesign: Monochromatic node palette (cyan shades only), 
+ * Redesign: Monochromatic node palette (Auburn burnt orange shades), 
  * subtle link colors, no legend clutter. Let the 3D structure
  * communicate the network hierarchy visually.
  */
 import { useEffect, useRef, useMemo } from 'react';
+import { BRANDING } from '@/lib/branding';
 import ForceGraph3D from '3d-force-graph';
 import { useThreatData } from '@/contexts/ThreatContext';
 
@@ -63,16 +64,17 @@ const BASE_LINKS: Omit<NetworkLink, 'particles'>[] = [
   { source: 'cloud', target: 'api1', type: 'normal' },
 ];
 
-// Monochromatic palette — different opacities of cyan
+// Monochromatic palette — brand accent at varying opacities
+const accent = BRANDING.accentColor;
 const NODE_COLORS: Record<string, string> = {
-  firewall: 'rgba(100, 200, 220, 0.9)',
-  server: 'rgba(100, 200, 220, 0.6)',
-  database: 'rgba(180, 220, 230, 0.8)',
-  endpoint: 'rgba(100, 200, 220, 0.35)',
-  router: 'rgba(140, 210, 225, 0.75)',
-  cloud: 'rgba(120, 190, 210, 0.65)',
-  iot: 'rgba(100, 200, 220, 0.4)',
-  honeypot: 'rgba(100, 200, 220, 0.5)',
+  firewall: `${accent}E6`,
+  server: `${accent}99`,
+  database: `${accent}CC`,
+  endpoint: `${accent}59`,
+  router: `${accent}BF`,
+  cloud: `${accent}A6`,
+  iot: `${accent}66`,
+  honeypot: `${accent}80`,
 };
 
 export default function NetworkTopology() {
@@ -107,7 +109,7 @@ export default function NetworkTopology() {
     const graph = ForceGraph3D()
       .backgroundColor('#00000000')
       .showNavInfo(false)
-      .nodeColor((node: any) => NODE_COLORS[node.type] || 'rgba(100, 200, 220, 0.5)')
+      .nodeColor((node: any) => NODE_COLORS[node.type] || `${accent}80`)
       .nodeVal('val')
       .nodeLabel('')
       .nodeOpacity(0.85)
@@ -115,7 +117,7 @@ export default function NetworkTopology() {
       .linkColor((link: any) => {
         if (link.type === 'critical') return 'rgba(200, 80, 80, 0.5)';
         if (link.type === 'threat') return 'rgba(200, 80, 80, 0.25)';
-        return 'rgba(100, 200, 220, 0.08)';
+        return `${accent}14`;
       })
       .linkWidth((link: any) => {
         if (link.type === 'critical') return 1.5;
@@ -129,7 +131,7 @@ export default function NetworkTopology() {
       .linkDirectionalParticleColor((link: any) => {
         if (link.type === 'critical') return 'rgba(200, 80, 80, 0.7)';
         if (link.type === 'threat') return 'rgba(200, 120, 80, 0.5)';
-        return 'rgba(100, 200, 220, 0.2)';
+        return `${accent}33`;
       })
       .linkCurvature(0.1)
       (containerRef.current);

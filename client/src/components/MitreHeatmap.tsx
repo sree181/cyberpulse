@@ -35,7 +35,7 @@ export default function MitreHeatmap() {
                   className="h-full rounded-full transition-all duration-1000 ease-out"
                   style={{ 
                     width: `${Math.max(pct, count > 0 ? 4 : 0)}%`,
-                    backgroundColor: `oklch(0.75 0.14 195 / ${opacity})`,
+                    backgroundColor: `oklch(0.62 0.18 45 / ${opacity})`,
                   }}
                 />
               </div>

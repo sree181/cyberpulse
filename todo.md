@@ -46,3 +46,6 @@
 - [x] UI/UX Redesign: Polish transitions, micro-interactions, and final cohesion
 - [x] Fix status display logic — show LIVE/CACHED correctly based on API response timing
 - [x] Ensure all panels handle loading/empty states gracefully and consistently
+- [x] Add university logo placeholder in the header
+- [x] Make primary accent color configurable via CSS custom property or env variable
+- [x] Add branding configuration section for easy school customization (Auburn University applied)

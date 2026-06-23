@@ -64,7 +64,7 @@ export default function ThreatFeed() {
         <span className="text-label text-[var(--color-cp-text-tertiary)]">Threat Feed</span>
         <div className="flex items-center gap-1.5">
           <div className={`w-1.5 h-1.5 rounded-full ${
-            isLive ? 'bg-emerald-400 animate-live-pulse' 
+            isLive ? 'bg-green-500 animate-live-pulse' 
             : realDataStatus.includes('Cached') || realDataStatus.includes('Fallback') ? 'bg-amber-400'
             : realDataStatus === '' ? 'bg-[var(--color-cp-accent)]'
             : 'bg-neutral-500'

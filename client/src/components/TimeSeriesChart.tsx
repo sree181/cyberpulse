@@ -6,6 +6,7 @@
  */
 import { useThreatData } from '@/contexts/ThreatContext';
 import { useRef, useEffect } from 'react';
+import { BRANDING } from '@/lib/branding';
 
 export default function TimeSeriesChart() {
   const { timeSeries } = useThreatData();
@@ -58,8 +59,8 @@ export default function TimeSeriesChart() {
 
       // Area fill — very subtle
       const gradient = ctx.createLinearGradient(0, padding.top, 0, h);
-      gradient.addColorStop(0, 'rgba(100, 200, 220, 0.15)');
-      gradient.addColorStop(1, 'rgba(100, 200, 220, 0.0)');
+      gradient.addColorStop(0, `${BRANDING.accentColor}26`);
+      gradient.addColorStop(1, `${BRANDING.accentColor}00`);
 
       ctx.beginPath();
       ctx.moveTo(points[0][0], padding.top + chartH);
@@ -90,7 +91,7 @@ export default function TimeSeriesChart() {
           ctx.bezierCurveTo(cpx, prev[1], cpx, curr[1], curr[0], curr[1]);
         }
       }
-      ctx.strokeStyle = 'rgba(100, 200, 220, 0.6)';
+      ctx.strokeStyle = `${BRANDING.accentColor}99`;
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
@@ -98,7 +99,7 @@ export default function TimeSeriesChart() {
       const lastPoint = points[points.length - 1];
       ctx.beginPath();
       ctx.arc(lastPoint[0], lastPoint[1], 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(100, 200, 220, 0.8)';
+      ctx.fillStyle = `${BRANDING.accentColor}CC`;
       ctx.fill();
 
       // Label — left side
@@ -110,7 +111,7 @@ export default function TimeSeriesChart() {
       // Current value — right side
       const currentVal = timeSeries[timeSeries.length - 1]?.count || 0;
       ctx.font = '11px "JetBrains Mono", monospace';
-      ctx.fillStyle = 'rgba(100, 200, 220, 0.7)';
+      ctx.fillStyle = `${BRANDING.accentColor}B3`;
       ctx.textAlign = 'right';
       ctx.fillText(`${currentVal}`, w - padding.right, 12);
       ctx.font = '8px Inter, sans-serif';

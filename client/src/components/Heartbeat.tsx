@@ -1,6 +1,6 @@
 /**
  * Heartbeat — EKG-style waveform showing network health
- * ENHANCED: Triple-wave with threat-responsive intensity, magenta critical wave
+ * Auburn branded: burnt orange primary wave, navy secondary
  */
 import { useEffect, useRef } from 'react';
 import { useThreatData } from '@/contexts/ThreatContext';
@@ -29,11 +29,11 @@ export default function Heartbeat() {
       const midY = displayH / 2;
       const intensity = Math.min(stats.attacksPerMinute / 30, 1);
       
-      // Primary cyan wave
+      // Primary burnt orange wave
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(0, 240, 255, ${0.35 + intensity * 0.5})`;
+      ctx.strokeStyle = `rgba(221, 85, 12, ${0.4 + intensity * 0.5})`;
       ctx.lineWidth = 1.5;
-      ctx.shadowColor = '#00F0FF';
+      ctx.shadowColor = '#DD550C';
       ctx.shadowBlur = 6 + intensity * 10;
 
       offsetRef.current += 1.8;
@@ -50,9 +50,9 @@ export default function Heartbeat() {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Secondary faint cyan wave
+      // Secondary faint navy wave
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(0, 240, 255, ${0.08 + intensity * 0.12})`;
+      ctx.strokeStyle = `rgba(12, 35, 64, ${0.2 + intensity * 0.3})`;
       ctx.lineWidth = 0.5;
 
       for (let x = 0; x < displayW; x++) {
@@ -63,13 +63,13 @@ export default function Heartbeat() {
       }
       ctx.stroke();
 
-      // Third magenta wave — critical threat indicator
+      // Third wave — critical threat indicator (red)
       if (stats.critical > 0) {
         const critIntensity = Math.min(stats.critical / 10, 1);
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(255, 20, 147, ${0.1 + critIntensity * 0.3})`;
+        ctx.strokeStyle = `rgba(200, 30, 30, ${0.15 + critIntensity * 0.35})`;
         ctx.lineWidth = 0.8;
-        ctx.shadowColor = '#FF1493';
+        ctx.shadowColor = '#C81E1E';
         ctx.shadowBlur = 4;
 
         for (let x = 0; x < displayW; x++) {
@@ -84,11 +84,11 @@ export default function Heartbeat() {
 
       // Status text
       ctx.font = '8px "JetBrains Mono", monospace';
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+      ctx.fillStyle = 'rgba(221, 85, 12, 0.25)';
       ctx.fillText('NETWORK HEALTH', 6, displayH - 3);
 
       const healthPct = (100 - intensity * 30).toFixed(0);
-      ctx.fillStyle = intensity > 0.7 ? 'rgba(255, 0, 64, 0.5)' : 'rgba(0, 255, 136, 0.4)';
+      ctx.fillStyle = intensity > 0.7 ? 'rgba(200, 30, 30, 0.5)' : 'rgba(0, 200, 100, 0.4)';
       ctx.textAlign = 'right';
       ctx.fillText(`${healthPct}%`, displayW - 6, displayH - 3);
       ctx.textAlign = 'left';

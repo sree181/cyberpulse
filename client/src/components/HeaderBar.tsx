@@ -1,15 +1,14 @@
 /**
- * HeaderBar — Minimal, elegant header
+ * HeaderBar — Auburn University branded header
  * 
  * Design: Clean horizontal bar with 3 zones:
- *   Left: Brand mark + title
+ *   Left: Auburn logo + brand mark + title
  *   Center: Key metrics (3 max)
  *   Right: Data source status + timestamp
- * 
- * No glowing borders, no animated scan lines, no competing elements.
  */
 import { useThreatData } from '@/contexts/ThreatContext';
 import { useEffect, useState } from 'react';
+import { BRANDING } from '@/lib/branding';
 
 export default function HeaderBar() {
   const { stats, isLive, realDataStatus } = useThreatData();
@@ -20,7 +19,7 @@ export default function HeaderBar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Status logic: empty string means API hasn't responded yet (initializing)
+  // Status logic
   const statusLabel = isLive 
     ? 'LIVE' 
     : realDataStatus.includes('Cached') || realDataStatus.includes('Fallback') 
@@ -29,7 +28,7 @@ export default function HeaderBar() {
         ? 'CONNECTING' 
         : 'OFFLINE';
   const statusColor = isLive 
-    ? 'bg-emerald-400' 
+    ? 'bg-green-500' 
     : realDataStatus.includes('Cached') || realDataStatus.includes('Fallback')
       ? 'bg-amber-400' 
       : realDataStatus === ''
@@ -37,33 +36,41 @@ export default function HeaderBar() {
         : 'bg-neutral-500';
 
   return (
-    <header className="h-12 shrink-0 flex items-center justify-between px-5 bg-[var(--color-cp-surface)] border-b border-[var(--color-cp-border)]">
+    <header className="h-14 shrink-0 flex items-center justify-between px-6 bg-[var(--color-cp-surface)] border-b border-[var(--color-cp-border)]">
       
-      {/* Left: Brand */}
-      <div className="flex items-center gap-3">
-        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-cp-accent)] animate-live-pulse" />
-        <h1 className="text-title text-[var(--color-cp-text-primary)] tracking-[0.15em]">
-          CYBERPULSE
-        </h1>
-        <span className="text-caption text-[var(--color-cp-text-tertiary)] hidden lg:block">
-          IS&A Data Immersion Lab
-        </span>
+      {/* Left: Auburn Logo + Brand */}
+      <div className="flex items-center gap-4">
+        {/* Institution Logo */}
+        <img 
+          src={BRANDING.logoUrl} 
+          alt={BRANDING.logoAlt} 
+          className="h-8 w-auto object-contain"
+        />
+        <div className="w-px h-7 bg-[var(--color-cp-border)]" />
+        <div className="flex flex-col">
+          <h1 className="text-title text-[var(--color-cp-text-primary)] tracking-[0.12em] leading-tight">
+            {BRANDING.institutionName}
+          </h1>
+          <span className="text-caption text-[var(--color-cp-text-tertiary)] hidden lg:block leading-tight">
+            {BRANDING.subtitle}
+          </span>
+        </div>
       </div>
 
       {/* Center: Key metrics — 3 max */}
       <div className="flex items-center gap-8">
         <div className="flex flex-col items-center">
-          <span className="font-data text-[13px] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.total}</span>
+          <span className="font-data text-[14px] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.total}</span>
           <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>THREATS</span>
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex flex-col items-center">
-          <span className="font-data text-[13px] font-light severity-critical tabular-nums">{stats.critical}</span>
+          <span className="font-data text-[14px] font-light text-[var(--color-cp-accent)] tabular-nums">{stats.critical}</span>
           <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>CRITICAL</span>
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex flex-col items-center">
-          <span className="font-data text-[13px] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.attacksPerMinute}</span>
+          <span className="font-data text-[14px] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.attacksPerMinute}</span>
           <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>ATK/MIN</span>
         </div>
       </div>
@@ -71,7 +78,7 @@ export default function HeaderBar() {
       {/* Right: Status + Time */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
+          <div className={`w-1.5 h-1.5 rounded-full ${statusColor} ${isLive ? 'animate-live-pulse' : ''}`} />
           <span className="text-caption text-[var(--color-cp-text-tertiary)]">{statusLabel}</span>
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />

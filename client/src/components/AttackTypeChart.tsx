@@ -1,5 +1,6 @@
 /**
  * AttackTypeChart — Horizontal bar chart showing attack type distribution
+ * Auburn branded: burnt orange accent
  */
 import { useMemo } from 'react';
 import { useThreatData } from '@/contexts/ThreatContext';
@@ -22,15 +23,15 @@ export default function AttackTypeChart() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 py-1.5 border-b border-[#00F0FF]/10 shrink-0">
-        <div className="font-data text-[10px] tracking-[0.2em] uppercase text-[#00F0FF]/60">
+      <div className="px-3 py-1.5 border-b border-[var(--color-cp-border)] shrink-0">
+        <div className="font-data text-[10px] tracking-[0.2em] uppercase text-[var(--color-cp-text-tertiary)]">
           Attack Vectors
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {attackCounts.map(([type, count]) => {
-          const color = ATTACK_COLORS[type as AttackType] || '#00F0FF';
+          const color = ATTACK_COLORS[type as AttackType] || '#DD550C';
           const pct = (count / maxCount) * 100;
           return (
             <div key={type}>
@@ -42,13 +43,12 @@ export default function AttackTypeChart() {
                   {count}
                 </span>
               </div>
-              <div className="h-[3px] bg-[#0a0a1a] overflow-hidden">
+              <div className="h-[3px] bg-[var(--color-cp-base)] overflow-hidden rounded-full">
                 <div 
-                  className="h-full transition-all duration-700 ease-out"
+                  className="h-full transition-all duration-700 ease-out rounded-full"
                   style={{ 
                     width: `${pct}%`, 
                     backgroundColor: color,
-                    boxShadow: `0 0 4px ${color}44`,
                   }}
                 />
               </div>

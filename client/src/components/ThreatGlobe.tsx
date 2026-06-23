@@ -8,6 +8,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import Globe from 'globe.gl';
 import { useThreatData } from '@/contexts/ThreatContext';
+import { BRANDING } from '@/lib/branding';
 
 export default function ThreatGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -19,7 +20,7 @@ export default function ThreatGlobe() {
     startLng: arc.startLng,
     endLat: arc.endLat,
     endLng: arc.endLng,
-    color: ['rgba(100, 200, 220, 0.6)', 'rgba(100, 200, 220, 0.05)'],
+    color: [`${BRANDING.accentColor}B3`, `${BRANDING.accentColor}0D`],
     stroke: Math.min(arc.stroke * 0.6, 1.2),
   })), [activeArcs]);
 
@@ -34,7 +35,7 @@ export default function ThreatGlobe() {
     }).map(arc => ({
       lat: arc.startLat,
       lng: arc.startLng,
-      color: 'rgba(100, 200, 220, 0.5)',
+      color: `${BRANDING.accentColor}99`,
       size: 0.12,
       altitude: 0.005,
     }));
@@ -42,11 +43,11 @@ export default function ThreatGlobe() {
 
   // Target ring data — subtle pulsing at target locations
   const ringsData = useMemo(() => [
-    { lat: 38.9072, lng: -77.0369, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
-    { lat: 37.3861, lng: -122.0839, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
-    { lat: 50.1109, lng: 8.6821, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
-    { lat: 1.3521, lng: 103.8198, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
-    { lat: 51.5074, lng: -0.1278, color: 'rgba(100, 200, 220, 0.3)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 38.9072, lng: -77.0369, color: 'rgba(221, 85, 12, 0.35)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 37.3861, lng: -122.0839, color: 'rgba(221, 85, 12, 0.35)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 50.1109, lng: 8.6821, color: 'rgba(221, 85, 12, 0.35)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 1.3521, lng: 103.8198, color: 'rgba(221, 85, 12, 0.35)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
+    { lat: 51.5074, lng: -0.1278, color: 'rgba(221, 85, 12, 0.35)', maxR: 3, propagationSpeed: 2, repeatPeriod: 1200 },
   ], []);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function ThreatGlobe() {
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
       .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-      .atmosphereColor('rgba(100, 200, 220, 0.4)')
+      .atmosphereColor('rgba(221, 85, 12, 0.3)')
       .atmosphereAltitude(0.18)
       // Arcs
       .arcsData([])
