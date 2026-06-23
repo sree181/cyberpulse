@@ -127,8 +127,8 @@ export default function ThreatSpotlight() {
               Ransomware
             </span>
           )}
-          {currentCVE.cwes.slice(0, 2).map(cwe => (
-            <span key={cwe} className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-elevated)] text-[var(--color-cp-text-tertiary)]">
+          {currentCVE.cwes.slice(0, 2).map((cwe, i) => (
+            <span key={`${cwe}-${i}`} className="text-caption px-1.5 py-0.5 rounded bg-[var(--color-cp-elevated)] text-[var(--color-cp-text-tertiary)]">
               {cwe}
             </span>
           ))}
@@ -150,9 +150,9 @@ export default function ThreatSpotlight() {
 
       {/* Rotation dots */}
       <div className="flex justify-center gap-1 py-2 border-t border-[var(--color-cp-border)]">
-        {allCVEs.slice(0, 10).map((_, i) => (
+        {allCVEs.slice(0, 10).map((cve, i) => (
           <div
-            key={i}
+            key={`dot-${cve.cveId || i}`}
             className={`w-1 h-1 rounded-full transition-all duration-300 ${
               i === currentIndex 
                 ? 'bg-[var(--color-cp-accent)]' 

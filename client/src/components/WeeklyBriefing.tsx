@@ -113,9 +113,9 @@ export default function WeeklyBriefing() {
 
       {/* Slide dots */}
       <div className="flex justify-center gap-1 py-2 border-t border-[var(--color-cp-border)]">
-        {slides.map((_: any, i: number) => (
+        {slides.map((s: any, i: number) => (
           <div
-            key={i}
+            key={`slide-${s.type}-${i}`}
             className={`w-1 h-1 rounded-full transition-all duration-300 ${
               i === currentSlide ? 'bg-[var(--color-cp-accent)]' : 'bg-[var(--color-cp-border)]'
             }`}
@@ -169,7 +169,7 @@ function OverviewSlide({ data, title, subtitle }: { data: any; title: string; su
           const max = Math.max(...(data.dailyBreakdown || []).map((x: any) => x.records), 1);
           const height = Math.max((d.records / max) * 100, 4);
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+            <div key={`day-${d.date || i}`} className="flex-1 flex flex-col items-center gap-0.5">
               <div 
                 className="w-full rounded-t-sm"
                 style={{ 
@@ -417,7 +417,7 @@ function SeverityBreakdownSlide({ data }: { data: any }) {
             const maxDay = Math.max(...(data.dailySeverity || []).map((x: any) => x.critical + x.high + x.medium + x.low), 1);
             const height = Math.max((dayTotal / maxDay) * 100, 4);
             return (
-              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+              <div key={`sev-${d.date || i}`} className="flex-1 flex flex-col items-center gap-0.5">
                 <div
                   className="w-full rounded-t-sm"
                   style={{ 
@@ -445,7 +445,7 @@ function KeyTakeawaySlide({ data }: { data: any }) {
       {/* Insights */}
       <div className="flex-1 flex flex-col gap-2 mt-3 overflow-hidden">
         {insights.slice(0, 4).map((insight: string, i: number) => (
-          <div key={i} className="flex gap-2">
+          <div key={`insight-${i}-${insight.slice(0, 20)}`} className="flex gap-2">
             <div className="w-1 h-1 rounded-full mt-1.5 shrink-0 bg-[var(--color-cp-accent)] opacity-50" />
             <p className="text-caption text-[var(--color-cp-text-secondary)] leading-relaxed">{insight}</p>
           </div>
