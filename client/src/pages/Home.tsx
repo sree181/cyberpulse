@@ -48,8 +48,8 @@ export default function Home() {
 
           {/* CENTER — Globe (hero) + Time Series */}
           <div className="flex-1 flex flex-col gap-3 overflow-hidden">
-            {/* Globe — dominant visual, clean */}
-            <div className="flex-[5] cp-panel relative overflow-hidden">
+            {/* Globe — dominant visual, dark bg for contrast */}
+            <div className="flex-[5] cp-panel relative overflow-hidden" style={{ background: 'oklch(0.14 0.02 250)' }}>
               <ThreatGlobe />
             </div>
             {/* Time Series — subtle, integrated */}

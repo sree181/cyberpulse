@@ -37,12 +37,12 @@ export default function HeaderBar() {
         : 'bg-neutral-500';
 
   return (
-    <header className="h-16 shrink-0 flex items-center justify-between px-6 bg-[var(--color-cp-surface)] border-b border-[var(--color-cp-border)]">
+    <header className="h-16 shrink-0 flex items-center justify-between px-6 bg-white border-b border-[var(--color-cp-border)] shadow-sm">
       
       {/* Left: Auburn Logo + BASY Branding — PROMINENT */}
       <div className="flex items-center gap-5">
         {/* Institution Logo — larger and more visible */}
-        <div className="flex items-center gap-3 bg-white rounded-lg px-2 py-1">
+        <div className="flex items-center gap-3 px-2 py-1">
           <img 
             src={BRANDING.logoUrl} 
             alt={BRANDING.logoAlt} 

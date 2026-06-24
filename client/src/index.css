@@ -43,64 +43,64 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* === CYBERPULSE DESIGN SYSTEM === */
+  /* === CYBERPULSE DESIGN SYSTEM — LIGHT THEME === */
   /* Restrained palette: 60% base, 30% surface, 10% accent */
   /* Auburn University branding: Burnt Orange #DD550C + Navy #0C2340 */
-  --color-cp-base: oklch(0.12 0.02 250);
-  --color-cp-surface: oklch(0.16 0.02 250);
-  --color-cp-elevated: oklch(0.20 0.02 250);
-  --color-cp-accent: oklch(0.62 0.18 45);
-  --color-cp-accent-dim: oklch(0.42 0.10 45);
-  --color-cp-navy: oklch(0.20 0.05 250);
-  --color-cp-text-primary: oklch(0.88 0.01 260);
-  --color-cp-text-secondary: oklch(0.55 0.02 260);
-  --color-cp-text-tertiary: oklch(0.40 0.02 250);
-  --color-cp-border: oklch(0.22 0.02 250);
+  --color-cp-base: oklch(0.96 0.005 250);
+  --color-cp-surface: oklch(1.00 0 0);
+  --color-cp-elevated: oklch(0.98 0.003 250);
+  --color-cp-accent: oklch(0.55 0.20 45);
+  --color-cp-accent-dim: oklch(0.45 0.12 45);
+  --color-cp-navy: oklch(0.22 0.06 255);
+  --color-cp-text-primary: oklch(0.18 0.03 255);
+  --color-cp-text-secondary: oklch(0.45 0.02 255);
+  --color-cp-text-tertiary: oklch(0.60 0.01 250);
+  --color-cp-border: oklch(0.88 0.005 250);
   /* Severity — used sparingly, only for data encoding */
-  --color-cp-critical: oklch(0.65 0.22 25);
-  --color-cp-high: oklch(0.70 0.18 45);
-  --color-cp-medium: oklch(0.75 0.14 85);
-  --color-cp-low: oklch(0.65 0.10 160);
+  --color-cp-critical: oklch(0.55 0.24 25);
+  --color-cp-high: oklch(0.60 0.20 45);
+  --color-cp-medium: oklch(0.65 0.16 85);
+  --color-cp-low: oklch(0.55 0.12 160);
 }
 
 :root {
-  --radius: 0.375rem;
-  --background: oklch(0.12 0.02 250);
-  --foreground: oklch(0.88 0.01 260);
-  --card: oklch(0.16 0.02 250);
-  --card-foreground: oklch(0.88 0.01 260);
-  --popover: oklch(0.16 0.02 250);
-  --popover-foreground: oklch(0.88 0.01 260);
-  --primary: oklch(0.62 0.18 45);
+  --radius: 0.5rem;
+  --background: oklch(0.96 0.005 250);
+  --foreground: oklch(0.18 0.03 255);
+  --card: oklch(1.00 0 0);
+  --card-foreground: oklch(0.18 0.03 255);
+  --popover: oklch(1.00 0 0);
+  --popover-foreground: oklch(0.18 0.03 255);
+  --primary: oklch(0.55 0.20 45);
   --primary-foreground: oklch(0.98 0.01 90);
-  --secondary: oklch(0.20 0.02 250);
-  --secondary-foreground: oklch(0.70 0.02 260);
-  --muted: oklch(0.18 0.02 250);
-  --muted-foreground: oklch(0.55 0.02 260);
-  --accent: oklch(0.20 0.02 250);
-  --accent-foreground: oklch(0.62 0.18 45);
-  --destructive: oklch(0.65 0.22 25);
+  --secondary: oklch(0.94 0.005 250);
+  --secondary-foreground: oklch(0.35 0.02 255);
+  --muted: oklch(0.94 0.005 250);
+  --muted-foreground: oklch(0.50 0.02 255);
+  --accent: oklch(0.94 0.005 250);
+  --accent-foreground: oklch(0.55 0.20 45);
+  --destructive: oklch(0.55 0.24 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.22 0.02 250);
-  --input: oklch(0.22 0.02 250);
-  --ring: oklch(0.62 0.18 45);
-  --chart-1: oklch(0.62 0.18 45);
-  --chart-2: oklch(0.65 0.22 25);
-  --chart-3: oklch(0.75 0.14 85);
-  --chart-4: oklch(0.65 0.10 160);
-  --chart-5: oklch(0.55 0.10 280);
-  --sidebar: oklch(0.10 0.02 250);
-  --sidebar-foreground: oklch(0.88 0.01 260);
-  --sidebar-accent: oklch(0.20 0.02 250);
-  --sidebar-accent-foreground: oklch(0.62 0.18 45);
-  --sidebar-border: oklch(0.22 0.02 250);
-  --sidebar-ring: oklch(0.62 0.18 45);
-  --sidebar-primary: oklch(0.62 0.18 45);
+  --border: oklch(0.88 0.005 250);
+  --input: oklch(0.88 0.005 250);
+  --ring: oklch(0.55 0.20 45);
+  --chart-1: oklch(0.55 0.20 45);
+  --chart-2: oklch(0.55 0.24 25);
+  --chart-3: oklch(0.65 0.16 85);
+  --chart-4: oklch(0.55 0.12 160);
+  --chart-5: oklch(0.45 0.12 280);
+  --sidebar: oklch(0.98 0.003 250);
+  --sidebar-foreground: oklch(0.18 0.03 255);
+  --sidebar-accent: oklch(0.94 0.005 250);
+  --sidebar-accent-foreground: oklch(0.55 0.20 45);
+  --sidebar-border: oklch(0.88 0.005 250);
+  --sidebar-ring: oklch(0.55 0.20 45);
+  --sidebar-primary: oklch(0.55 0.20 45);
   --sidebar-primary-foreground: oklch(0.98 0.01 90);
 }
 
 .dark {
-  --radius: 0.375rem;
+  --radius: 0.5rem;
   --background: oklch(0.12 0.02 250);
   --foreground: oklch(0.88 0.01 260);
   --card: oklch(0.16 0.02 250);
@@ -280,24 +280,25 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.30 0.02 250);
+  background: oklch(0.78 0.005 250);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.40 0.03 45);
+  background: oklch(0.60 0.05 45);
 }
 
 /* === PANEL SYSTEM === */
 .cp-panel {
-  background: oklch(0.16 0.02 250);
-  border-radius: 0.5rem;
-  border: 1px solid oklch(0.22 0.02 250);
+  background: oklch(1.00 0 0);
+  border-radius: 0.625rem;
+  border: 1px solid oklch(0.88 0.005 250);
   overflow: hidden;
+  box-shadow: 0 1px 3px oklch(0.00 0 0 / 0.04), 0 1px 2px oklch(0.00 0 0 / 0.02);
 }
 
 .cp-panel-header {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid oklch(0.20 0.02 250);
+  border-bottom: 1px solid oklch(0.92 0.003 250);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -308,12 +309,12 @@
 }
 
 /* === SEVERITY INDICATORS (Only used for data, never for UI chrome) === */
-.severity-critical { color: oklch(0.65 0.22 25); }
-.severity-high { color: oklch(0.70 0.18 45); }
-.severity-medium { color: oklch(0.75 0.14 85); }
-.severity-low { color: oklch(0.65 0.10 160); }
+.severity-critical { color: oklch(0.55 0.24 25); }
+.severity-high { color: oklch(0.60 0.20 45); }
+.severity-medium { color: oklch(0.65 0.16 85); }
+.severity-low { color: oklch(0.55 0.12 160); }
 
-.severity-dot-critical { background: oklch(0.65 0.22 25); }
-.severity-dot-high { background: oklch(0.70 0.18 45); }
-.severity-dot-medium { background: oklch(0.75 0.14 85); }
-.severity-dot-low { background: oklch(0.65 0.10 160); }
+.severity-dot-critical { background: oklch(0.55 0.24 25); }
+.severity-dot-high { background: oklch(0.60 0.20 45); }
+.severity-dot-medium { background: oklch(0.65 0.16 85); }
+.severity-dot-low { background: oklch(0.55 0.12 160); }
