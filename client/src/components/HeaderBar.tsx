@@ -42,11 +42,11 @@ export default function HeaderBar() {
       {/* Left: Auburn Logo + BASY Branding — PROMINENT */}
       <div className="flex items-center gap-5">
         {/* Institution Logo — larger and more visible */}
-        <div className="flex items-center gap-3 bg-white/10 rounded-lg px-3 py-1.5">
+        <div className="flex items-center gap-3 bg-white rounded-lg px-2 py-1">
           <img 
             src={BRANDING.logoUrl} 
             alt={BRANDING.logoAlt} 
-            className="h-9 w-auto object-contain brightness-0 invert"
+            className="h-11 w-auto object-contain"
           />
         </div>
         <div className="w-px h-9 bg-[var(--color-cp-border)]" />
