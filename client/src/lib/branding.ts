@@ -21,7 +21,7 @@ export const BRANDING = {
   subtitle: 'BASY Data Immersion Lab',
   
   /** Path to the institution logo (use manus-upload-file --webdev for permanent URLs) */
-  logoUrl: '/manus-storage/auburn-university-logo_e4d96d5f.png',
+  logoUrl: '/manus-storage/auburn-university-logo_da7b5f73.png',
   
   /** Alt text for accessibility */
   logoAlt: 'Auburn University',

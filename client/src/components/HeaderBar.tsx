@@ -2,7 +2,7 @@
  * HeaderBar — Auburn University branded header
  * 
  * Design: Clean horizontal bar with 3 zones:
- *   Left: Auburn logo + brand mark + title
+ *   Left: Auburn logo + BASY branding (prominent)
  *   Center: Key metrics (3 max)
  *   Right: Data source status + timestamp
  */
@@ -37,22 +37,24 @@ export default function HeaderBar() {
         : 'bg-neutral-500';
 
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between px-6 bg-[var(--color-cp-surface)] border-b border-[var(--color-cp-border)]">
+    <header className="h-16 shrink-0 flex items-center justify-between px-6 bg-[var(--color-cp-surface)] border-b border-[var(--color-cp-border)]">
       
-      {/* Left: Auburn Logo + Brand */}
-      <div className="flex items-center gap-4">
-        {/* Institution Logo */}
-        <img 
-          src={BRANDING.logoUrl} 
-          alt={BRANDING.logoAlt} 
-          className="h-8 w-auto object-contain"
-        />
-        <div className="w-px h-7 bg-[var(--color-cp-border)]" />
+      {/* Left: Auburn Logo + BASY Branding — PROMINENT */}
+      <div className="flex items-center gap-5">
+        {/* Institution Logo — larger and more visible */}
+        <div className="flex items-center gap-3 bg-white/10 rounded-lg px-3 py-1.5">
+          <img 
+            src={BRANDING.logoUrl} 
+            alt={BRANDING.logoAlt} 
+            className="h-9 w-auto object-contain brightness-0 invert"
+          />
+        </div>
+        <div className="w-px h-9 bg-[var(--color-cp-border)]" />
         <div className="flex flex-col">
-          <h1 className="text-title text-[var(--color-cp-text-primary)] tracking-[0.12em] leading-tight">
+          <h1 className="text-[15px] font-bold text-[var(--color-cp-text-primary)] tracking-[0.15em] leading-tight">
             {BRANDING.institutionName}
           </h1>
-          <span className="text-caption text-[var(--color-cp-text-tertiary)] hidden lg:block leading-tight">
+          <span className="text-[11px] font-semibold tracking-[0.2em] text-[var(--color-cp-accent)] leading-tight mt-0.5">
             {BRANDING.subtitle}
           </span>
         </div>

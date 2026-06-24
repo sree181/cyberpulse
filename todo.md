@@ -61,3 +61,5 @@
 - [x] Design professional frontend panels for all three AI models
 - [x] Integrate AI panels into the main dashboard layout with cohesive design
 - [x] Add tRPC endpoints for all three AI model services
+- [x] Fix broken Auburn University logo in header
+- [x] Make Auburn University and BASY label more prominent in header
