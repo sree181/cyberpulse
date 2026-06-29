@@ -89,6 +89,13 @@ export function KioskProvider({ children }: { children: ReactNode }) {
     };
   }, [resetTimer]);
 
+  // Dispatch custom event when mode changes so globe can listen
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('cyberpulse:kiosk-mode', {
+      detail: { passive: mode === 'passive' }
+    }));
+  }, [mode]);
+
   // Countdown timer
   useEffect(() => {
     countdownRef.current = setInterval(() => {
