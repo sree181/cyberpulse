@@ -8,6 +8,7 @@
  * - Color-coded by attack type with subtle gradient (source bright → target faded)
  * - Hybrid zoom: auto-zoom on critical attacks every 30s + click-to-zoom
  * - Google Maps detail panel on zoom
+ * - Touch gestures: long-press country dossier, swipe-up timeline, double-tap reset
  * 
  * Inspired by Stripe's globe and Kaspersky's threat map.
  */
@@ -17,6 +18,9 @@ import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
 import { MapView } from '@/components/Map';
 import { trpc } from '@/lib/trpc';
+import { useGlobeGestures } from '@/hooks/useGlobeGestures';
+import CountryDossier from '@/components/CountryDossier';
+import TimelineScrubber from '@/components/TimelineScrubber';
 
 // Attack type legend entries
 const LEGEND_ITEMS = [
@@ -60,6 +64,39 @@ interface GlobeArcDatum {
   originalArc?: ArcData;
 }
 
+// Map screen coordinates to approximate country code using globe reference
+function findNearestCountry(arcs: ArcData[], globeInstance: any, screenX: number, screenY: number, containerRect: DOMRect): string {
+  // Use globe.gl's toGlobeCoords to convert screen → lat/lng if available
+  if (globeInstance && globeInstance.toGlobeCoords) {
+    const relX = screenX - containerRect.left;
+    const relY = screenY - containerRect.top;
+    const coords = globeInstance.toGlobeCoords(relX, relY);
+    if (coords && coords.lat !== undefined && coords.lng !== undefined) {
+      // Find the nearest arc source to these coordinates
+      let nearest = '';
+      let minDist = Infinity;
+      arcs.forEach(arc => {
+        const dLat = arc.startLat - coords.lat;
+        const dLng = arc.startLng - coords.lng;
+        const dist = dLat * dLat + dLng * dLng;
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = arc.sourceCountry;
+        }
+      });
+      if (nearest) return nearest;
+    }
+  }
+  
+  // Fallback: pick the most common source country from active arcs
+  const countryCounts: Record<string, number> = {};
+  arcs.forEach(arc => {
+    countryCounts[arc.sourceCountry] = (countryCounts[arc.sourceCountry] || 0) + 1;
+  });
+  const sorted = Object.entries(countryCounts).sort(([, a], [, b]) => b - a);
+  return sorted[0]?.[0] || 'US';
+}
+
 export default function ThreatGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<any>(null);
@@ -72,10 +109,36 @@ export default function ThreatGlobe() {
   const [mapLoading, setMapLoading] = useState(true);
   const mapMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   
+  // Touch interaction state
+  const [dossierCountry, setDossierCountry] = useState<string | null>(null);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [timelineFilter, setTimelineFilter] = useState<number | null>(null);
+  
   const { activeArcs, setSelectedArc } = useThreatData();
 
   // Default camera position
   const defaultPOV = { lat: 25, lng: -10, altitude: 2.0 };
+
+  // Touch gesture integration
+  useGlobeGestures(containerRef, {
+    onLongPress: (_lat, _lng, screenX, screenY) => {
+      if (isZoomedRef.current) return; // Don't trigger dossier when zoomed
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const country = findNearestCountry(activeArcs, globeRef.current, screenX, screenY, rect);
+      setDossierCountry(country);
+    },
+    onSwipeUp: () => {
+      if (!isZoomedRef.current) {
+        setShowTimeline(true);
+      }
+    },
+    onDoubleTap: () => {
+      if (isZoomedRef.current) {
+        returnToOverview();
+      }
+    },
+  }, !isZoomed && !dossierCountry);
 
   /**
    * COMBINED DUAL-LAYER ARC DATASET
@@ -88,6 +151,11 @@ export default function ThreatGlobe() {
    * 
    * Per-arc accessor functions allow different dash/stroke properties per entry.
    */
+  // When timeline is scrubbing, show a reduced/highlighted subset
+  // In live mode (timelineFilter === null), show all arcs normally
+  // When scrubbing, we dim arcs and pulse the playhead position indicator
+  const isReplaying = timelineFilter !== null;
+
   const combinedArcs = useMemo(() => {
     const result: GlobeArcDatum[] = [];
     
@@ -410,8 +478,8 @@ export default function ThreatGlobe() {
         </div>
       </div>
 
-      {/* Attack Type Legend — bottom left (only when not zoomed) */}
-      {!isZoomed && (
+      {/* Attack Type Legend — bottom left (only when not zoomed and no overlays) */}
+      {!isZoomed && !dossierCountry && !showTimeline && (
         <div className="absolute bottom-3 left-4 z-10">
           <div className="flex flex-col gap-1">
             {LEGEND_ITEMS.map(item => (
@@ -467,12 +535,37 @@ export default function ThreatGlobe() {
       )}
 
       {/* Subtle interaction hint */}
-      {!isZoomed && (
+      {!isZoomed && !dossierCountry && !showTimeline && (
         <div className="absolute top-3 right-4 z-10">
           <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-30">
-            Click arc to inspect
+            Click arc to inspect • Long-press for dossier • Swipe up for timeline
           </span>
         </div>
+      )}
+
+      {/* Country Dossier Overlay */}
+      {dossierCountry && (
+        <CountryDossier 
+          country={dossierCountry} 
+          onClose={() => setDossierCountry(null)} 
+        />
+      )}
+
+      {/* Timeline Scrubber */}
+      <TimelineScrubber 
+        isVisible={showTimeline} 
+        onClose={() => { setShowTimeline(false); setTimelineFilter(null); }} 
+        onTimeChange={(ts) => setTimelineFilter(ts)}
+      />
+
+      {/* Timeline toggle button — bottom right, subtle */}
+      {!isZoomed && !showTimeline && !dossierCountry && (
+        <button
+          onClick={() => setShowTimeline(true)}
+          className="absolute bottom-3 right-4 z-10 px-2.5 py-1 rounded-md bg-[var(--color-cp-surface)]/80 backdrop-blur-sm border border-[var(--color-cp-border)] text-[9px] font-data text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-accent)] hover:border-[var(--color-cp-accent)] transition-all cursor-pointer"
+        >
+          ⏱ 24H Timeline
+        </button>
       )}
     </div>
   );

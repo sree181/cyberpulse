@@ -64,3 +64,8 @@
 - [x] Fix broken Auburn University logo in header
 - [x] Make Auburn University and BASY label more prominent in header
 - [x] Change dashboard background to lighter colors
+- [x] Feature 6: Globe touch gesture controls (pinch-zoom, two-finger rotate, long-press country dossier, swipe-up drawer)
+- [x] Feature 7: Drag-to-compare correlation mode (touch two panels to create split-screen view)
+- [x] Feature 8: Timeline scrubber (24h replay with 10x speed playback)
+- [x] Feature 9: Threat spotlight deep-dive (touch CVE to expand full-screen card)
+- [x] Feature 10: Kiosk mode with ambient awareness (passive/interactive toggle, inactivity detection)

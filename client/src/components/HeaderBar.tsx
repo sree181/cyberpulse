@@ -4,12 +4,13 @@
  * Design: Clean horizontal bar with 3 zones:
  *   Left: Auburn logo + BASY branding (prominent)
  *   Center: Key metrics (3 max)
- *   Right: Data source status + timestamp
+ *   Right: Data source status + timestamp + Kiosk toggle
  */
 import { useThreatData } from '@/contexts/ThreatContext';
 import { useEffect, useState } from 'react';
 import { BRANDING } from '@/lib/branding';
 import { Link } from 'wouter';
+import KioskToggle from '@/components/KioskToggle';
 
 export default function HeaderBar() {
   const { stats, isLive, realDataStatus } = useThreatData();
@@ -86,8 +87,10 @@ export default function HeaderBar() {
         </Link>
       </div>
 
-      {/* Right: Status + Time */}
+      {/* Right: Status + Time + Kiosk Toggle */}
       <div className="flex items-center gap-4">
+        <KioskToggle />
+        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex items-center gap-1.5">
           <div className={`w-1.5 h-1.5 rounded-full ${statusColor} ${isLive ? 'animate-live-pulse' : ''}`} />
           <span className="text-caption text-[var(--color-cp-text-tertiary)]">{statusLabel}</span>
