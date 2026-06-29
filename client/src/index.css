@@ -397,3 +397,20 @@
 .severity-dot-high { background: oklch(0.62 0.20 45); }
 .severity-dot-medium { background: oklch(0.75 0.14 85); }
 .severity-dot-low { background: oklch(0.65 0.12 160); }
+
+/* === GESTURE HINT ICON ANIMATIONS === */
+@keyframes tap {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(0.85); opacity: 1; }
+}
+
+@keyframes hold {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  30% { transform: scale(0.9); opacity: 1; }
+  60% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes swipeUp {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-3px); opacity: 1; }
+}

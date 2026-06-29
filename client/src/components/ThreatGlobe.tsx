@@ -581,12 +581,36 @@ export default function ThreatGlobe() {
         </div>
       )}
 
-      {/* Interaction hint */}
+      {/* Interaction hint — bottom-center with animated gesture icons */}
       {!isZoomed && !dossierCountry && !showTimeline && (
-        <div className="absolute top-3 right-4 z-10">
-          <span className="font-data text-[10px] text-[var(--color-cp-text-secondary)] bg-[var(--color-cp-surface)]/70 backdrop-blur-sm px-2.5 py-1 rounded border border-[var(--color-cp-border)]/40">
-            Click arc to inspect • Long-press for dossier • Swipe up for timeline
-          </span>
+        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10">
+          <div className="flex items-center gap-4 font-data text-[10px] text-[var(--color-cp-text-secondary)] bg-[var(--color-cp-surface)]/75 backdrop-blur-sm px-3 py-1.5 rounded-full border border-[var(--color-cp-border)]/40">
+            {/* Tap icon */}
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 animate-[tap_2s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M15 8h.01M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9" strokeLinecap="round" />
+                <path d="M12 12v-2m0 0V8m0 2h2m-2 0H10" strokeLinecap="round" />
+              </svg>
+              <span>Tap arc</span>
+            </span>
+            <span className="text-[var(--color-cp-border)]">•</span>
+            {/* Hold icon */}
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 animate-[hold_2.5s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="3" />
+                <circle cx="12" cy="12" r="7" strokeDasharray="4 2" opacity="0.5" />
+              </svg>
+              <span>Hold for dossier</span>
+            </span>
+            <span className="text-[var(--color-cp-border)]">•</span>
+            {/* Swipe up icon */}
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 animate-[swipeUp_2s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M12 19V5m0 0l-4 4m4-4l4 4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span>Swipe for timeline</span>
+            </span>
+          </div>
         </div>
       )}
 
