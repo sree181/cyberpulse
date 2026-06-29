@@ -78,3 +78,5 @@
 - [x] Feature 17: Typography hierarchy overhaul — JetBrains Mono for data, geometric sans for labels, tabular figures, severity glow
 - [x] Feature 18: Cinematic transitions — dolly zoom on auto-zoom, spring physics for panel transitions
 - [x] Feature 19: Data sonification layer — pitch-shifted pings per attack, time-of-day volume auto-adjust
+- [x] Bug fix: Auburn logo/label not visible in header (moved logo to public/ instead of manus-storage)
+- [x] Bug fix: Map not loading on Railway (added graceful fallback when Forge proxy unavailable)

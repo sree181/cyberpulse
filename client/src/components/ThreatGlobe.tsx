@@ -383,6 +383,11 @@ export default function ThreatGlobe() {
     globeRef.current.pointsData(pointsData);
   }, [combinedArcs, pointsData]);
 
+  // Handle Google Maps error
+  const handleMapError = useCallback(() => {
+    setMapLoading(false);
+  }, []);
+
   // Handle Google Maps ready
   const handleMapReady = useCallback((map: google.maps.Map) => {
     setMapLoading(false);
@@ -470,6 +475,7 @@ export default function ThreatGlobe() {
               initialCenter={{ lat: zoomedArc.startLat, lng: zoomedArc.startLng }}
               initialZoom={8}
               onMapReady={handleMapReady}
+              onMapError={handleMapError}
             />
           )}
 
