@@ -17,7 +17,7 @@ function SeverityBar({ label, count, total, level }: { label: string; count: num
           style={{ width: `${Math.max(pct, 2)}%` }}
         />
       </div>
-      <span className="font-data text-caption text-[var(--color-cp-text-secondary)] w-6 text-right tabular-nums">{count}</span>
+      <span className={`font-data text-caption text-[var(--color-cp-text-secondary)] w-6 text-right tabular-nums ${level === 'critical' ? 'glow-critical severity-critical' : level === 'high' ? 'glow-high severity-high' : ''}`}>{count}</span>
     </div>
   );
 }

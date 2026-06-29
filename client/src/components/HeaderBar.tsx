@@ -70,7 +70,7 @@ export default function HeaderBar() {
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex flex-col items-center">
-          <span className="font-data text-[14px] font-light text-[var(--color-cp-accent)] tabular-nums">{stats.critical}</span>
+          <span className="font-data text-[14px] font-light text-[var(--color-cp-accent)] tabular-nums glow-critical">{stats.critical}</span>
           <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>CRITICAL</span>
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />

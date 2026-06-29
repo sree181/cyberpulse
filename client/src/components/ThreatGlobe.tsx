@@ -296,6 +296,8 @@ export default function ThreatGlobe() {
       
       if (criticalArc) {
         zoomToArc(criticalArc);
+        // Dispatch cinematic dolly zoom event
+        window.dispatchEvent(new CustomEvent('cyberpulse:autozoom'));
       }
     }, 30000);
 

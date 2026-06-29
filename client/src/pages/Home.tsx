@@ -33,6 +33,11 @@ import PortHeatmap from '@/components/PortHeatmap';
 import ThreatSpotlight from '@/components/ThreatSpotlight';
 import WeeklyBriefing from '@/components/WeeklyBriefing';
 import CompareMode from '@/components/CompareMode';
+import ParticleField from '@/components/ParticleField';
+import ImpactRipples from '@/components/ImpactRipples';
+import { useCinematicTransitions } from '@/hooks/useCinematicTransitions';
+import { useDataSonification } from '@/hooks/useDataSonification';
+import { soundEngine } from '@/lib/soundEngine';
 
 export default function Home() {
   return (
@@ -55,9 +60,18 @@ function HomeContent() {
   // Persist threat events for 24h timeline replay
   useTimelinePersistence();
 
+  // Cinematic transitions (dolly zoom + spring physics)
+  const { dollyActive, dollyScale } = useCinematicTransitions();
+
+  // Data sonification layer (pitch-shifted pings per attack)
+  useDataSonification(soundEngine.isEnabled());
+
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-cp-base)] transition-all duration-500 ${isTransitioning ? 'opacity-80' : 'opacity-100'}`}>
       
+      {/* Particle Field Background — neural mesh behind all panels */}
+      <ParticleField />
+
       {/* HEADER — Hidden in passive mode */}
       <div className={`transition-all duration-500 ${isPassive ? 'h-0 opacity-0 overflow-hidden' : 'h-16 opacity-100'}`}>
         <HeaderBar />
@@ -70,10 +84,10 @@ function HomeContent() {
         <div className={`shrink-0 flex flex-col gap-3 transition-all duration-500 ${
           isPassive ? 'w-0 opacity-0 overflow-hidden' : 'w-[220px] opacity-100'
         }`}>
-          <div className="cp-panel flex-[3]">
+          <div className="cp-panel flex-[3] spring-lift">
             <StatsPanel />
           </div>
-          <div className="cp-panel flex-[4]">
+          <div className="cp-panel flex-[4] spring-lift">
             <MitreHeatmap />
           </div>
         </div>
@@ -83,8 +97,13 @@ function HomeContent() {
           {/* Globe — dominant visual, dark bg for contrast */}
           <div className={`cp-panel relative overflow-hidden transition-all duration-500 ${
             isPassive ? 'flex-1' : 'flex-[5]'
-          }`} style={{ background: 'oklch(0.12 0.04 255)' }}>
+          } ${dollyActive ? 'dolly-zoom-active' : ''}`} style={{ 
+            background: 'oklch(0.12 0.04 255)',
+            transform: dollyActive ? `scale(${dollyScale})` : 'scale(1)',
+          }}>
             <ThreatGlobe />
+            {/* Impact ripples — sonar pings at attack target locations */}
+            <ImpactRipples />
             {/* Compare Mode overlay — rendered inside globe panel for full coverage */}
             <CompareMode isVisible={showCompare} onClose={() => setShowCompare(false)} />
             
@@ -112,10 +131,10 @@ function HomeContent() {
           <div className={`flex gap-3 overflow-hidden transition-all duration-500 ${
             isPassive ? 'flex-[0] h-0 opacity-0' : 'flex-[2] opacity-100'
           }`}>
-            <div className="flex-1 cp-panel overflow-hidden">
+            <div className="flex-1 cp-panel overflow-hidden spring-lift">
               <ThreatSpotlight />
             </div>
-            <div className="flex-1 cp-panel overflow-hidden">
+            <div className="flex-1 cp-panel overflow-hidden spring-lift">
               <WeeklyBriefing />
             </div>
           </div>
@@ -125,10 +144,10 @@ function HomeContent() {
         <div className={`shrink-0 flex flex-col gap-3 transition-all duration-500 ${
           isPassive ? 'w-0 opacity-0 overflow-hidden' : 'w-[260px] opacity-100'
         }`}>
-          <div className="cp-panel flex-[2] overflow-hidden">
+          <div className="cp-panel flex-[2] overflow-hidden spring-lift">
             <PortHeatmap />
           </div>
-          <div className="cp-panel flex-[5] overflow-hidden">
+          <div className="cp-panel flex-[5] overflow-hidden spring-lift">
             <ThreatFeed />
           </div>
           {/* Compare Mode trigger button */}

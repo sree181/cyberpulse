@@ -72,3 +72,9 @@
 - [x] Feature 11: Sound effects/haptic feedback — subtle audio cues on critical alerts and mode transitions
 - [x] Feature 12: Persist timeline replay data — store historical arc data server-side for 24h scrubber replay
 - [x] Feature 13: Full-screen presentation mode — /present route for TV/projector passive kiosk display
+- [x] Feature 14: Particle field background — animated neural mesh that responds to threat level (faster/redder as attacks increase)
+- [x] Feature 15: Attack impact ripples — concentric sonar ping animations at target locations on globe, severity-colored
+- [x] Feature 16: Glassmorphism panel redesign — frosted-glass panels with backdrop-blur letting particle background bleed through
+- [x] Feature 17: Typography hierarchy overhaul — JetBrains Mono for data, geometric sans for labels, tabular figures, severity glow
+- [x] Feature 18: Cinematic transitions — dolly zoom on auto-zoom, spring physics for panel transitions
+- [x] Feature 19: Data sonification layer — pitch-shifted pings per attack, time-of-day volume auto-adjust

@@ -6,6 +6,7 @@
  */
 import { useState, useCallback } from 'react';
 import { soundEngine } from '@/lib/soundEngine';
+import { dataSonification } from '@/lib/dataSonification';
 
 export default function SoundControl() {
   const [enabled, setEnabled] = useState(soundEngine.isEnabled());
@@ -19,6 +20,11 @@ export default function SoundControl() {
     }
     
     soundEngine.setEnabled(next);
+    if (next) {
+      dataSonification.enable();
+    } else {
+      dataSonification.disable();
+    }
     setEnabled(next);
     
     // Play a confirmation sound when enabling
