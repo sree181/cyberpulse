@@ -80,3 +80,8 @@
 - [x] Feature 19: Data sonification layer — pitch-shifted pings per attack, time-of-day volume auto-adjust
 - [x] Bug fix: Auburn logo/label not visible in header (moved logo to public/ instead of manus-storage)
 - [x] Bug fix: Map not loading on Railway (added graceful fallback when Forge proxy unavailable)
+- [x] Globe Enhancement: Atmosphere glow (orange-tinted volumetric halo, increased altitude)
+- [x] Globe Enhancement: Arc severity styling (variable width, faster pulse for critical, brighter colors)
+- [x] Globe Enhancement: Camera choreography for kiosk mode (cinematic orbital paths with breathing)
+- [x] Globe Enhancement: CSS-only overlays (day/night terminator, orbital ring with sensor dots, comet tails)
+- [x] Globe Enhancement: Arc count limiter (20 max) to prevent WebGL context loss

@@ -89,6 +89,11 @@ export function KioskProvider({ children }: { children: ReactNode }) {
     };
   }, [resetTimer]);
 
+  // Dispatch mode change event for globe camera choreography
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('cyberpulse:kioskchange', { detail: { mode } }));
+  }, [mode]);
+
   // Countdown timer
   useEffect(() => {
     countdownRef.current = setInterval(() => {

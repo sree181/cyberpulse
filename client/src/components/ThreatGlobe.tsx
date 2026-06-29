@@ -21,6 +21,7 @@ import { trpc } from '@/lib/trpc';
 import { useGlobeGestures } from '@/hooks/useGlobeGestures';
 import CountryDossier from '@/components/CountryDossier';
 import TimelineScrubber from '@/components/TimelineScrubber';
+import { useCameraChoreography } from '@/hooks/useCameraChoreography';
 
 // Attack type legend entries
 const LEGEND_ITEMS = [
@@ -140,6 +141,31 @@ export default function ThreatGlobe() {
     },
   }, !isZoomed && !dossierCountry);
 
+  // Camera choreography for kiosk/passive mode
+  // Listen for kiosk mode changes via custom event from KioskContext
+  const [isPassiveMode, setIsPassiveMode] = useState(false);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setIsPassiveMode(detail?.mode === 'passive');
+    };
+    window.addEventListener('cyberpulse:kioskchange', handler);
+    return () => window.removeEventListener('cyberpulse:kioskchange', handler);
+  }, []);
+
+  // Derive hotspots from active arcs (top attack sources)
+  const hotspots = useMemo(() => {
+    const seen = new Set<string>();
+    return activeArcs.slice(0, 5).filter(a => {
+      const k = `${a.startLat.toFixed(0)},${a.startLng.toFixed(0)}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    }).map(a => ({ lat: a.startLat, lng: a.startLng }));
+  }, [activeArcs]);
+
+  useCameraChoreography({ globeRef, isPassive: isPassiveMode, hotspots });
+
   /**
    * COMBINED DUAL-LAYER ARC DATASET
    * 
@@ -159,35 +185,47 @@ export default function ThreatGlobe() {
   const combinedArcs = useMemo(() => {
     const result: GlobeArcDatum[] = [];
     
-    activeArcs.forEach((arc, index) => {
+    // Limit to 20 arcs to keep GPU happy while still looking dense
+    const limitedArcs = activeArcs.slice(0, 20);
+
+    limitedArcs.forEach((arc, index) => {
+      // Severity-based trail opacity (critical arcs leave stronger traces)
+      const trailOpacity = arc.severity === 'critical' ? '55' : arc.severity === 'high' ? '44' : '33';
+      const trailEndOpacity = arc.severity === 'critical' ? '22' : '11';
+
       // Layer 1: Trail (the persistent fiber — always visible, subtle)
       result.push({
         startLat: arc.startLat,
         startLng: arc.startLng,
         endLat: arc.endLat,
         endLng: arc.endLng,
-        color: [`${arc.color}44`, `${arc.color}11`], // 27% → 7% opacity gradient
-        stroke: null, // null = ThreeJS Line (1px constant width, elegant hairline)
-        dashLength: 1,    // Full length visible
-        dashGap: 0,       // No gaps — solid line
-        animateTime: 0,   // No animation — static trail
+        color: [`${arc.color}${trailOpacity}`, `${arc.color}${trailEndOpacity}`],
+        stroke: arc.severity === 'critical' ? 0.12 : null, // Critical gets thin tube, others hairline
+        dashLength: 1,
+        dashGap: 0,
+        animateTime: 0,
         dashInitialGap: 0,
         id: `trail-${arc.id}`,
         layer: 'trail',
       });
 
       // Layer 2: Pulse (the traveling photon — bright, animated)
+      // Critical attacks travel faster and are wider
+      const pulseSpeed = arc.severity === 'critical' ? 1200 : arc.severity === 'high' ? 1500 : 2000;
+      const pulseWidth = arc.severity === 'critical' ? 0.55 : arc.severity === 'high' ? 0.4 : 0.25;
+      const pulseDashLen = arc.severity === 'critical' ? 0.3 : 0.25;
+
       result.push({
         startLat: arc.startLat,
         startLng: arc.startLng,
         endLat: arc.endLat,
         endLng: arc.endLng,
-        color: [`${arc.color}EE`, `${arc.color}88`], // 93% → 53% opacity (bright head, dimmer tail)
-        stroke: arc.severity === 'critical' ? 0.45 : arc.severity === 'high' ? 0.35 : 0.25,
-        dashLength: 0.25,  // 25% of arc visible — substantial enough to see
-        dashGap: 0.75,     // 75% invisible — creates single traveling segment
-        animateTime: 1800 + (index % 5) * 200, // Stagger speeds slightly for organic feel
-        dashInitialGap: Math.random(), // Random starting position — avoids synchronized movement
+        color: [`${arc.color}FF`, `${arc.color}99`], // Full brightness head → 60% tail
+        stroke: pulseWidth,
+        dashLength: pulseDashLen,
+        dashGap: 1 - pulseDashLen,
+        animateTime: pulseSpeed + (index % 5) * 100, // Stagger for organic feel
+        dashInitialGap: Math.random(),
         id: `pulse-${arc.id}`,
         layer: 'pulse',
         originalArc: arc,
@@ -314,8 +352,9 @@ export default function ThreatGlobe() {
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
       .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-      .atmosphereColor('rgba(221, 85, 12, 0.2)')
-      .atmosphereAltitude(0.15)
+      .showAtmosphere(true)
+      .atmosphereColor('#dd550c')
+      .atmosphereAltitude(0.2)
       // ARCS — per-arc accessor functions for dual-layer rendering
       .arcsData([])
       .arcColor('color')
@@ -324,8 +363,8 @@ export default function ThreatGlobe() {
       .arcDashGap((d: any) => d.dashGap)                  // 0=no gap, 0.75=traveling effect
       .arcDashInitialGap((d: any) => d.dashInitialGap)    // Random start offset
       .arcDashAnimateTime((d: any) => d.animateTime)      // 0=static, 1800+=animated
-      .arcAltitudeAutoScale(0.3)  // Elegant, restrained arc height
-      .arcCurveResolution(64)     // Silky smooth curves
+      .arcAltitudeAutoScale(0.35)  // Slightly taller arcs for drama
+      .arcCurveResolution(48)      // Smooth curves
       // Click handler — only respond to pulse arcs (not trails)
       .onArcClick((arc: any) => {
         if (arc && arc.layer === 'pulse' && arc.originalArc) {
