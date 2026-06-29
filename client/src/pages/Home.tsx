@@ -21,6 +21,8 @@
 import { useState } from 'react';
 import { ThreatProvider } from '@/contexts/ThreatContext';
 import { KioskProvider, useKiosk } from '@/contexts/KioskContext';
+import { useSoundFeedback } from '@/hooks/useSoundFeedback';
+import { useTimelinePersistence } from '@/hooks/useTimelinePersistence';
 import HeaderBar from '@/components/HeaderBar';
 import ThreatGlobe from '@/components/ThreatGlobe';
 import ThreatFeed from '@/components/ThreatFeed';
@@ -46,6 +48,12 @@ function HomeContent() {
   const { mode, isTransitioning } = useKiosk();
   const [showCompare, setShowCompare] = useState(false);
   const isPassive = mode === 'passive';
+
+  // Sound effects and haptic feedback
+  useSoundFeedback();
+
+  // Persist threat events for 24h timeline replay
+  useTimelinePersistence();
 
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-cp-base)] transition-all duration-500 ${isTransitioning ? 'opacity-80' : 'opacity-100'}`}>

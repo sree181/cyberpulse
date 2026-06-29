@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { BRANDING } from '@/lib/branding';
 import { Link } from 'wouter';
 import KioskToggle from '@/components/KioskToggle';
+import SoundControl from '@/components/SoundControl';
 
 export default function HeaderBar() {
   const { stats, isLive, realDataStatus } = useThreatData();
@@ -87,8 +88,9 @@ export default function HeaderBar() {
         </Link>
       </div>
 
-      {/* Right: Status + Time + Kiosk Toggle */}
+      {/* Right: Status + Time + Kiosk Toggle + Sound */}
       <div className="flex items-center gap-4">
+        <SoundControl />
         <KioskToggle />
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex items-center gap-1.5">

@@ -12,6 +12,7 @@
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useThreatData } from '@/contexts/ThreatContext';
+import { trpc } from '@/lib/trpc';
 
 interface TimelineScrubberProps {
   isVisible: boolean;
@@ -31,11 +32,37 @@ export default function TimelineScrubber({ isVisible, onClose, onTimeChange }: T
   const trackRef = useRef<HTMLDivElement>(null);
   const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Generate 24h histogram data from timeSeries
+  // Fetch persisted 24h histogram from server
+  const { data: serverHistogram } = trpc.timeline.histogram.useQuery(undefined, {
+    refetchInterval: 30000, // Refresh every 30s
+    staleTime: 15000,
+  });
+
+  // Generate 24h histogram data — prefer server data, fallback to client timeSeries
   const histogram = useMemo(() => {
     const bins = 48; // 30-min bins over 24h
     const data = new Array(bins).fill(0);
-    
+
+    // Use server-persisted histogram if available
+    if (serverHistogram?.bins && serverHistogram.bins.length > 0) {
+      const now = Date.now();
+      const dayAgo = now - 24 * 60 * 60 * 1000;
+      
+      for (const bin of serverHistogram.bins) {
+        const binTime = new Date(bin.binStart).getTime();
+        if (binTime >= dayAgo) {
+          const binIndex = Math.floor(((binTime - dayAgo) / (24 * 60 * 60 * 1000)) * bins);
+          if (binIndex >= 0 && binIndex < bins) {
+            data[binIndex] += bin.eventCount;
+          }
+        }
+      }
+      
+      // If server data produced non-zero bins, use it
+      if (data.some(v => v > 0)) return data;
+    }
+
+    // Fallback: use client-side timeSeries
     if (timeSeries.length > 0) {
       const now = Date.now();
       const dayAgo = now - 24 * 60 * 60 * 1000;
@@ -49,7 +76,7 @@ export default function TimelineScrubber({ isVisible, onClose, onTimeChange }: T
         }
       });
     } else {
-      // Generate synthetic histogram for visual appeal
+      // Generate synthetic histogram for visual appeal when no data available
       for (let i = 0; i < bins; i++) {
         const baseActivity = 3 + Math.sin(i / 6) * 2;
         const spike = Math.random() > 0.85 ? Math.random() * 8 : 0;
@@ -58,7 +85,7 @@ export default function TimelineScrubber({ isVisible, onClose, onTimeChange }: T
     }
     
     return data;
-  }, [timeSeries]);
+  }, [timeSeries, serverHistogram]);
 
   const maxBin = Math.max(...histogram, 1);
 

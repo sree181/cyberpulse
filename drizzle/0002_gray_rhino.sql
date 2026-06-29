@@ -1,0 +1,1 @@
+ALTER TABLE `timeline_bins` ADD CONSTRAINT `bin_start_idx` UNIQUE(`binStart`);

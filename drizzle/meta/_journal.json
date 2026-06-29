@@ -8,6 +8,20 @@
       "when": 1777325479078,
       "tag": "0000_giant_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1782767048634,
+      "tag": "0001_overjoyed_cerise",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1782767400783,
+      "tag": "0002_gray_rhino",
+      "breakpoints": true
     }
   ]
 }

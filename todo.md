@@ -69,3 +69,6 @@
 - [x] Feature 8: Timeline scrubber (24h replay with 10x speed playback)
 - [x] Feature 9: Threat spotlight deep-dive (touch CVE to expand full-screen card)
 - [x] Feature 10: Kiosk mode with ambient awareness (passive/interactive toggle, inactivity detection)
+- [x] Feature 11: Sound effects/haptic feedback — subtle audio cues on critical alerts and mode transitions
+- [x] Feature 12: Persist timeline replay data — store historical arc data server-side for 24h scrubber replay
+- [x] Feature 13: Full-screen presentation mode — /present route for TV/projector passive kiosk display
