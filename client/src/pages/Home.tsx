@@ -35,7 +35,6 @@ import WeeklyBriefing from '@/components/WeeklyBriefing';
 import CompareMode from '@/components/CompareMode';
 import ParticleField from '@/components/ParticleField';
 import ImpactRipples from '@/components/ImpactRipples';
-import GlobeOverlays from '@/components/GlobeOverlays';
 import { useCinematicTransitions } from '@/hooks/useCinematicTransitions';
 import { useDataSonification } from '@/hooks/useDataSonification';
 import { soundEngine } from '@/lib/soundEngine';
@@ -103,8 +102,6 @@ function HomeContent() {
             transform: dollyActive ? `scale(${dollyScale})` : 'scale(1)',
           }}>
             <ThreatGlobe />
-            {/* Globe overlays — day/night terminator, comet tails, orbital ring */}
-            <GlobeOverlays />
             {/* Impact ripples — sonar pings at attack target locations */}
             <ImpactRipples />
             {/* Compare Mode overlay — rendered inside globe panel for full coverage */}

@@ -19,7 +19,6 @@ import { BRANDING } from '@/lib/branding';
 import { MapView } from '@/components/Map';
 import { trpc } from '@/lib/trpc';
 import { useGlobeGestures } from '@/hooks/useGlobeGestures';
-import { useCameraChoreography } from '@/hooks/useCameraChoreography';
 import CountryDossier from '@/components/CountryDossier';
 import TimelineScrubber from '@/components/TimelineScrubber';
 
@@ -141,25 +140,6 @@ export default function ThreatGlobe() {
     },
   }, !isZoomed && !dossierCountry);
 
-  // Camera choreography for kiosk passive mode
-  // Listens for 'cyberpulse:kiosk-passive' custom event from KioskContext
-  const [isPassiveMode, setIsPassiveMode] = useState(false);
-  useEffect(() => {
-    const handlePassive = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setIsPassiveMode(detail?.passive ?? false);
-    };
-    window.addEventListener('cyberpulse:kiosk-mode', handlePassive);
-    return () => window.removeEventListener('cyberpulse:kiosk-mode', handlePassive);
-  }, []);
-
-  useCameraChoreography({
-    globeRef,
-    activeArcs,
-    isPassive: isPassiveMode,
-    isZoomed,
-  });
-
   /**
    * COMBINED DUAL-LAYER ARC DATASET
    * 
@@ -178,106 +158,40 @@ export default function ThreatGlobe() {
 
   const combinedArcs = useMemo(() => {
     const result: GlobeArcDatum[] = [];
-
-    // Connection clustering: group arcs by source country to detect botnets
-    const sourceGroups: Record<string, ArcData[]> = {};
-    activeArcs.forEach(arc => {
-      const key = arc.sourceCountry;
-      if (!sourceGroups[key]) sourceGroups[key] = [];
-      sourceGroups[key].push(arc);
-    });
-
-    // For clusters with 4+ arcs from same source, add a "trunk" arc
-    Object.entries(sourceGroups).forEach(([_country, group]) => {
-      if (group.length >= 4) {
-        // Trunk arc: from source centroid to midpoint (visual hub)
-        const avgStartLat = group.reduce((s, a) => s + a.startLat, 0) / group.length;
-        const avgStartLng = group.reduce((s, a) => s + a.startLng, 0) / group.length;
-        const avgEndLat = group.reduce((s, a) => s + a.endLat, 0) / group.length;
-        const avgEndLng = group.reduce((s, a) => s + a.endLng, 0) / group.length;
-        const midLat = (avgStartLat + avgEndLat) / 2;
-        const midLng = (avgStartLng + avgEndLng) / 2;
-        
-        // Thick trunk arc representing the botnet cluster
-        result.push({
-          startLat: avgStartLat,
-          startLng: avgStartLng,
-          endLat: midLat,
-          endLng: midLng,
-          color: [`${group[0].color}88`, `${group[0].color}44`],
-          stroke: 0.3 + group.length * 0.05, // Thicker with more connections
-          dashLength: 0.6,
-          dashGap: 0.4,
-          animateTime: 2500,
-          dashInitialGap: 0,
-          id: `trunk-${_country}-${group[0].id}`,
-          layer: 'trail',
-        });
-      }
-    });
     
     activeArcs.forEach((arc, index) => {
-      // Severity-based width scaling
-      const trailOpacity = arc.severity === 'critical' ? '66' : arc.severity === 'high' ? '55' : '33';
-      const trailEndOpacity = arc.severity === 'critical' ? '22' : '11';
-      
       // Layer 1: Trail (the persistent fiber — always visible, subtle)
-      // Variable width: critical arcs have thicker trails
       result.push({
         startLat: arc.startLat,
         startLng: arc.startLng,
         endLat: arc.endLat,
         endLng: arc.endLng,
-        color: [`${arc.color}${trailOpacity}`, `${arc.color}${trailEndOpacity}`],
-        stroke: arc.severity === 'critical' ? 0.15 : null, // Critical gets tube trail, others get hairline
-        dashLength: 1,
-        dashGap: 0,
-        animateTime: 0,
+        color: [`${arc.color}44`, `${arc.color}11`], // 27% → 7% opacity gradient
+        stroke: null, // null = ThreeJS Line (1px constant width, elegant hairline)
+        dashLength: 1,    // Full length visible
+        dashGap: 0,       // No gaps — solid line
+        animateTime: 0,   // No animation — static trail
         dashInitialGap: 0,
         id: `trail-${arc.id}`,
         layer: 'trail',
       });
 
       // Layer 2: Pulse (the traveling photon — bright, animated)
-      // Faster animation for critical, variable width by severity
-      const pulseSpeed = arc.severity === 'critical' ? 1200 : arc.severity === 'high' ? 1500 : 2000;
-      const pulseWidth = arc.severity === 'critical' ? 0.6 : arc.severity === 'high' ? 0.4 : 0.25;
-      const pulseDashLen = arc.severity === 'critical' ? 0.35 : 0.25; // Critical has longer visible segment
-      
       result.push({
         startLat: arc.startLat,
         startLng: arc.startLng,
         endLat: arc.endLat,
         endLng: arc.endLng,
-        color: [`${arc.color}FF`, `${arc.color}99`], // Full brightness head → 60% tail
-        stroke: pulseWidth,
-        dashLength: pulseDashLen,
-        dashGap: 1 - pulseDashLen,
-        animateTime: pulseSpeed + (index % 5) * 100, // Stagger for organic feel
-        dashInitialGap: Math.random(),
+        color: [`${arc.color}EE`, `${arc.color}88`], // 93% → 53% opacity (bright head, dimmer tail)
+        stroke: arc.severity === 'critical' ? 0.45 : arc.severity === 'high' ? 0.35 : 0.25,
+        dashLength: 0.25,  // 25% of arc visible — substantial enough to see
+        dashGap: 0.75,     // 75% invisible — creates single traveling segment
+        animateTime: 1800 + (index % 5) * 200, // Stagger speeds slightly for organic feel
+        dashInitialGap: Math.random(), // Random starting position — avoids synchronized movement
         id: `pulse-${arc.id}`,
         layer: 'pulse',
         originalArc: arc,
       });
-
-      // Layer 3: Lightning flash for critical attacks — brief bright burst
-      if (arc.severity === 'critical') {
-        result.push({
-          startLat: arc.startLat,
-          startLng: arc.startLng,
-          endLat: arc.endLat,
-          endLng: arc.endLng,
-          color: ['#FFFFFFEE', `${arc.color}00`], // White flash fading to transparent
-          stroke: 0.8,
-          dashLength: 0.15,
-          dashGap: 0.85,
-          animateTime: 600, // Very fast — lightning speed
-          dashInitialGap: Math.random() * 0.5,
-          id: `flash-${arc.id}`,
-          layer: 'pulse',
-          originalArc: arc,
-        });
-      }
     });
 
     return result;
@@ -300,88 +214,14 @@ export default function ThreatGlobe() {
     }));
   }, [activeArcs]);
 
-  // Hex-bin heatmap data — all target locations for density aggregation
-  const hexBinData = useMemo(() => {
-    return activeArcs.map(arc => ({
-      lat: arc.endLat,
-      lng: arc.endLng,
-      weight: arc.severity === 'critical' ? 4 : arc.severity === 'high' ? 2.5 : arc.severity === 'medium' ? 1.5 : 1,
-    }));
-  }, [activeArcs]);
-
-  // Orbital ring — sensor nodes at fixed altitude representing monitored infrastructure
-  const orbitalNodes = useMemo(() => {
-    const sensors = [
-      { lat: 38.9, lng: -77.0, label: 'US-EAST HQ', active: true },
-      { lat: 37.4, lng: -122.1, label: 'US-WEST DC', active: true },
-      { lat: 51.5, lng: -0.1, label: 'UK OFFICE', active: true },
-      { lat: 50.1, lng: 8.7, label: 'EU-CENTRAL DC', active: true },
-      { lat: 1.35, lng: 103.8, label: 'APAC DC', active: true },
-      { lat: 35.7, lng: 139.7, label: 'JP NODE', active: false },
-      { lat: -33.9, lng: 151.2, label: 'AU NODE', active: false },
-      { lat: 55.8, lng: 37.6, label: 'MONITOR-RU', active: true },
-      { lat: 39.9, lng: 116.4, label: 'MONITOR-CN', active: true },
-      { lat: -23.5, lng: -46.6, label: 'SA NODE', active: false },
-    ];
-    // Check which sensors are being targeted
-    const targetedSensors = new Set<string>();
-    activeArcs.forEach(arc => {
-      sensors.forEach(s => {
-        const dist = Math.abs(arc.endLat - s.lat) + Math.abs(arc.endLng - s.lng);
-        if (dist < 5) targetedSensors.add(s.label);
-      });
-    });
-    return sensors.map(s => ({
-      ...s,
-      underAttack: targetedSensors.has(s.label),
-      altitude: 0.15, // Fixed orbital altitude
-    }));
-  }, [activeArcs]);
-
-  // Dynamic pulse rings at target cities — stacking concentric rings at impact locations
-  // Rings are generated from active arcs, with severity-based color and size
-  const ringsData = useMemo(() => {
-    // Aggregate targets by location (rounded to 1 decimal for grouping)
-    const targetMap: Record<string, { lat: number; lng: number; count: number; maxSeverity: string }> = {};
-    
-    activeArcs.forEach(arc => {
-      const key = `${arc.endLat.toFixed(1)},${arc.endLng.toFixed(1)}`;
-      if (!targetMap[key]) {
-        targetMap[key] = { lat: arc.endLat, lng: arc.endLng, count: 0, maxSeverity: 'low' };
-      }
-      targetMap[key].count++;
-      // Track highest severity hitting this location
-      const severityRank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
-      if ((severityRank[arc.severity] || 0) > (severityRank[targetMap[key].maxSeverity] || 0)) {
-        targetMap[key].maxSeverity = arc.severity;
-      }
-    });
-
-    return Object.values(targetMap).map(target => {
-      // Color intensity based on severity
-      const colorMap: Record<string, string> = {
-        critical: 'rgba(200, 30, 30, 0.25)',
-        high: 'rgba(221, 85, 12, 0.2)',
-        medium: 'rgba(212, 160, 23, 0.15)',
-        low: 'rgba(92, 138, 77, 0.1)',
-      };
-      // Ring size scales with attack count (stacking effect)
-      const maxR = Math.min(1.5 + target.count * 0.5, 5);
-      // Faster propagation for critical (more urgent visual)
-      const speed = target.maxSeverity === 'critical' ? 2.5 : target.maxSeverity === 'high' ? 1.8 : 1.2;
-      // Shorter repeat period for high-volume targets (more rings visible simultaneously)
-      const repeat = Math.max(600, 2000 - target.count * 150);
-
-      return {
-        lat: target.lat,
-        lng: target.lng,
-        color: colorMap[target.maxSeverity] || colorMap.low,
-        maxR,
-        propagationSpeed: speed,
-        repeatPeriod: repeat,
-      };
-    });
-  }, [activeArcs]);
+  // Target rings — subtle pulsing at destinations
+  const ringsData = useMemo(() => [
+    { lat: 38.9072, lng: -77.0369, color: 'rgba(221, 85, 12, 0.12)', maxR: 2, propagationSpeed: 1.2, repeatPeriod: 1800 },
+    { lat: 37.3861, lng: -122.0839, color: 'rgba(221, 85, 12, 0.12)', maxR: 2, propagationSpeed: 1.2, repeatPeriod: 1800 },
+    { lat: 50.1109, lng: 8.6821, color: 'rgba(221, 85, 12, 0.12)', maxR: 2, propagationSpeed: 1.2, repeatPeriod: 1800 },
+    { lat: 1.3521, lng: 103.8198, color: 'rgba(221, 85, 12, 0.12)', maxR: 2, propagationSpeed: 1.2, repeatPeriod: 1800 },
+    { lat: 51.5074, lng: -0.1278, color: 'rgba(221, 85, 12, 0.12)', maxR: 2, propagationSpeed: 1.2, repeatPeriod: 1800 },
+  ], []);
 
   // Zoom to a specific arc location
   const zoomToArc = useCallback((arc: ArcData) => {
@@ -474,9 +314,8 @@ export default function ThreatGlobe() {
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
       .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-      .atmosphereColor('rgba(221, 85, 12, 0.35)')
-      .atmosphereAltitude(0.25)
-      .showAtmosphere(true)
+      .atmosphereColor('rgba(221, 85, 12, 0.2)')
+      .atmosphereAltitude(0.15)
       // ARCS — per-arc accessor functions for dual-layer rendering
       .arcsData([])
       .arcColor('color')
@@ -498,45 +337,12 @@ export default function ThreatGlobe() {
       .pointColor('color')
       .pointAltitude('altitude')
       .pointRadius('size')
-      // Hex-bin heatmap — attack density at target locations
-      .hexBinPointsData([])
-      .hexBinPointWeight('weight')
-      .hexBinResolution(3)
-      .hexMargin(0.4)
-      .hexTopColor((d: any) => {
-        const w = d.sumWeight || 0;
-        if (w > 10) return 'rgba(200, 30, 30, 0.85)';
-        if (w > 5) return 'rgba(221, 85, 12, 0.75)';
-        if (w > 2) return 'rgba(212, 160, 23, 0.55)';
-        return 'rgba(92, 138, 77, 0.35)';
-      })
-      .hexSideColor((d: any) => {
-        const w = d.sumWeight || 0;
-        if (w > 10) return 'rgba(200, 30, 30, 0.4)';
-        if (w > 5) return 'rgba(221, 85, 12, 0.3)';
-        return 'rgba(92, 138, 77, 0.15)';
-      })
-      .hexAltitude((d: any) => Math.min((d.sumWeight || 0) * 0.008, 0.15))
-      .hexBinMerge(true)
-      .hexTransitionDuration(800)
-      // Orbital sensor nodes — labels at altitude
-      .labelsData([])
-      .labelLat((d: any) => d.lat)
-      .labelLng((d: any) => d.lng)
-      .labelAltitude((d: any) => d.altitude || 0.15)
-      .labelText((d: any) => d.underAttack ? `● ${d.label}` : `○ ${d.label}`)
-      .labelSize((d: any) => d.underAttack ? 0.6 : 0.4)
-      .labelDotRadius((d: any) => d.underAttack ? 0.4 : 0.2)
-      .labelColor((d: any) => d.underAttack ? 'rgba(200, 30, 30, 0.9)' : d.active ? 'rgba(92, 138, 77, 0.7)' : 'rgba(100, 116, 139, 0.4)')
-      .labelResolution(2)
-      .labelIncludeDot(true)
-      .labelDotOrientation(() => 'bottom' as any)
-      // Rings — dynamic pulse rings at target cities
+      // Rings — subtle target pulsing
       .ringsData(ringsData)
       .ringColor('color')
-      .ringMaxRadius((d: any) => d.maxR || 2)
-      .ringPropagationSpeed((d: any) => d.propagationSpeed || 1.2)
-      .ringRepeatPeriod((d: any) => d.repeatPeriod || 1800)
+      .ringMaxRadius(2)
+      .ringPropagationSpeed(1.2)
+      .ringRepeatPeriod(1800)
       (containerRef.current);
 
     // Camera
@@ -570,15 +376,12 @@ export default function ThreatGlobe() {
     };
   }, [ringsData, zoomToArc]);
 
-  // Update arc, point, hex-bin, orbital, and rings data
+  // Update arc and point data
   useEffect(() => {
     if (!globeRef.current) return;
     globeRef.current.arcsData(combinedArcs);
     globeRef.current.pointsData(pointsData);
-    globeRef.current.hexBinPointsData(hexBinData);
-    globeRef.current.labelsData(orbitalNodes);
-    globeRef.current.ringsData(ringsData);
-  }, [combinedArcs, pointsData, hexBinData, orbitalNodes, ringsData]);
+  }, [combinedArcs, pointsData]);
 
   // Handle Google Maps error
   const handleMapError = useCallback(() => {
