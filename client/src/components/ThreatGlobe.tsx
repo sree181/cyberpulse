@@ -581,10 +581,10 @@ export default function ThreatGlobe() {
         </div>
       )}
 
-      {/* Subtle interaction hint */}
+      {/* Interaction hint */}
       {!isZoomed && !dossierCountry && !showTimeline && (
         <div className="absolute top-3 right-4 z-10">
-          <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-30">
+          <span className="font-data text-[10px] text-[var(--color-cp-text-secondary)] bg-[var(--color-cp-surface)]/70 backdrop-blur-sm px-2.5 py-1 rounded border border-[var(--color-cp-border)]/40">
             Click arc to inspect • Long-press for dossier • Swipe up for timeline
           </span>
         </div>
