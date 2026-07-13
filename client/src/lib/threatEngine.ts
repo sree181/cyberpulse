@@ -70,13 +70,24 @@ const ATTACK_SOURCES = [
   { country: 'KP', city: 'Pyongyang', lat: 39.0392, lng: 125.7625, weight: 3 },
 ];
 
-// Target infrastructure locations (simulating a multinational corporation)
+// Target infrastructure locations (simulating a multinational corporation with distributed infra)
 const TARGETS = [
-  { name: 'US-EAST HQ', lat: 38.9072, lng: -77.0369 },
-  { name: 'US-WEST DC', lat: 37.3861, lng: -122.0839 },
-  { name: 'EU-CENTRAL DC', lat: 50.1109, lng: 8.6821 },
-  { name: 'APAC DC', lat: 1.3521, lng: 103.8198 },
-  { name: 'UK OFFICE', lat: 51.5074, lng: -0.1278 },
+  { name: 'US-EAST HQ', lat: 38.9072, lng: -77.0369, weight: 5 },
+  { name: 'US-WEST DC', lat: 37.3861, lng: -122.0839, weight: 4 },
+  { name: 'US-CENTRAL CDN', lat: 41.8781, lng: -87.6298, weight: 2 },
+  { name: 'US-SOUTH EDGE', lat: 29.7604, lng: -95.3698, weight: 2 },
+  { name: 'EU-CENTRAL DC', lat: 50.1109, lng: 8.6821, weight: 4 },
+  { name: 'EU-NORTH BACKUP', lat: 59.3293, lng: 18.0686, weight: 2 },
+  { name: 'EU-WEST CDN', lat: 48.8566, lng: 2.3522, weight: 2 },
+  { name: 'UK OFFICE', lat: 51.5074, lng: -0.1278, weight: 3 },
+  { name: 'APAC DC', lat: 1.3521, lng: 103.8198, weight: 3 },
+  { name: 'APAC-NORTH DC', lat: 35.6762, lng: 139.6503, weight: 2 },
+  { name: 'APAC-SOUTH EDGE', lat: -33.8688, lng: 151.2093, weight: 2 },
+  { name: 'INDIA OFFICE', lat: 19.0760, lng: 72.8777, weight: 2 },
+  { name: 'LATAM DC', lat: -23.5505, lng: -46.6333, weight: 2 },
+  { name: 'AFRICA EDGE', lat: -26.2041, lng: 28.0473, weight: 1 },
+  { name: 'ME OFFICE', lat: 25.2048, lng: 55.2708, weight: 2 },
+  { name: 'CANADA CDN', lat: 45.5017, lng: -73.5673, weight: 1 },
 ];
 
 const ATTACK_TYPES: { type: AttackType; severity: Severity; weight: number; port: number; protocol: string; tactic: string; technique: string }[] = [
@@ -111,7 +122,7 @@ let threatCounter = 0;
 
 export function generateThreat(): ThreatEvent {
   const source = weightedRandom(ATTACK_SOURCES);
-  const target = TARGETS[Math.floor(Math.random() * TARGETS.length)];
+  const target = weightedRandom(TARGETS);
   const attack = weightedRandom(ATTACK_TYPES);
   
   threatCounter++;
@@ -126,8 +137,8 @@ export function generateThreat(): ThreatEvent {
     sourceCity: source.city,
     sourceLat: source.lat + (Math.random() - 0.5) * 2,
     sourceLng: source.lng + (Math.random() - 0.5) * 2,
-    targetLat: target.lat,
-    targetLng: target.lng,
+    targetLat: target.lat + (Math.random() - 0.5) * 0.5,
+    targetLng: target.lng + (Math.random() - 0.5) * 0.5,
     targetName: target.name,
     port: attack.port || Math.floor(Math.random() * 65535),
     protocol: attack.protocol,

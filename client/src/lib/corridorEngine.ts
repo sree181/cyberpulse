@@ -109,9 +109,9 @@ export interface SourceHotspot {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const WINDOW_MS = 5 * 60 * 1000;       // 5-minute rolling window
-const RECENT_MS = 30 * 1000;            // "recent" = last 30 seconds
-const DECAY_MS = 2 * 60 * 1000;         // Corridors fade over 2 minutes after last event
+const WINDOW_MS = 2 * 60 * 1000;       // 2-minute rolling window (shorter = more dynamic)
+const RECENT_MS = 15 * 1000;            // "recent" = last 15 seconds (tighter recency)
+const DECAY_MS = 45 * 1000;             // Corridors fade over 45s after last event (faster turnover)
 const MAX_CORRIDORS = 12;               // Maximum visible corridors (top by volume)
 const PULSE_LIFETIME_MS = 3000;         // How long a pulse animation lives
 

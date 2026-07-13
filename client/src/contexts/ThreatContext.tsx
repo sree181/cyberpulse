@@ -94,6 +94,7 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
   const minuteCountRef = useRef<number[]>([]);
   const realAttackersRef = useRef<any[]>([]);
   const realDataAvailableRef = useRef(false);
+  const attackerIndexRef = useRef(0); // Round-robin index for attacker selection
 
   // Fetch real threat data from blocklist.de via our backend
   const { data: realData, error: realDataError } = trpc.threats.realData.useQuery(undefined, {
@@ -209,9 +210,12 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
       const realAttackers = realAttackersRef.current;
       const useRealData = realDataAvailableRef.current && realAttackers.length > 0;
       
-      // 75% chance to use real attacker data when available
-      if (useRealData && Math.random() < 0.75) {
-        const attacker = realAttackers[Math.floor(Math.random() * realAttackers.length)];
+      // 80% chance to use real attacker data when available
+      if (useRealData && Math.random() < 0.80) {
+        // Round-robin through attackers to ensure all get used before repeating
+        const idx = attackerIndexRef.current % realAttackers.length;
+        attackerIndexRef.current++;
+        const attacker = realAttackers[idx];
         if (attacker.lat && attacker.lng) {
           // Map real attacker data to threat event
           const portBasedAttack = mapPortToAttackType(attacker);
@@ -220,8 +224,8 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
             sourceIp: attacker.ip,
             sourceCountry: attacker.country,
             sourceCity: attacker.city || 'Unknown',
-            sourceLat: attacker.lat + (Math.random() - 0.5) * 0.3,
-            sourceLng: attacker.lng + (Math.random() - 0.5) * 0.3,
+            sourceLat: attacker.lat + (Math.random() - 0.5) * 0.8,
+            sourceLng: attacker.lng + (Math.random() - 0.5) * 0.8,
             ...(portBasedAttack ? { 
               attackType: portBasedAttack.attackType,
               port: portBasedAttack.port,

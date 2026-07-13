@@ -127,29 +127,29 @@ describe('CorridorAggregator', () => {
     expect(state.corridors.length).toBeLessThanOrEqual(12);
   });
 
-  it('decays corridor opacity over 2 minutes after last event', () => {
+  it('decays corridor opacity after recent window', () => {
     const now = Date.now();
-    // Add event 90 seconds ago (within 2-min decay window but past 30s recency)
-    const eventTime = now - 90_000;
+    // Add event 30 seconds ago (past 15s recency, within 45s decay)
+    const eventTime = now - 30_000;
     aggregator.addEvent(makeArc({ timestamp: eventTime }));
     const state = aggregator.getState(now);
     
-    // Should still be visible (within 2-min window, 90s < 120s decay)
+    // Should still be visible (within 45s decay)
     expect(state.corridors.length).toBe(1);
-    // Opacity should be reduced (decaying) — 90s into 120s decay = 75% through
+    // Opacity should be reduced (decaying) — 30s into 45s decay = ~67% through
     expect(state.corridors[0].opacity).toBeLessThan(0.7);
     expect(state.corridors[0].opacity).toBeGreaterThan(0.1);
   });
 
-  it('removes corridors after 2-minute decay window', () => {
+  it('removes corridors after decay window', () => {
     const now = Date.now();
-    // Add event 2 min 10s ago (past the 2-min decay but within 5-min window)
-    const eventTime = now - 130_000;
+    // Add event 50 seconds ago (past the 45s decay)
+    const eventTime = now - 50_000;
     const agg = new CorridorAggregator();
     agg.addEvent(makeArc({ timestamp: eventTime }));
     const state = agg.getState(now);
     
-    // Should be gone (past DECAY_MS of 2 minutes since last event)
+    // Should be gone (past DECAY_MS of 45 seconds since last event)
     expect(state.corridors.length).toBe(0);
   });
 
@@ -195,19 +195,19 @@ describe('CorridorAggregator', () => {
 
   it('recent events have higher opacity than older events', () => {
     const now = Date.now();
-    // Corridor with recent event (5s ago)
+    // Corridor with recent event (5s ago — within 15s recency window)
     const recentAgg = new CorridorAggregator();
     recentAgg.addEvent(makeArc({ timestamp: now - 5_000 }));
     const recentState = recentAgg.getState(now);
     const recentOpacity = recentState.corridors[0].opacity;
 
-    // Corridor with old event (80s ago — past 30s recency, in decay phase)
+    // Corridor with old event (35s ago — past 15s recency, in 45s decay phase)
     const oldAgg = new CorridorAggregator();
-    oldAgg.addEvent(makeArc({ timestamp: now - 80_000 }));
+    oldAgg.addEvent(makeArc({ timestamp: now - 35_000 }));
     const oldState = oldAgg.getState(now);
     const oldOpacity = oldState.corridors[0].opacity;
 
-    // Recent (within 30s) should have higher opacity than decaying (80s old)
+    // Recent (within 15s) should have higher opacity than decaying (35s old)
     expect(recentOpacity).toBeGreaterThan(oldOpacity);
   });
 });
