@@ -161,3 +161,8 @@
 - [x] Ensure no warping or stretching at either resolution
 - [x] Globe stays circular (not elliptical) at ultra-wide aspect ratios
 - [x] Panels use proportional sizing that works at both 32:9 and 24:9
+
+## Flat Map View Fix (July 2026)
+- [x] Replace dot-grid flat map with proper SVG world map showing country outlines
+- [x] Add filled country shapes (dark fill with visible borders)
+- [x] Keep attack arcs rendering on top of the map

@@ -1,39 +1,75 @@
 /**
  * ThreatFlatMap — 2D Flat World Map with Attack Arcs
  * 
- * Inspired by Kaspersky CyberMap / Checkpoint ThreatMap:
- * - Dark flat world map (Mercator projection)
- * - Animated arcs drawn as SVG quadratic curves
- * - Source/target dots with glow effects
- * - Same data source as the 3D globe (activeArcs from ThreatContext)
+ * Uses Natural Earth 110m country outlines (via world-atlas/topojson)
+ * rendered as filled SVG polygons with a dark theme.
+ * Attack arcs are drawn on top as animated SVG curves.
+ * 
+ * Inspired by Kaspersky CyberMap / Checkpoint ThreatMap.
  */
 import { useMemo, useEffect, useRef, useState } from 'react';
 import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
+import * as topojson from 'topojson-client';
+import worldData from 'world-atlas/countries-110m.json';
 
-// Simple Mercator projection: lat/lng → x/y (0-1 range)
+// Convert TopoJSON to GeoJSON features once at module level
+const worldGeo = topojson.feature(
+  worldData as any,
+  (worldData as any).objects.countries
+) as any;
+
+// Mercator projection: lat/lng → x/y (0-1 range)
 function latLngToXY(lat: number, lng: number): [number, number] {
   const x = (lng + 180) / 360;
-  // Mercator y with clamping
   const latRad = (Math.max(-85, Math.min(85, lat)) * Math.PI) / 180;
   const mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));
   const y = 0.5 - mercN / (2 * Math.PI);
   return [x, y];
 }
 
-// Generate a quadratic bezier curve control point (arc above the line)
-function getControlPoint(x1: number, y1: number, x2: number, y2: number): [number, number] {
+// Convert GeoJSON coordinates to SVG path string using Mercator projection
+function geoToSvgPath(geometry: any, width: number, height: number): string {
+  const paths: string[] = [];
+  
+  const projectRing = (ring: number[][]) => {
+    return ring.map(([lng, lat]) => {
+      const [x, y] = latLngToXY(lat, lng);
+      return `${x * width},${y * height}`;
+    });
+  };
+
+  if (geometry.type === 'Polygon') {
+    for (const ring of geometry.coordinates) {
+      const points = projectRing(ring);
+      if (points.length > 0) {
+        paths.push(`M${points[0]} L${points.slice(1).join(' L')} Z`);
+      }
+    }
+  } else if (geometry.type === 'MultiPolygon') {
+    for (const polygon of geometry.coordinates) {
+      for (const ring of polygon) {
+        const points = projectRing(ring);
+        if (points.length > 0) {
+          paths.push(`M${points[0]} L${points.slice(1).join(' L')} Z`);
+        }
+      }
+    }
+  }
+  
+  return paths.join(' ');
+}
+
+// Generate a quadratic bezier arc control point
+function getArcControlPoint(x1: number, y1: number, x2: number, y2: number, height: number): [number, number] {
   const midX = (x1 + x2) / 2;
   const midY = (y1 + y2) / 2;
   const dx = x2 - x1;
   const dy = y2 - y1;
   const dist = Math.sqrt(dx * dx + dy * dy);
-  // Arc height proportional to distance, perpendicular to the line
-  const arcHeight = Math.min(dist * 0.35, 0.15);
-  // Perpendicular direction (rotate 90 degrees, always curve upward)
+  const arcHeight = Math.min(dist * 0.3, height * 0.15);
   const perpX = -dy / dist;
   const perpY = dx / dist;
-  // Choose direction that curves upward (negative y in SVG)
   const sign = perpY < 0 ? 1 : -1;
   return [midX + perpX * arcHeight * sign, midY + perpY * arcHeight * sign];
 }
@@ -70,38 +106,31 @@ export default function ThreatFlatMap() {
 
   const { width, height } = dimensions;
 
+  // Pre-compute country SVG paths
+  const countryPaths = useMemo(() => {
+    return worldGeo.features.map((feature: any) => ({
+      id: feature.id || feature.properties?.name || Math.random().toString(),
+      name: feature.properties?.name || '',
+      path: geoToSvgPath(feature.geometry, width, height),
+    }));
+  }, [width, height]);
+
   // Convert arcs to SVG paths
   const arcPaths = useMemo(() => {
     return activeArcs.map((arc) => {
       let [x1, y1] = latLngToXY(arc.startLat, arc.startLng);
       let [x2, y2] = latLngToXY(arc.endLat, arc.endLng);
 
-      // Scale to pixel coords
       x1 *= width;
       y1 *= height;
       x2 *= width;
       y2 *= height;
 
-      // Handle wrapping (if arc crosses the date line, skip for simplicity)
+      // Skip arcs that cross the date line
       const wrapDist = Math.abs(arc.startLng - arc.endLng);
       if (wrapDist > 180) return null;
 
-      const [cx, cy] = getControlPoint(x1, y1, x2, y2);
-      const controlX = cx * width / width; // already in pixel space from getControlPoint
-      const controlY = cy * height / height;
-
-      // Actually recalculate control point in pixel space
-      const midX = (x1 + x2) / 2;
-      const midY = (y1 + y2) / 2;
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const arcHeight = Math.min(dist * 0.3, height * 0.15);
-      const perpX = -dy / dist;
-      const perpY = dx / dist;
-      const sign = perpY < 0 ? 1 : -1;
-      const cpx = midX + perpX * arcHeight * sign;
-      const cpy = midY + perpY * arcHeight * sign;
+      const [cpx, cpy] = getArcControlPoint(x1, y1, x2, y2, height);
 
       // Age-based opacity
       const age = Date.now() - arc.timestamp;
@@ -165,10 +194,53 @@ export default function ThreatFlatMap() {
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         className="absolute inset-0"
-        style={{ background: '#050d18' }}
+        style={{ background: '#040a12' }}
       >
-        {/* World map outline — simplified continents */}
-        <WorldMapPath width={width} height={height} />
+        {/* Graticule (grid lines) */}
+        <g opacity="0.15">
+          {/* Latitude lines */}
+          {[-60, -30, 0, 30, 60].map(lat => {
+            const [, y] = latLngToXY(lat, 0);
+            return (
+              <line
+                key={`lat-${lat}`}
+                x1={0} y1={y * height}
+                x2={width} y2={y * height}
+                stroke="#3a6080"
+                strokeWidth="0.5"
+                strokeDasharray="4 6"
+              />
+            );
+          })}
+          {/* Longitude lines */}
+          {[-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150].map(lng => {
+            const [x] = latLngToXY(0, lng);
+            return (
+              <line
+                key={`lng-${lng}`}
+                x1={x * width} y1={0}
+                x2={x * width} y2={height}
+                stroke="#3a6080"
+                strokeWidth="0.5"
+                strokeDasharray="4 6"
+              />
+            );
+          })}
+        </g>
+
+        {/* Country shapes — filled polygons */}
+        <g>
+          {countryPaths.map((country: { id: string; name: string; path: string }) => (
+            <path
+              key={country.id}
+              d={country.path}
+              fill="#0f2035"
+              stroke="#1a3a55"
+              strokeWidth="0.5"
+              opacity="0.9"
+            />
+          ))}
+        </g>
 
         {/* Target pressure rings (pulsing) */}
         {targetDots.map((t, i) => (
@@ -208,10 +280,10 @@ export default function ThreatFlatMap() {
               cx={h.x} cy={h.y} r={h.radius}
               fill={h.color}
               opacity={h.intensity * 0.3}
-              filter="url(#glow)"
+              filter="url(#mapGlow)"
             />
             <circle
-              cx={h.x} cy={h.y} r="3"
+              cx={h.x} cy={h.y} r="3.5"
               fill={h.color}
               opacity="0.9"
             />
@@ -226,10 +298,10 @@ export default function ThreatFlatMap() {
               d={a.path}
               fill="none"
               stroke={a.color}
-              strokeWidth={a.severity === 'critical' ? 3 : a.severity === 'high' ? 2.5 : 1.5}
-              opacity={a.opacity * 0.4}
+              strokeWidth={a.severity === 'critical' ? 3.5 : a.severity === 'high' ? 2.5 : 1.5}
+              opacity={a.opacity * 0.35}
               strokeLinecap="round"
-              filter="url(#glow)"
+              filter="url(#mapGlow)"
             />
             {/* Main arc */}
             <path
@@ -250,23 +322,30 @@ export default function ThreatFlatMap() {
             </path>
             {/* Source dot */}
             <circle
-              cx={a.x1} cy={a.y1} r="3"
+              cx={a.x1} cy={a.y1} r="3.5"
               fill={a.color}
               opacity={a.opacity}
-            />
+            >
+              <animate
+                attributeName="r"
+                values="3.5;5;3.5"
+                dur="2s"
+                repeatCount="indefinite"
+              />
+            </circle>
             {/* Target dot */}
             <circle
-              cx={a.x2} cy={a.y2} r="2.5"
+              cx={a.x2} cy={a.y2} r="3"
               fill={a.color}
-              opacity={a.opacity * 0.7}
+              opacity={a.opacity * 0.8}
             />
           </g>
         ))}
 
         {/* SVG filters */}
         <defs>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
+          <filter id="mapGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -304,115 +383,4 @@ export default function ThreatFlatMap() {
       </div>
     </div>
   );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// WORLD MAP SVG PATH — Simplified continent outlines
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function WorldMapPath({ width, height }: { width: number; height: number }) {
-  // Use a simplified world map with country boundaries
-  // This renders a dotted grid pattern for the landmasses (like Checkpoint)
-  const dots = useMemo(() => {
-    // Major landmass approximate boundaries (lat/lng pairs defining rough continent shapes)
-    const landPoints: Array<[number, number]> = [];
-    
-    // Generate a grid of points and check if they're roughly on land
-    const step = 4; // degrees between dots
-    for (let lat = -60; lat <= 72; lat += step) {
-      for (let lng = -180; lng <= 180; lng += step) {
-        if (isLand(lat, lng)) {
-          landPoints.push([lat, lng]);
-        }
-      }
-    }
-    
-    return landPoints.map(([lat, lng]) => {
-      const [x, y] = latLngToXY(lat, lng);
-      return { x: x * width, y: y * height };
-    });
-  }, [width, height]);
-
-  // Also generate grid lines for latitude/longitude
-  const gridLines = useMemo(() => {
-    const lines: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
-    // Latitude lines
-    for (let lat = -60; lat <= 80; lat += 30) {
-      const [, y] = latLngToXY(lat, 0);
-      lines.push({ x1: 0, y1: y * height, x2: width, y2: y * height });
-    }
-    // Longitude lines
-    for (let lng = -180; lng <= 180; lng += 40) {
-      const [x] = latLngToXY(0, lng);
-      lines.push({ x1: x * width, y1: 0, x2: x * width, y2: height });
-    }
-    return lines;
-  }, [width, height]);
-
-  return (
-    <g>
-      {/* Grid lines */}
-      {gridLines.map((line, i) => (
-        <line
-          key={`grid-${i}`}
-          x1={line.x1} y1={line.y1}
-          x2={line.x2} y2={line.y2}
-          stroke="rgba(60, 100, 140, 0.12)"
-          strokeWidth="0.5"
-        />
-      ))}
-      {/* Land dots */}
-      {dots.map((dot, i) => (
-        <circle
-          key={i}
-          cx={dot.x}
-          cy={dot.y}
-          r="1.8"
-          fill="rgba(100, 160, 200, 0.4)"
-        />
-      ))}
-    </g>
-  );
-}
-
-// Simple land detection (rough approximation for visual purposes)
-function isLand(lat: number, lng: number): boolean {
-  // North America
-  if (lat >= 25 && lat <= 72 && lng >= -170 && lng <= -50) {
-    if (lat >= 48 && lng <= -130) return true; // Alaska/Canada west
-    if (lat >= 25 && lat <= 50 && lng >= -130 && lng <= -65) return true; // US/Canada
-    if (lat >= 50 && lng >= -140 && lng <= -55) return true; // Northern Canada
-    return false;
-  }
-  // Central America & Caribbean
-  if (lat >= 7 && lat <= 25 && lng >= -120 && lng <= -60) return true;
-  // South America
-  if (lat >= -56 && lat <= 12 && lng >= -82 && lng <= -34) {
-    if (lng >= -82 && lng <= -34 && lat >= -56) return true;
-  }
-  // Europe
-  if (lat >= 35 && lat <= 72 && lng >= -12 && lng <= 40) return true;
-  // Africa
-  if (lat >= -35 && lat <= 37 && lng >= -18 && lng <= 52) {
-    if (lat >= 20 && lng >= 30 && lng <= 52) return true; // NE Africa
-    if (lat >= -35 && lat <= 20 && lng >= -18 && lng <= 52) return true;
-    if (lat >= 20 && lng >= -18 && lng <= 30) return true; // NW Africa
-    return false;
-  }
-  // Middle East
-  if (lat >= 12 && lat <= 42 && lng >= 25 && lng <= 65) return true;
-  // Russia / Central Asia
-  if (lat >= 40 && lat <= 72 && lng >= 40 && lng <= 180) return true;
-  // South Asia
-  if (lat >= 5 && lat <= 40 && lng >= 65 && lng <= 100) return true;
-  // East Asia
-  if (lat >= 18 && lat <= 55 && lng >= 100 && lng <= 145) return true;
-  // Southeast Asia
-  if (lat >= -10 && lat <= 20 && lng >= 95 && lng <= 140) return true;
-  // Australia
-  if (lat >= -45 && lat <= -10 && lng >= 110 && lng <= 155) return true;
-  // Japan / Korea
-  if (lat >= 30 && lat <= 46 && lng >= 125 && lng <= 146) return true;
-  
-  return false;
 }
