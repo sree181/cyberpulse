@@ -456,3 +456,86 @@ canvas, svg {
 @media (min-width: 1536px) {
   /* XL breakpoint for ultra-wide screens */
 }
+
+
+/* === DISPLAY ENGINEERING: TOUCH & INTERACTION FEEDBACK === */
+
+/* Ripple animation for touch feedback */
+@keyframes ripple-expand {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple-expand 0.8s ease-out forwards;
+}
+
+/* === DISPLAY ENGINEERING: ATTRACT MODE === */
+/* When idle > 60s — more dramatic visuals to draw attention */
+.attract-mode {
+  /* Subtle pulsing border glow */
+}
+
+.attract-mode .cp-panel {
+  transition: all 2s ease-in-out;
+}
+
+/* Globe rotates faster in attract mode */
+.attract-mode [data-globe-container] canvas,
+.attract-mode .globe-container canvas {
+  transition: filter 2s ease-in-out;
+  filter: saturate(1.2) brightness(1.1);
+}
+
+/* === DISPLAY ENGINEERING: DEEP IDLE MODE === */
+/* When idle > 5min — reduce visual intensity for power/comfort */
+.deep-idle-mode {
+  transition: filter 5s ease-in-out;
+}
+
+.deep-idle-mode .cp-panel {
+  opacity: 0.7;
+  transition: opacity 5s ease-in-out;
+}
+
+/* === DISPLAY ENGINEERING: TOUCH TARGET SIZING === */
+/* Ensure all interactive elements meet 44px minimum for large touch screens */
+@media (pointer: coarse) {
+  button, a, [role="button"], .interactive {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Large-format touch screens (> 2560px) need even bigger targets */
+@media (min-width: 2560px) and (pointer: coarse) {
+  button, a, [role="button"], .interactive {
+    min-height: 56px;
+    min-width: 56px;
+  }
+}
+
+/* === DISPLAY ENGINEERING: PERFORMANCE OPTIMIZATIONS === */
+/* GPU-accelerate key animation containers */
+.cp-panel, [data-globe-container], .globe-container {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Reduce motion for accessibility / power saving */
+@media (prefers-reduced-motion: reduce) {
+  .animate-live-pulse,
+  .animate-ambient,
+  .animate-ripple {
+    animation: none;
+  }
+  .attract-mode [data-globe-container] canvas {
+    filter: none;
+  }
+}

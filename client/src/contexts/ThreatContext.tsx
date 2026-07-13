@@ -98,6 +98,8 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
       
       if (realData.isLive) {
         setRealDataStatus(`LIVE — blocklist.de + ip-api.com — ${realData.lastUpdated.slice(0, 19)}`);
+        // Notify DisplayShell that fresh data arrived (for stale-data detection)
+        window.dispatchEvent(new Event('threat-data-updated'));
       } else {
         setRealDataStatus('Cached data — API temporarily unavailable');
       }

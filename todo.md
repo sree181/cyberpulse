@@ -79,3 +79,16 @@
 - [x] Update weekly briefing API to use blocklist.de instead of blocked DShield endpoints
 - [x] Update UI labels from "DShield/ISC" to "blocklist.de"
 - [x] All 18 tests passing with new data sources
+
+## Display Engineering — Large Touch-Mounted Planar Screen (July 2026)
+
+- [x] Kiosk Mode: Fullscreen API with auto-enter, F11 fallback, browser-chrome hiding
+- [x] Screensaver Prevention: Wake Lock API + invisible video fallback for older browsers
+- [x] Auto-Recovery: Error boundary with automatic page reload on crash (exponential backoff)
+- [x] Touch Gestures: Swipe navigation between panels, pinch-to-zoom on globe, long-press for details
+- [x] Attract Mode: Enhanced animations when idle >60s (larger arcs, faster rotation, dramatic zoom sweeps)
+- [x] Ambient Awareness: Time-of-day brightness adaptation (dimmer at night for hallway comfort)
+- [x] Operator Panel: Hidden admin overlay (triple-tap corner) for display management, refresh, diagnostics
+- [x] Connection Resilience: Auto-reconnect with visual indicator, stale data detection, graceful degradation
+- [x] Performance Monitor: FPS counter, memory usage, auto-quality reduction if dropping below 30fps
+- [x] Touch Feedback: Ripple effects, haptic-style visual feedback on touch interactions

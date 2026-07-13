@@ -299,8 +299,46 @@ export default function ThreatGlobe() {
     window.addEventListener('resize', handleResize);
     handleResize();
 
+    // ─── Display Engineering: Attract Mode Globe Speed ───────────────────
+    // Listen for CSS custom property changes to adjust globe rotation speed
+    const attractObserver = new MutationObserver(() => {
+      const speed = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--globe-rotate-speed') || '0.2');
+      const ctrl = globeRef.current?.controls();
+      if (ctrl) {
+        ctrl.autoRotateSpeed = speed;
+      }
+    });
+    attractObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+
+    // ─── Display Engineering: Pinch Gesture for Globe Zoom ───────────────
+    const handlePinch = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!globeRef.current) return;
+      const pov = globeRef.current.pointOfView();
+      const zoomDelta = detail.type === 'pinch_out' ? -0.3 : 0.3;
+      const newAlt = Math.max(0.4, Math.min(4.0, pov.altitude + zoomDelta));
+      globeRef.current.pointOfView({ ...pov, altitude: newAlt }, 500);
+    };
+    window.addEventListener('display-pinch', handlePinch);
+
+    // ─── Display Engineering: Long-press for nearest arc inspection ──────
+    const handleLongPress = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      // Find the nearest arc to the touch point and zoom to it
+      const arcs = activeArcsRef.current;
+      if (arcs.length > 0) {
+        // Pick a random critical/high arc for inspection
+        const target = arcs.find(a => a.severity === 'critical') || arcs.find(a => a.severity === 'high') || arcs[0];
+        if (target) zoomToArc(target);
+      }
+    };
+    window.addEventListener('display-long-press', handleLongPress);
+
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('display-pinch', handlePinch);
+      window.removeEventListener('display-long-press', handleLongPress);
+      attractObserver.disconnect();
       if (autoZoomTimerRef.current) clearInterval(autoZoomTimerRef.current);
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
