@@ -109,3 +109,16 @@
 - [x] Web Audio: Alert tone escalation for critical threats
 - [x] Sound Toggle: Header button to enable/disable audio
 - [x] Hollywood CSS: Bloom glow, chromatic-hover, holographic shimmer, gradient-border-flow
+
+## Arc Redesign — From Ornamental to Meaningful (July 2026)
+
+- [ ] Corridor Aggregator: Group events by source_country→target into rolling 5-min corridors
+- [ ] Arc WIDTH = corridor volume (log scale, thin=few events, thick=campaign)
+- [ ] Arc OPACITY/BRIGHTNESS = recency (last 30s bright, older fades over 2 min)
+- [ ] Arc COLOR = dominant severity (critical=red, high=amber, medium=cyan)
+- [ ] Arc SPEED = urgency (critical corridors pulse faster)
+- [ ] Source Heatmap Glow: Radial glow at countries with many attackers
+- [ ] Target Pressure Rings: Dynamic pulse rate/size based on actual attack volume
+- [ ] Temporal Decay: Corridors persist and fade over 2 min instead of vanishing at 15s
+- [ ] Event Pulses: Single bright pulse travels along corridor when new attack arrives
+- [ ] Remove spaghetti: Max 12 corridors visible, not 60 individual arcs

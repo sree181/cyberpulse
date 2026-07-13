@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, ty
 import { generateThreat, type ThreatEvent, type Severity, type AttackType } from '@/lib/threatEngine';
 import { trpc } from '@/lib/trpc';
 import { BRANDING } from '@/lib/branding';
+import { CorridorAggregator, type Corridor, type CorridorPulse, type TargetPressure, type SourceHotspot } from '@/lib/corridorEngine';
 
 interface ThreatStats {
   total: number;
@@ -34,6 +35,10 @@ interface ThreatContextType {
   recentThreats: ThreatEvent[];
   stats: ThreatStats;
   activeArcs: ArcData[];
+  corridors: Corridor[];
+  corridorPulses: CorridorPulse[];
+  targetPressures: TargetPressure[];
+  sourceHotspots: SourceHotspot[];
   tacticCounts: Record<string, number>;
   timeSeries: TimeSeriesPoint[];
   portActivity: PortActivity[];
@@ -72,6 +77,11 @@ export function useThreatData() {
 export function ThreatProvider({ children }: { children: ReactNode }) {
   const [threats, setThreats] = useState<ThreatEvent[]>([]);
   const [activeArcs, setActiveArcs] = useState<ArcData[]>([]);
+  const [corridors, setCorridors] = useState<Corridor[]>([]);
+  const [corridorPulses, setCorridorPulses] = useState<CorridorPulse[]>([]);
+  const [targetPressures, setTargetPressures] = useState<TargetPressure[]>([]);
+  const [sourceHotspots, setSourceHotspots] = useState<SourceHotspot[]>([]);
+  const corridorAggregatorRef = useRef(new CorridorAggregator());
   const [tacticCounts, setTacticCounts] = useState<Record<string, number>>({});
   const [timeSeries, setTimeSeries] = useState<TimeSeriesPoint[]>([]);
   const [portActivity, setPortActivity] = useState<PortActivity[]>([]);
@@ -177,6 +187,13 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
       return next.slice(-60);
     });
 
+    // Feed the corridor aggregator
+    const { corridors: updatedCorridors, pulse } = corridorAggregatorRef.current.addEvent(newArc);
+    setCorridors(updatedCorridors);
+    if (pulse) {
+      setCorridorPulses(prev => [...prev, pulse].slice(-20));
+    }
+
     setTimeout(() => {
       setActiveArcs(prev => prev.filter(a => a.id !== threat.id));
     }, 15000);
@@ -242,9 +259,22 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
 
   const recentThreats = threats.slice(0, 30);
 
+  // Periodic corridor state refresh (for decay/pressure updates)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const state = corridorAggregatorRef.current.getState();
+      setCorridors(state.corridors);
+      setCorridorPulses(state.pulses);
+      setTargetPressures(state.targets);
+      setSourceHotspots(state.hotspots);
+    }, 2000); // Refresh every 2 seconds for smooth decay
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ThreatContext.Provider value={{ 
-      threats, recentThreats, stats, activeArcs, tacticCounts,
+      threats, recentThreats, stats, activeArcs, corridors, corridorPulses,
+      targetPressures, sourceHotspots, tacticCounts,
       timeSeries, portActivity, isLive, realDataStatus,
       selectedArc, setSelectedArc
     }}>
