@@ -148,3 +148,9 @@
 - [x] Make all info panels minimizable/collapsible (reduce information overload)
 - [x] Add top attack source countries panel (like Kaspersky CyberMap ranking)
 - [x] Add top target countries panel (like Kaspersky CyberMap ranking)
+
+## Ultra-Wide Aspect Ratio Fix (July 2026)
+- [x] Fix dashboard stretching/warping on ultra-wide monitors (32:9, 21:9)
+- [x] Add max-width constraints to side panels so they don't over-stretch
+- [x] Ensure globe maintains circular aspect ratio on any screen width
+- [x] Prevent horizontal over-stretching of bottom panels

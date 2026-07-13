@@ -32,11 +32,13 @@ import { SoundEngineProvider } from '@/components/SoundEngine';
 import FuiPanel from '@/components/FuiPanel';
 import CollapsiblePanel from '@/components/CollapsiblePanel';
 import TopCountries from '@/components/TopCountries';
+import { useUltraWide } from '@/hooks/useUltraWide';
 
 type ViewMode = 'globe' | 'map';
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('globe');
+  const isUltraWide = useUltraWide();
 
   return (
     <ThreatProvider>
@@ -55,14 +57,14 @@ export default function Home() {
               <HeaderBar />
             </div>
 
-            {/* MAIN CONTENT — Responsive layout */}
-            <div className="flex-1 flex flex-col gap-[0.75vw] p-[0.75vw] pt-0 overflow-hidden relative z-10">
+            {/* MAIN CONTENT — Responsive layout with max-width to prevent ultra-wide stretching */}
+            <div className="flex-1 flex flex-col gap-[0.75vw] p-[0.75vw] pt-0 overflow-hidden relative z-10 max-w-[3200px] mx-auto w-full">
               
               {/* TOP ROW: Left sidebar + Globe/Map area */}
               <div className="flex-1 flex flex-col xl:flex-row gap-[0.75vw] overflow-hidden">
                 
-                {/* LEFT SIDEBAR — Compact metrics + MITRE */}
-                <div className="w-full xl:w-[12vw] xl:min-w-[160px] xl:max-w-[240px] xl:shrink-0 h-[12vh] xl:h-auto flex xl:flex-col gap-[0.75vw]">
+                {/* LEFT SIDEBAR — Compact metrics + MITRE (fixed width, no stretching) */}
+                <div className="w-full xl:w-[220px] 2xl:w-[260px] xl:shrink-0 h-[12vh] xl:h-auto flex xl:flex-col gap-[0.75vw]">
                   <FuiPanel className="flex-1 lg:flex-[3] overflow-hidden" delay={0.2} cornerSize={8}>
                     <CollapsiblePanel title="Analytics">
                       <div className="cp-panel h-full">
@@ -89,7 +91,7 @@ export default function Home() {
                 {/* CENTER — Globe/Map (hero) + Time Series + Bottom panels */}
                 <div className="flex-1 flex flex-col gap-[0.75vw] overflow-hidden">
                   {/* Globe/Map — dominant visual with toggle */}
-                  <div className="relative flex-[5] overflow-hidden">
+                  <div className="relative flex-[7] overflow-hidden min-h-[200px]">
                     <FuiPanel className="h-full" delay={0} cornerSize={14} glowColor="var(--color-cp-accent)">
                       <div className="cp-panel relative h-full" style={{ background: 'oklch(0.12 0.04 255)' }}>
                         {viewMode === 'globe' && <HudRings />}
@@ -101,21 +103,23 @@ export default function Home() {
                     {/* View Toggle — OUTSIDE the globe container to avoid Three.js event capture */}
                     <ViewToggle viewMode={viewMode} onChange={setViewMode} />
                   </div>
-                  {/* Time Series — subtle, integrated */}
-                  <div className="h-[5.5vh] min-h-[70px] cp-panel shrink-0 overflow-hidden">
-                    <TimeSeriesChart />
-                  </div>
-                  {/* Bottom row: Spotlight + Briefing */}
-                  <div className="flex-[2] flex gap-[0.75vw] overflow-hidden">
+                  {/* Time Series — subtle, integrated (hidden on ultra-wide to save vertical space) */}
+                  {!isUltraWide && (
+                    <div className="h-[4vh] min-h-[40px] max-h-[80px] cp-panel shrink-0 overflow-hidden">
+                      <TimeSeriesChart />
+                    </div>
+                  )}
+                  {/* Bottom row: Spotlight + Briefing (auto-collapsed on ultra-wide) */}
+                  <div className={`${isUltraWide ? 'flex-[1]' : 'flex-[2]'} min-h-[80px] flex gap-[0.75vw] overflow-hidden`}>
                     <FuiPanel className="flex-1 overflow-hidden" delay={0.8} cornerSize={8}>
-                      <CollapsiblePanel title="CVE Spotlight">
+                      <CollapsiblePanel title="CVE Spotlight" defaultCollapsed={isUltraWide}>
                         <div className="cp-panel h-full">
                           <ThreatSpotlight />
                         </div>
                       </CollapsiblePanel>
                     </FuiPanel>
                     <FuiPanel className="flex-1 overflow-hidden" delay={1.0} cornerSize={8}>
-                      <CollapsiblePanel title="Weekly Briefing">
+                      <CollapsiblePanel title="Weekly Briefing" defaultCollapsed={isUltraWide}>
                         <div className="cp-panel h-full">
                           <WeeklyBriefing />
                         </div>
@@ -124,8 +128,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* RIGHT SIDEBAR — Port Activity + Threat Feed */}
-                <div className="hidden xl:flex w-[14vw] min-w-[200px] max-w-[300px] shrink-0 flex-col gap-[0.75vw]">
+                {/* RIGHT SIDEBAR — Port Activity + Threat Feed (fixed width, no stretching) */}
+                <div className="hidden xl:flex w-[240px] 2xl:w-[280px] shrink-0 flex-col gap-[0.75vw]">
                   <FuiPanel className="flex-[2] overflow-hidden" delay={0.3} cornerSize={8}>
                     <CollapsiblePanel title="Port Activity">
                       <div className="cp-panel h-full">
@@ -144,7 +148,7 @@ export default function Home() {
               </div>
 
               {/* BOTTOM ROW: Port Activity + Threat Feed (shown on smaller screens) */}
-              <div className="flex xl:hidden gap-[0.75vw] h-[16vh] overflow-hidden">
+              <div className="flex xl:hidden gap-[0.75vw] h-[14vh] min-h-[100px] overflow-hidden">
                 <FuiPanel className="flex-1 overflow-hidden" delay={0.4} cornerSize={8}>
                   <CollapsiblePanel title="Port Activity">
                     <div className="cp-panel h-full">

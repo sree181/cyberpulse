@@ -361,6 +361,34 @@
   }
 }
 
+/* === ULTRA-WIDE ASPECT RATIO HANDLING (21:9, 32:9, 48:9) === */
+/* On ultra-wide, the viewport is very short — prioritize globe, shrink bottom panels */
+@media (min-aspect-ratio: 21/9) {
+  /* Reduce font sizes slightly to fit more content vertically */
+  .cp-panel {
+    font-size: 0.85em;
+  }
+  .cp-panel-header {
+    padding: 0.4rem 0.75rem;
+  }
+  .cp-panel-body {
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+/* Super ultra-wide (32:9 and wider) — aggressively compact bottom panels */
+@media (min-aspect-ratio: 28/9) {
+  .cp-panel {
+    font-size: 0.8em;
+  }
+  .cp-panel-header {
+    padding: 0.3rem 0.6rem;
+  }
+  .cp-panel-body {
+    padding: 0.3rem 0.6rem;
+  }
+}
+
 /* Ensure crisp rendering on high-DPI wall panels */
 @media (min-resolution: 2dppx) {
   body {

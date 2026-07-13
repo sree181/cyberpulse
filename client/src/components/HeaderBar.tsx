@@ -40,7 +40,7 @@ export default function HeaderBar() {
         : 'bg-neutral-500';
 
   return (
-    <header className="h-[clamp(3.5rem,4vh,6rem)] shrink-0 flex items-center justify-between px-[clamp(1rem,1.5vw,3rem)] bg-[var(--color-cp-elevated)] border-b border-[var(--color-cp-border)] shadow-sm relative z-20">
+    <header className="h-[clamp(3.5rem,4vh,6rem)] shrink-0 flex items-center justify-between px-[clamp(1rem,1.5vw,3rem)] bg-[var(--color-cp-elevated)] border-b border-[var(--color-cp-border)] shadow-sm relative z-20 max-w-[3200px] mx-auto w-full">
       
       {/* Left: Auburn Logo + BASY Branding — PROMINENT */}
       <div className="flex items-center gap-5">
