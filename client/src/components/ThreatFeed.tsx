@@ -48,19 +48,9 @@ function ThreatEntry({ threat, isNew }: { threat: ThreatEvent; isNew: boolean })
         </span>
       </div>
       <div className="mt-1 ml-3.5 flex items-center gap-1.5 text-caption text-[var(--color-cp-text-secondary)]">
-        {/* IP address — decodes from hex for new entries */}
+        {/* IP address — always readable, no scramble */}
         <span className="font-data tabular-nums">
-          {isNew ? (
-            <TextScramble 
-              text={threat.sourceIp} 
-              mode="hex" 
-              duration={0.8} 
-              delay={0.2}
-              trigger={threat.id}
-            />
-          ) : (
-            threat.sourceIp
-          )}
+          {threat.sourceIp}
         </span>
         <span className="text-[var(--color-cp-text-tertiary)]">&rarr;</span>
         <span className="truncate">{threat.targetName}</span>

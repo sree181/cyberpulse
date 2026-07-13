@@ -122,3 +122,9 @@
 - [x] Temporal Decay: Corridors persist and fade over 2 min instead of vanishing at 15s
 - [x] Event Pulses: Single bright pulse travels along corridor when new attack arrives
 - [x] Remove spaghetti: Max 12 corridors visible, not 60 individual arcs
+
+## Arc-Feed Sync Fix (July 2026)
+- [ ] Globe PRIMARY layer: render activeArcs directly (1 arc = 1 feed event, exact source→target coords)
+- [ ] Globe SECONDARY layer: keep corridors as faint background beams (reduced opacity)
+- [ ] Remove TextScramble from IP addresses in threat feed (makes feed unreadable)
+- [ ] Keep TextScramble only on attack type (short, decorative, resolves quickly)

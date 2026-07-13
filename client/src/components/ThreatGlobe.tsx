@@ -1,20 +1,19 @@
 /**
- * ThreatGlobe — Corridor-Based Intelligence Visualization
+ * ThreatGlobe — Event-Level Intelligence Visualization
  * 
- * REDESIGN: From ornamental spaghetti to meaningful data encoding.
+ * REDESIGN: Each arc on the globe corresponds EXACTLY to a threat feed entry.
  * 
  * Visual Architecture:
- * - PRIMARY LAYER: Attack Corridors (source_country → target)
- *   Width = volume (log scale), Color = severity, Opacity = recency
- * - SECONDARY LAYER: Event Pulses (bright dots traveling along corridors)
- *   One pulse per new event, lives 3 seconds
+ * - PRIMARY LAYER: Individual Event Arcs (1 arc = 1 threat feed entry)
+ *   Each arc uses the EXACT source→target coordinates from the event.
+ *   Color = attack type, Stroke = severity, Animation = directional pulse
+ * - SECONDARY LAYER: Corridor Beams (faint background showing aggregate patterns)
+ *   Very low opacity, wide, static — shows "where campaigns are happening"
  * - TARGET RINGS: Dynamic pressure indicators (pulse rate = attack volume)
  * - SOURCE HOTSPOTS: Glow at countries with concentrated attackers
  * 
- * Information Hierarchy:
- * - Hallway (5m): "3 hot corridors, biggest from East Asia"
- * - Stops (2m): "That thick red beam is SSH brute force, 40+ events/min"
- * - Touches: "IP 45.33.32.156 in Shanghai, targeting port 22"
+ * Key Principle: If you see "SSH Brute Force from 45.33.32.156 → EU-CENTRAL DC :22"
+ * in the threat feed, you MUST see an arc from Shanghai to Frankfurt on the globe.
  */
 import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import Globe from 'globe.gl';
@@ -22,14 +21,15 @@ import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
 import { MapView } from '@/components/Map';
 import { trpc } from '@/lib/trpc';
-import type { Corridor, CorridorPulse, TargetPressure } from '@/lib/corridorEngine';
+import type { Corridor } from '@/lib/corridorEngine';
 
-// Severity legend (replaces attack-type legend — severity is what matters at globe scale)
-const SEVERITY_LEGEND = [
-  { label: 'Critical', color: '#FF2D2D', description: 'Active campaign' },
-  { label: 'High', color: '#FF8C00', description: 'Sustained attack' },
-  { label: 'Medium', color: '#00D4FF', description: 'Probing' },
-  { label: 'Low', color: '#4A9EFF', description: 'Background noise' },
+// Attack type legend (matches threat feed colors)
+const ATTACK_TYPE_LEGEND = [
+  { label: 'SSH Brute Force', color: BRANDING.attackColors['SSH Brute Force'] },
+  { label: 'Port Scan', color: BRANDING.attackColors['Port Scan'] },
+  { label: 'SQL Injection', color: BRANDING.attackColors['SQL Injection'] },
+  { label: 'DDoS', color: BRANDING.attackColors['DDoS'] },
+  { label: 'Malware C2', color: BRANDING.attackColors['Malware C2'] },
 ];
 
 // Dark map style for the detail view
@@ -47,7 +47,7 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3a5a7a' }] },
 ];
 
-// Globe arc datum for the corridor-based rendering
+// Globe arc datum
 interface GlobeArcDatum {
   startLat: number;
   startLng: number;
@@ -60,10 +60,10 @@ interface GlobeArcDatum {
   animateTime: number;
   dashInitialGap: number;
   id: string;
-  layer: 'corridor' | 'pulse';
+  layer: 'event' | 'corridor';
   // For click/drill-down
-  corridor?: Corridor;
   originalArc?: ArcData;
+  corridor?: Corridor;
 }
 
 export default function ThreatGlobe() {
@@ -74,44 +74,42 @@ export default function ThreatGlobe() {
   const isZoomedRef = useRef(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomedArc, setZoomedArc] = useState<ArcData | null>(null);
-  const [zoomedCorridor, setZoomedCorridor] = useState<Corridor | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
   const mapMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   
-  const { activeArcs, corridors, corridorPulses, targetPressures, sourceHotspots, setSelectedArc } = useThreatData();
+  const { activeArcs, corridors, targetPressures, sourceHotspots, setSelectedArc } = useThreatData();
 
   // Default camera position
   const defaultPOV = { lat: 25, lng: -10, altitude: 2.0 };
 
   /**
-   * CORRIDOR-BASED ARC DATASET
+   * EVENT-LEVEL ARC DATASET
    * 
-   * Each corridor produces TWO entries:
-   * 1. A "corridor beam" — width proportional to volume, opacity to recency
-   *    This is the PRIMARY visual — the "I can see 3 hot corridors" layer
-   * 2. Event pulses — thin bright segments traveling along the corridor
-   *    These show "something just happened" without spaghetti
+   * PRIMARY LAYER: Each activeArc = one visible arc on the globe.
+   * These use the EXACT coordinates from the threat event.
+   * The threat feed shows "IP → Target :port" and the globe shows
+   * the corresponding arc from that IP's location to that target's location.
+   * 
+   * SECONDARY LAYER: Corridors as faint background beams (very low opacity).
+   * These show aggregate patterns but don't compete with individual events.
    */
   const combinedArcs = useMemo(() => {
     const result: GlobeArcDatum[] = [];
     
-    // Layer 1: Corridor beams (the meaningful aggregated flows)
+    // Layer 1 (BACKGROUND): Corridor beams — very faint, wide, showing aggregate patterns
     corridors.forEach((corridor) => {
-      // Width encodes volume, opacity encodes recency
-      const baseOpacity = Math.round(corridor.opacity * 255).toString(16).padStart(2, '0');
-      const dimOpacity = Math.round(corridor.opacity * 0.4 * 255).toString(16).padStart(2, '0');
-      
+      // Very low opacity so they don't compete with event arcs
       result.push({
         startLat: corridor.sourceLat,
         startLng: corridor.sourceLng,
         endLat: corridor.targetLat,
         endLng: corridor.targetLng,
-        color: [`${corridor.color}${baseOpacity}`, `${corridor.color}${dimOpacity}`],
-        stroke: corridor.width, // Width = volume (0.3 to 4.0)
-        dashLength: 1,          // Full length visible — solid beam
+        color: [`${corridor.color}18`, `${corridor.color}08`], // Very faint (0.09 → 0.03 opacity)
+        stroke: corridor.width * 1.5, // Wide but transparent — "ghost corridor"
+        dashLength: 1,
         dashGap: 0,
-        animateTime: 0,         // Static — the beam persists
+        animateTime: 0, // Static background
         dashInitialGap: 0,
         id: `corridor-${corridor.id}`,
         layer: 'corridor',
@@ -119,35 +117,47 @@ export default function ThreatGlobe() {
       });
     });
 
-    // Layer 2: Event pulses (thin bright dots traveling along corridors)
-    corridorPulses.forEach((pulse) => {
-      // Find the corridor this pulse belongs to
-      const corridor = corridors.find(c => c.id === pulse.corridorId);
-      if (!corridor) return;
+    // Layer 2 (PRIMARY): Individual event arcs — each one maps 1:1 to a threat feed entry
+    activeArcs.forEach((arc) => {
+      // Directional animation: bright head traveling from source to target
+      const severityStroke = arc.severity === 'critical' ? 2.5 
+        : arc.severity === 'high' ? 1.8 
+        : 1.0;
+      
+      // Animation speed based on severity (critical = fast, low = slow)
+      const animSpeed = arc.severity === 'critical' ? 800 
+        : arc.severity === 'high' ? 1200 
+        : arc.severity === 'medium' ? 1800 
+        : 2400;
 
-      const pulseColor = corridor.color;
+      // Age-based opacity: newer arcs are brighter, older ones fade
+      const age = Date.now() - arc.timestamp;
+      const maxAge = 15000; // arcs live 15 seconds
+      const ageFactor = Math.max(0.3, 1 - (age / maxAge) * 0.7);
+      const headOpacity = Math.round(ageFactor * 255).toString(16).padStart(2, '0');
+      const tailOpacity = Math.round(ageFactor * 0.4 * 255).toString(16).padStart(2, '0');
+
       result.push({
-        startLat: corridor.sourceLat,
-        startLng: corridor.sourceLng,
-        endLat: corridor.targetLat,
-        endLng: corridor.targetLng,
-        color: [`${pulseColor}FF`, `${pulseColor}66`], // Bright head, dim tail
-        stroke: Math.min(corridor.width * 0.6, 1.5), // Thinner than corridor
-        dashLength: 0.15,       // Short segment — a "data packet"
-        dashGap: 0.85,
-        animateTime: corridor.pulseSpeed, // Speed encodes urgency
-        dashInitialGap: Math.random(),
-        id: `pulse-${pulse.id}`,
-        layer: 'pulse',
-        originalArc: pulse.arc,
-        corridor,
+        startLat: arc.startLat,
+        startLng: arc.startLng,
+        endLat: arc.endLat,
+        endLng: arc.endLng,
+        color: [`${arc.color}${headOpacity}`, `${arc.color}${tailOpacity}`],
+        stroke: severityStroke,
+        dashLength: 0.4,       // Visible segment (projectile)
+        dashGap: 0.2,          // Gap between segments
+        animateTime: animSpeed, // Directional animation speed
+        dashInitialGap: Math.random() * 0.5, // Stagger so arcs don't all sync
+        id: `event-${arc.id}`,
+        layer: 'event',
+        originalArc: arc,
       });
     });
 
     return result;
-  }, [corridors, corridorPulses]);
+  }, [activeArcs, corridors]);
 
-  // Source hotspot glow elements — radial CSS glow at countries with concentrated attackers
+  // Source hotspot glow elements
   const hotspotElements = useMemo(() => {
     return sourceHotspots.map(hotspot => ({
       lat: hotspot.lat,
@@ -176,10 +186,9 @@ export default function ThreatGlobe() {
     return el;
   }, []);
 
-  // Dynamic target rings — pulse rate/size based on actual attack pressure
+  // Dynamic target rings
   const ringsData = useMemo(() => {
     if (targetPressures.length === 0) {
-      // Fallback: subtle static rings at known targets
       return [
         { lat: 38.9072, lng: -77.0369, color: 'rgba(221, 85, 12, 0.08)', maxR: 1.5, propagationSpeed: 0.8, repeatPeriod: 2500 },
         { lat: 37.3861, lng: -122.0839, color: 'rgba(221, 85, 12, 0.08)', maxR: 1.5, propagationSpeed: 0.8, repeatPeriod: 2500 },
@@ -193,51 +202,18 @@ export default function ThreatGlobe() {
       lng: target.lng,
       color: target.color,
       maxR: target.maxRadius,
-      propagationSpeed: 2.5 - target.pressure * 1.8, // Higher pressure = faster propagation
+      propagationSpeed: 2.5 - target.pressure * 1.8,
       repeatPeriod: target.pulseRate,
     }));
   }, [targetPressures]);
 
-  // Zoom to a corridor (shows the most recent event from that corridor)
-  const zoomToCorridor = useCallback((corridor: Corridor) => {
-    if (!globeRef.current) return;
-    
-    const arc = corridor.recentEvents[corridor.recentEvents.length - 1];
-    if (!arc) return;
-
-    isZoomedRef.current = true;
-    setIsZoomed(true);
-    setZoomedArc(arc);
-    setZoomedCorridor(corridor);
-    setSelectedArc(arc);
-    setMapLoading(true);
-    
-    setTimeout(() => setShowMap(true), 800);
-
-    globeRef.current.pointOfView(
-      { lat: corridor.sourceLat, lng: corridor.sourceLng, altitude: 0.6 },
-      1500
-    );
-
-    const controls = globeRef.current.controls();
-    if (controls) {
-      controls.autoRotate = false;
-    }
-
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-    inactivityTimerRef.current = setTimeout(() => {
-      returnToOverview();
-    }, 15000);
-  }, []);
-
-  // Zoom to a specific arc (for pulse clicks)
+  // Zoom to a specific arc
   const zoomToArc = useCallback((arc: ArcData) => {
     if (!globeRef.current) return;
     
     isZoomedRef.current = true;
     setIsZoomed(true);
     setZoomedArc(arc);
-    setZoomedCorridor(null);
     setSelectedArc(arc);
     setMapLoading(true);
     
@@ -266,7 +242,6 @@ export default function ThreatGlobe() {
     isZoomedRef.current = false;
     setIsZoomed(false);
     setZoomedArc(null);
-    setZoomedCorridor(null);
     setShowMap(false);
     setMapLoading(true);
     setSelectedArc(null);
@@ -291,30 +266,28 @@ export default function ThreatGlobe() {
   }, [setSelectedArc]);
 
   // Stable refs for auto-zoom
-  const corridorsRef = useRef<Corridor[]>([]);
-  useEffect(() => { corridorsRef.current = corridors; }, [corridors]);
   const activeArcsRef = useRef<ArcData[]>([]);
   useEffect(() => { activeArcsRef.current = activeArcs; }, [activeArcs]);
 
-  // Auto-zoom on the hottest corridor every 30s
+  // Auto-zoom on critical events every 30s
   useEffect(() => {
     autoZoomTimerRef.current = setInterval(() => {
       if (isZoomedRef.current) return;
 
-      const currentCorridors = corridorsRef.current;
-      // Find the most critical corridor
-      const criticalCorridor = currentCorridors.find(c => c.dominantSeverity === 'critical')
-        || currentCorridors.find(c => c.dominantSeverity === 'high' && c.eventCount > 5);
+      const arcs = activeArcsRef.current;
+      // Find the most critical recent arc
+      const criticalArc = arcs.find(a => a.severity === 'critical')
+        || arcs.find(a => a.severity === 'high');
       
-      if (criticalCorridor) {
-        zoomToCorridor(criticalCorridor);
+      if (criticalArc) {
+        zoomToArc(criticalArc);
       }
     }, 30000);
 
     return () => {
       if (autoZoomTimerRef.current) clearInterval(autoZoomTimerRef.current);
     };
-  }, [zoomToCorridor]);
+  }, [zoomToArc]);
 
   // Initialize globe
   useEffect(() => {
@@ -336,11 +309,9 @@ export default function ThreatGlobe() {
       .arcDashAnimateTime((d: any) => d.animateTime)
       .arcAltitudeAutoScale(0.35)
       .arcCurveResolution(64)
-      // Click handler — corridors and pulses both clickable
+      // Click handler — event arcs are clickable
       .onArcClick((arc: any) => {
-        if (arc && arc.layer === 'corridor' && arc.corridor) {
-          zoomToCorridor(arc.corridor);
-        } else if (arc && arc.layer === 'pulse' && arc.originalArc) {
+        if (arc && arc.layer === 'event' && arc.originalArc) {
           zoomToArc(arc.originalArc);
         }
       })
@@ -401,14 +372,14 @@ export default function ThreatGlobe() {
     };
     window.addEventListener('display-pinch', handlePinch);
 
-    // ─── Display Engineering: Long-press for corridor inspection ──────
+    // ─── Display Engineering: Long-press for arc inspection ──────
     const handleLongPress = () => {
-      const currentCorridors = corridorsRef.current;
-      if (currentCorridors.length > 0) {
-        const target = currentCorridors.find(c => c.dominantSeverity === 'critical') 
-          || currentCorridors.find(c => c.dominantSeverity === 'high') 
-          || currentCorridors[0];
-        if (target) zoomToCorridor(target);
+      const arcs = activeArcsRef.current;
+      if (arcs.length > 0) {
+        const target = arcs.find(a => a.severity === 'critical') 
+          || arcs.find(a => a.severity === 'high') 
+          || arcs[0];
+        if (target) zoomToArc(target);
       }
     };
     window.addEventListener('display-long-press', handleLongPress);
@@ -421,7 +392,7 @@ export default function ThreatGlobe() {
       if (autoZoomTimerRef.current) clearInterval(autoZoomTimerRef.current);
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
-  }, [ringsData, zoomToArc, zoomToCorridor]);
+  }, [ringsData, zoomToArc]);
 
   // Update arc, point, and ring data
   useEffect(() => {
@@ -502,55 +473,48 @@ export default function ThreatGlobe() {
             />
           )}
 
-          {/* Info card with corridor context */}
+          {/* Info card with event details */}
           {zoomedArc && (
-            <ZoomedInfoCard arc={zoomedArc} corridor={zoomedCorridor} />
+            <ZoomedInfoCard arc={zoomedArc} />
           )}
         </div>
       </div>
 
-      {/* Corridor Legend — bottom left (only when not zoomed) */}
+      {/* Attack Type Legend — bottom left (only when not zoomed) */}
       {!isZoomed && (
         <div className="absolute bottom-3 left-4 z-10">
           <div className="flex flex-col gap-1.5">
             <div className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-60 uppercase tracking-wider mb-0.5">
-              Corridor Severity
+              Attack Type
             </div>
-            {SEVERITY_LEGEND.map(item => (
+            {ATTACK_TYPE_LEGEND.map(item => (
               <div key={item.label} className="flex items-center gap-2">
-                {/* Width indicator bar */}
-                <div className="relative w-6 h-[3px] rounded-full overflow-hidden">
-                  <div 
-                    className="absolute inset-0 rounded-full"
-                    style={{ 
-                      backgroundColor: item.color,
-                      boxShadow: `0 0 4px ${item.color}66`,
-                      opacity: item.label === 'Critical' ? 1 : item.label === 'High' ? 0.8 : 0.6,
-                    }}
-                  />
-                </div>
+                <div 
+                  className="w-5 h-[2px] rounded-full"
+                  style={{ 
+                    backgroundColor: item.color,
+                    boxShadow: `0 0 4px ${item.color}66`,
+                  }}
+                />
                 <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-70">
                   {item.label}
-                </span>
-                <span className="font-data text-[8px] text-[var(--color-cp-text-tertiary)] opacity-40">
-                  {item.description}
                 </span>
               </div>
             ))}
           </div>
-          {/* Corridor count and width explanation */}
+          {/* Active event count */}
           <div className="mt-2 flex flex-col gap-0.5">
             <div className="font-data text-caption text-[var(--color-cp-text-tertiary)] tabular-nums opacity-50">
-              {corridors.length} active corridor{corridors.length !== 1 ? 's' : ''}
+              {activeArcs.length} active event{activeArcs.length !== 1 ? 's' : ''}
             </div>
             <div className="font-data text-[8px] text-[var(--color-cp-text-tertiary)] opacity-30">
-              Width = volume · Brightness = recency
+              Each arc = one threat feed entry
             </div>
           </div>
         </div>
       )}
 
-      {/* Corridor info — top left when zoomed but map not yet shown */}
+      {/* Event info — top left when zoomed but map not yet shown */}
       {isZoomed && zoomedArc && !showMap && (
         <div className="absolute top-3 left-4 right-4 z-10 flex items-center justify-between">
           <div className="bg-[var(--color-cp-surface)]/90 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md px-3 py-2 max-w-[320px]">
@@ -560,16 +524,11 @@ export default function ThreatGlobe() {
                 style={{ backgroundColor: zoomedArc.color }}
               />
               <span className="font-data text-body font-medium text-[var(--color-cp-text-primary)]">
-                {zoomedCorridor 
-                  ? `${zoomedCorridor.sourceCountry} → ${zoomedCorridor.targetName}`
-                  : zoomedArc.attackType
-                }
+                {zoomedArc.attackType}
               </span>
-              {zoomedCorridor && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-cp-accent)]/10 text-[var(--color-cp-accent)] font-mono">
-                  {zoomedCorridor.eventCount} events
-                </span>
-              )}
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-cp-accent)]/10 text-[var(--color-cp-accent)] font-mono">
+                {zoomedArc.sourceCountry} → {zoomedArc.targetName}
+              </span>
             </div>
           </div>
           <button
@@ -585,7 +544,7 @@ export default function ThreatGlobe() {
       {!isZoomed && (
         <div className="absolute top-3 right-4 z-10">
           <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-30">
-            Click corridor to inspect
+            Click arc to inspect
           </span>
         </div>
       )}
@@ -594,10 +553,10 @@ export default function ThreatGlobe() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ZOOMED INFO CARD — Shows corridor context + event details + CVE linkage
+// ZOOMED INFO CARD — Shows event details + CVE linkage
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function ZoomedInfoCard({ arc, corridor }: { arc: ArcData; corridor: Corridor | null }) {
+function ZoomedInfoCard({ arc }: { arc: ArcData }) {
   const { data: linkageData } = trpc.ai.attackLinkage.useQuery(undefined, {
     refetchInterval: 15 * 60 * 1000,
     retry: 1,
@@ -613,51 +572,7 @@ function ZoomedInfoCard({ arc, corridor }: { arc: ArcData; corridor: Corridor | 
 
   return (
     <div className="absolute bottom-3 left-3 right-3 z-30 bg-[var(--color-cp-surface)]/95 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md px-3 py-2">
-      {/* Corridor header (if available) */}
-      {corridor && (
-        <div className="mb-2 pb-2 border-b border-[var(--color-cp-border)]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-3 h-1 rounded-full"
-                style={{ backgroundColor: corridor.color }}
-              />
-              <span className="font-data text-body font-semibold text-[var(--color-cp-text-primary)]">
-                {corridor.sourceCountry} → {corridor.targetName}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-                corridor.dominantSeverity === 'critical' ? 'bg-red-500/15 text-red-400' :
-                corridor.dominantSeverity === 'high' ? 'bg-amber-500/15 text-amber-400' :
-                'bg-cyan-500/15 text-cyan-400'
-              }`}>
-                {corridor.dominantSeverity.toUpperCase()}
-              </span>
-              <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)]">
-                {corridor.eventCount} events · {corridor.dominantAttackType}
-              </span>
-            </div>
-          </div>
-          {/* Trend indicator */}
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className={`text-[8px] font-medium ${
-              corridor.trend === 'accelerating' ? 'text-red-400' :
-              corridor.trend === 'stable' ? 'text-amber-400' :
-              'text-green-400'
-            }`}>
-              {corridor.trend === 'accelerating' ? '↑ ESCALATING' :
-               corridor.trend === 'stable' ? '→ SUSTAINED' :
-               '↓ DECAYING'}
-            </span>
-            <span className="text-[8px] text-[var(--color-cp-text-tertiary)]">
-              · {corridor.recentCount} in last 30s
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Latest event details */}
+      {/* Event header */}
       <div className="flex items-center gap-2 mb-1.5">
         <div 
           className="w-2.5 h-2.5 rounded-full"
