@@ -84,7 +84,7 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
   const realAttackersRef = useRef<any[]>([]);
   const realDataAvailableRef = useRef(false);
 
-  // Fetch real threat data from DShield via our backend
+  // Fetch real threat data from blocklist.de via our backend
   const { data: realData, error: realDataError } = trpc.threats.realData.useQuery(undefined, {
     refetchInterval: 60_000,
     retry: 2,
@@ -97,7 +97,7 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
       realDataAvailableRef.current = realData.isLive && realData.topAttackers.length > 0;
       
       if (realData.isLive) {
-        setRealDataStatus(`LIVE — DShield/ISC SANS — ${realData.lastUpdated.slice(0, 19)}`);
+        setRealDataStatus(`LIVE — blocklist.de + ip-api.com — ${realData.lastUpdated.slice(0, 19)}`);
       } else {
         setRealDataStatus('Cached data — API temporarily unavailable');
       }

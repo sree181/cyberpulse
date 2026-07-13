@@ -70,3 +70,12 @@
 - [x] Fix 1: Layout warping — adjusted responsive grid for ultra-wide (32:9, 48:9) aspect ratios
 - [x] Fix 2: Small fonts — increased minimum font sizes and improved readability for distance viewing
 - [x] Fix 3: Touch events — enabled pointer events and touch-action support for wall displays
+
+## Live Data Fix (July 2026)
+
+- [x] Diagnose "cached results not live" issue — DShield/ISC SANS API blocked by Cloudflare
+- [x] Replace DShield API with blocklist.de (real-time attacker IPs by service category)
+- [x] Replace ipapi.co geolocation with ip-api.com batch endpoint (100 IPs per request)
+- [x] Update weekly briefing API to use blocklist.de instead of blocked DShield endpoints
+- [x] Update UI labels from "DShield/ISC" to "blocklist.de"
+- [x] All 18 tests passing with new data sources

@@ -16,7 +16,7 @@ export default function PortHeatmap() {
       {/* Header */}
       <div className="cp-panel-header">
         <span className="text-label text-[var(--color-cp-text-tertiary)]">Port Activity</span>
-        <span className="text-caption text-[var(--color-cp-text-tertiary)]">DShield/ISC</span>
+        <span className="text-caption text-[var(--color-cp-text-tertiary)]">blocklist.de</span>
       </div>
 
       {/* Port rows */}
@@ -24,7 +24,7 @@ export default function PortHeatmap() {
         {portActivity.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 gap-2">
             <div className="w-4 h-4 border border-[var(--color-cp-border)] border-t-[var(--color-cp-accent)] rounded-full animate-spin" />
-            <span className="text-caption text-[var(--color-cp-text-tertiary)]">Connecting to DShield...</span>
+            <span className="text-caption text-[var(--color-cp-text-tertiary)]">Connecting to threat feeds...</span>
           </div>
         ) : (
           portActivity.slice(0, 12).map((port, i) => {

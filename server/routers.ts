@@ -19,7 +19,7 @@ export const appRouter = router({
   }),
 
   threats: router({
-    /** Fetch real-time threat intelligence from DShield + geolocation */
+    /** Fetch real-time threat intelligence from blocklist.de + geolocation */
     realData: publicProcedure.query(async () => {
       return fetchRealThreatData();
     }),
