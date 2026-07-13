@@ -137,3 +137,8 @@
 - [x] Visual clarity: max 6-8 arcs visible simultaneously (not 18+ tangled mess)
 - [x] Arc lifecycle: new arc animates in, holds for 8-10s, fades out gracefully
 - [x] Campaign rotation: every 20-30s, one campaign ends and a new one begins from different region
+
+## UI Refinement — Borders & Map Toggle (July 2026)
+- [x] Remove orange FUI panel borders from all panels (replace with clean borderless cards + subtle backdrop blur)
+- [x] Add globe/map toggle button (switch between 3D globe and 2D flat threat map view)
+- [x] Keep existing layout structure intact (no panel removal)
