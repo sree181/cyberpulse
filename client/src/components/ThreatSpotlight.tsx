@@ -6,12 +6,10 @@
  *   2. "AI Priority" — LLM-ranked patch priority list (new)
  * 
  * Auto-toggles between modes, with a subtle tab indicator.
- * Click/touch any card to open SpotlightDeepDive modal.
  */
 import { trpc } from '@/lib/trpc';
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'wouter';
-import SpotlightDeepDive from '@/components/SpotlightDeepDive';
 
 interface SpotlightCVE {
   cveId: string;
@@ -65,12 +63,6 @@ export default function ThreatSpotlight() {
   const [mode, setMode] = useState<'cve' | 'ai'>('cve');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  
-  // Deep-dive modal state
-  const [deepDiveOpen, setDeepDiveOpen] = useState(false);
-  const [deepDiveMode, setDeepDiveMode] = useState<'cve' | 'ai'>('cve');
-  const [deepDiveCVE, setDeepDiveCVE] = useState<SpotlightCVE | null>(null);
-  const [deepDiveAI, setDeepDiveAI] = useState<any>(null);
 
   const allCVEs: SpotlightCVE[] = data?.recentCVEs || [];
   const currentCVE = allCVEs[currentIndex] || data?.spotlight;
@@ -78,7 +70,6 @@ export default function ThreatSpotlight() {
 
   // Auto-rotate CVEs and toggle modes
   useEffect(() => {
-    if (deepDiveOpen) return; // Pause rotation when modal is open
     const interval = setInterval(() => {
       setIsTransitioning(true);
       setTimeout(() => {
@@ -99,23 +90,7 @@ export default function ThreatSpotlight() {
       }, 300);
     }, ROTATION_INTERVAL);
     return () => clearInterval(interval);
-  }, [mode, currentIndex, allCVEs.length, aiItems.length, deepDiveOpen]);
-
-  // Handle CVE card click → open deep-dive
-  const handleCVEClick = () => {
-    if (currentCVE) {
-      setDeepDiveMode('cve');
-      setDeepDiveCVE(currentCVE);
-      setDeepDiveOpen(true);
-    }
-  };
-
-  // Handle AI card click → open deep-dive
-  const handleAIClick = (item: any) => {
-    setDeepDiveMode('ai');
-    setDeepDiveAI(item);
-    setDeepDiveOpen(true);
-  };
+  }, [mode, currentIndex, allCVEs.length, aiItems.length]);
 
   if (isLoading || (!currentCVE && mode === 'cve')) {
     return (
@@ -157,8 +132,8 @@ export default function ThreatSpotlight() {
 
       {/* Content */}
       <div className={`cp-panel-body flex-1 flex flex-col overflow-hidden transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-        {mode === 'cve' && currentCVE && <CVEView cve={currentCVE} onClick={handleCVEClick} />}
-        {mode === 'ai' && <AIPriorityView items={aiItems} isLoading={aiLoading} confidence={aiPriority?.modelConfidence} onItemClick={handleAIClick} />}
+        {mode === 'cve' && currentCVE && <CVEView cve={currentCVE} />}
+        {mode === 'ai' && <AIPriorityView items={aiItems} isLoading={aiLoading} confidence={aiPriority?.modelConfidence} />}
       </div>
 
       {/* Footer */}
@@ -178,24 +153,15 @@ export default function ThreatSpotlight() {
           </Link>
         )}
       </div>
-
-      {/* Deep-Dive Modal */}
-      <SpotlightDeepDive
-        isOpen={deepDiveOpen}
-        onClose={() => setDeepDiveOpen(false)}
-        mode={deepDiveMode}
-        cveData={deepDiveCVE}
-        aiData={deepDiveAI}
-      />
     </div>
   );
 }
 
 // ─── CVE View (existing) ────────────────────────────────────────────────────
 
-function CVEView({ cve, onClick }: { cve: SpotlightCVE; onClick: () => void }) {
+function CVEView({ cve }: { cve: SpotlightCVE }) {
   return (
-    <div onClick={onClick} className="cursor-pointer hover:bg-[var(--color-cp-elevated)]/50 rounded-md transition-colors -mx-1 px-1 py-0.5">
+    <>
       {/* CVE ID + Score row */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -248,20 +214,13 @@ function CVEView({ cve, onClick }: { cve: SpotlightCVE; onClick: () => void }) {
           {cve.educationalNote}
         </p>
       </div>
-
-      {/* Touch hint */}
-      <div className="mt-1.5 text-center">
-        <span className="text-[8px] text-[var(--color-cp-text-tertiary)] opacity-50">
-          Tap for deep-dive analysis
-        </span>
-      </div>
-    </div>
+    </>
   );
 }
 
 // ─── AI Priority View (new) ─────────────────────────────────────────────────
 
-function AIPriorityView({ items, isLoading, confidence, onItemClick }: { items: any[]; isLoading: boolean; confidence?: number; onItemClick: (item: any) => void }) {
+function AIPriorityView({ items, isLoading, confidence }: { items: any[]; isLoading: boolean; confidence?: number }) {
   if (isLoading || items.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -295,11 +254,7 @@ function AIPriorityView({ items, isLoading, confidence, onItemClick }: { items: 
         {topItems.map((item, index) => {
           const urgencyColor = urgencyColors[item.urgency] || 'var(--color-cp-text-tertiary)';
           return (
-            <div 
-              key={item.cveId} 
-              className="p-2 rounded bg-[var(--color-cp-elevated)] border border-[var(--color-cp-border)] cursor-pointer hover:border-violet-500/30 transition-colors"
-              onClick={() => onItemClick(item)}
-            >
+            <div key={item.cveId} className="p-2 rounded bg-[var(--color-cp-elevated)] border border-[var(--color-cp-border)]">
               <div className="flex items-center justify-between mb-0.5">
                 <div className="flex items-center gap-1.5">
                   <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)]">#{index + 1}</span>

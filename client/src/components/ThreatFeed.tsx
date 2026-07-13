@@ -29,7 +29,7 @@ function ThreatEntry({ threat }: { threat: ThreatEvent }) {
         {/* Severity dot */}
         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${getSeverityClass(threat.severity)}`} />
         {/* Attack type */}
-        <span className={`text-body text-[var(--color-cp-text-primary)] font-medium truncate ${threat.severity === 'critical' ? 'glow-critical severity-critical' : threat.severity === 'high' ? 'glow-high severity-high' : ''}`}>
+        <span className="text-body text-[var(--color-cp-text-primary)] font-medium truncate">
           {threat.attackType}
         </span>
         {/* Time */}

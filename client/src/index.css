@@ -190,108 +190,46 @@
   }
 }
 
-/* === CYBERPULSE TYPOGRAPHY SYSTEM === */
-/* Data values: JetBrains Mono — monospace authority with tabular figures */
+/* === CYBERPULSE TYPOGRAPHY — Wall Display Optimized === */
+/* Uses clamp() to scale from standard monitors to 4K/8K wall panels */
 .font-data {
   font-family: 'JetBrains Mono', monospace;
   font-feature-settings: 'tnum' 1, 'zero' 1;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Labels & headings: Outfit — geometric sans, clean and modern */
-.font-label {
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-  font-weight: 500;
-  letter-spacing: 0.02em;
 }
 
 .text-display {
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-  font-size: 1.5rem;
+  font-size: clamp(2rem, 1.2vw + 0.8rem, 3.5rem);
   line-height: 1.2;
   font-weight: 300;
   letter-spacing: -0.02em;
 }
 
 .text-title {
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-  font-size: 0.8125rem;
+  font-size: clamp(1.125rem, 0.6vw + 0.5rem, 1.75rem);
   line-height: 1.4;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 
 .text-body {
-  font-size: 0.6875rem;
+  font-size: clamp(0.875rem, 0.5vw + 0.4rem, 1.5rem);
   line-height: 1.5;
   font-weight: 400;
 }
 
 .text-caption {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.5625rem;
+  font-size: clamp(0.75rem, 0.4vw + 0.3rem, 1.25rem);
   line-height: 1.4;
   font-weight: 400;
   letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
 }
 
 .text-label {
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-  font-size: 0.625rem;
+  font-size: clamp(0.8rem, 0.45vw + 0.35rem, 1.375rem);
   line-height: 1;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-/* Severity text glow effects */
-.glow-critical {
-  text-shadow: 0 0 8px oklch(0.65 0.24 25 / 0.6), 0 0 16px oklch(0.65 0.24 25 / 0.3);
-}
-.glow-high {
-  text-shadow: 0 0 8px oklch(0.62 0.20 45 / 0.5), 0 0 12px oklch(0.62 0.20 45 / 0.25);
-}
-.glow-medium {
-  text-shadow: 0 0 6px oklch(0.75 0.14 85 / 0.4), 0 0 10px oklch(0.75 0.14 85 / 0.2);
-}
-.glow-low {
-  text-shadow: 0 0 6px oklch(0.65 0.12 160 / 0.4), 0 0 10px oklch(0.65 0.12 160 / 0.2);
-}
-
-/* === CINEMATIC TRANSITIONS === */
-
-/* Dolly zoom: background scales while foreground stays fixed */
-.dolly-zoom-active {
-  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Spring physics panel transitions */
-.spring-enter {
-  animation: spring-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes spring-in {
-  0% { opacity: 0; transform: scale(0.92) translateY(8px); }
-  60% { opacity: 1; transform: scale(1.02) translateY(-2px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.spring-exit {
-  animation: spring-out 0.4s cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
-}
-
-@keyframes spring-out {
-  0% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.95) translateY(4px); }
-}
-
-/* Panel hover spring lift */
-.spring-lift {
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
-}
-.spring-lift:hover {
-  transform: translateY(-2px) scale(1.005);
 }
 
 /* === ANIMATIONS (Restrained — fewer, slower, purposeful) === */
@@ -351,36 +289,21 @@
   background: oklch(0.55 0.12 45);
 }
 
-/* === PANEL SYSTEM — Glassmorphism === */
+/* === PANEL SYSTEM === */
 .cp-panel {
-  background: oklch(0.18 0.035 255 / 0.72);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  border-radius: 0.75rem;
-  border: 1px solid oklch(0.35 0.03 255 / 0.4);
+  background: oklch(0.22 0.04 255);
+  border-radius: 0.625rem;
+  border: 1px solid oklch(0.30 0.03 255);
   overflow: hidden;
-  box-shadow:
-    0 4px 24px oklch(0.08 0.02 255 / 0.4),
-    0 1px 4px oklch(0.08 0.02 255 / 0.2),
-    inset 0 1px 0 oklch(0.40 0.02 255 / 0.08);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.cp-panel:hover {
-  border-color: oklch(0.42 0.04 255 / 0.5);
-  box-shadow:
-    0 6px 32px oklch(0.08 0.02 255 / 0.5),
-    0 2px 8px oklch(0.08 0.02 255 / 0.25),
-    inset 0 1px 0 oklch(0.45 0.02 255 / 0.1);
+  box-shadow: 0 2px 8px oklch(0.10 0.02 255 / 0.3), 0 1px 3px oklch(0.10 0.02 255 / 0.2);
 }
 
 .cp-panel-header {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid oklch(0.30 0.03 255 / 0.5);
+  border-bottom: 1px solid oklch(0.28 0.03 255);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: oklch(0.16 0.03 255 / 0.3);
 }
 
 .cp-panel-body {
@@ -398,19 +321,138 @@
 .severity-dot-medium { background: oklch(0.75 0.14 85); }
 .severity-dot-low { background: oklch(0.65 0.12 160); }
 
-/* === GESTURE HINT ICON ANIMATIONS === */
-@keyframes tap {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(0.85); opacity: 1; }
+/* === LARGE-FORMAT WALL DISPLAY OPTIMIZATION === */
+/* Targets 4K (3840x2160), ultra-wide, and video-wall resolutions */
+
+/* Scale up all elements proportionally for large screens */
+@media (min-width: 2560px) {
+  html {
+    font-size: 18px;
+  }
+  .cp-panel {
+    border-radius: 0.875rem;
+    border-width: 1.5px;
+  }
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
 }
 
-@keyframes hold {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  30% { transform: scale(0.9); opacity: 1; }
-  60% { transform: scale(1.1); opacity: 1; }
+@media (min-width: 3840px) {
+  html {
+    font-size: 24px;
+  }
+  .cp-panel {
+    border-radius: 1rem;
+    border-width: 2px;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
 }
 
-@keyframes swipeUp {
-  0%, 100% { transform: translateY(0); opacity: 0.6; }
-  50% { transform: translateY(-3px); opacity: 1; }
+/* 8K / video wall (7680px+) */
+@media (min-width: 7680px) {
+  html {
+    font-size: 36px;
+  }
+  .cp-panel {
+    border-radius: 1.25rem;
+    border-width: 3px;
+  }
+}
+
+/* Ensure crisp rendering on high-DPI wall panels */
+@media (min-resolution: 2dppx) {
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Tall/portrait wall displays (rotated screens) */
+@media (min-height: 2160px) and (orientation: portrait) {
+  html {
+    font-size: 20px;
+  }
+}
+
+/* Ultra-wide aspect ratios (32:9, triple-wide) */
+@media (min-aspect-ratio: 32/9) {
+  html {
+    font-size: 20px;
+  }
+}
+
+
+/* === TOUCH & POINTER EVENT SUPPORT === */
+/* Ensure touch events work on all devices including wall displays */
+body, html {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: auto;
+}
+
+/* Allow pointer events on interactive elements */
+button, a, input, [role="button"], .interactive {
+  pointer-events: auto;
+  touch-action: auto;
+}
+
+/* Canvas and SVG elements should allow pointer events */
+canvas, svg {
+  pointer-events: auto;
+  touch-action: auto;
+}
+
+/* Ensure globe container accepts touch */
+[data-globe-container], .globe-container {
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+
+/* Disable text selection on interactive elements for cleaner touch UX */
+.cp-panel, .globe-container, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Ensure touch feedback is visible */
+@media (hover: none) and (pointer: coarse) {
+  button:active, a:active, [role="button"]:active {
+    opacity: 0.8;
+  }
+}
+
+
+/* === ULTRA-WIDE DISPLAY DETECTION (32:9 and wider) === */
+/* True ultra-wide aspect ratio detection for wall displays */
+@media (min-aspect-ratio: 32/9) {
+  /* On ultra-wide, further reduce sidebar widths and increase globe dominance */
+  :root {
+    --sidebar-width-ultra: 10vw;
+  }
+  
+  /* Increase spacing between elements */
+  .gap-\[0\.75vw\] {
+    gap: 1vw;
+  }
+}
+
+/* 48:9 video wall (triple-wide) */
+@media (min-aspect-ratio: 48/9) {
+  :root {
+    --sidebar-width-ultra: 8vw;
+  }
+  
+  .gap-\[0\.75vw\] {
+    gap: 1.25vw;
+  }
+}
+
+/* Ensure XL breakpoint is configured for ultra-wide */
+@media (min-width: 1536px) {
+  /* XL breakpoint for ultra-wide screens */
 }

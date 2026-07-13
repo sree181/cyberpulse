@@ -21,7 +21,7 @@ export const BRANDING = {
   subtitle: 'BASY Data Immersion Lab',
   
   /** Path to the institution logo (use manus-upload-file --webdev for permanent URLs) */
-  logoUrl: '/auburn-harbert-logo.png',
+  logoUrl: '/manus-storage/auburn-harbert-logo_fad65f8f.png',
   
   /** Alt text for accessibility */
   logoAlt: 'Auburn University - Harbert College of Business',

@@ -76,7 +76,7 @@
 
 /// <reference types="@types/google.maps" />
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { usePersistFn } from "@/hooks/usePersistFn";
 import { cn } from "@/lib/utils";
 
@@ -92,60 +92,20 @@ const FORGE_BASE_URL =
   "https://forge.butterfly-effect.dev";
 const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
-let mapLoadAttempted = false;
-let mapLoadFailed = false;
-
 function loadMapScript() {
-  return new Promise<boolean>(resolve => {
-    // If already loaded successfully
-    if (window.google?.maps) {
-      resolve(true);
-      return;
-    }
-    // If previously failed, don't retry
-    if (mapLoadFailed) {
-      resolve(false);
-      return;
-    }
-    // If already attempted (script in flight), wait for it
-    if (mapLoadAttempted) {
-      const check = setInterval(() => {
-        if (window.google?.maps) { clearInterval(check); resolve(true); }
-        if (mapLoadFailed) { clearInterval(check); resolve(false); }
-      }, 200);
-      setTimeout(() => { clearInterval(check); resolve(false); }, 10000);
-      return;
-    }
-    mapLoadAttempted = true;
-
-    // Don't attempt if API key or proxy URL is missing
-    if (!API_KEY || !MAPS_PROXY_URL) {
-      mapLoadFailed = true;
-      resolve(false);
-      return;
-    }
-
+  return new Promise(resolve => {
     const script = document.createElement("script");
     script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => {
-      resolve(true);
+      resolve(null);
+      script.remove(); // Clean up immediately
     };
     script.onerror = () => {
       console.error("Failed to load Google Maps script");
-      mapLoadFailed = true;
-      resolve(false);
     };
     document.head.appendChild(script);
-
-    // Timeout after 8 seconds
-    setTimeout(() => {
-      if (!window.google?.maps) {
-        mapLoadFailed = true;
-        resolve(false);
-      }
-    }, 8000);
   });
 }
 
@@ -154,7 +114,6 @@ interface MapViewProps {
   initialCenter?: google.maps.LatLngLiteral;
   initialZoom?: number;
   onMapReady?: (map: google.maps.Map) => void;
-  onMapError?: () => void;
 }
 
 export function MapView({
@@ -162,65 +121,33 @@ export function MapView({
   initialCenter = { lat: 37.7749, lng: -122.4194 },
   initialZoom = 12,
   onMapReady,
-  onMapError,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<google.maps.Map | null>(null);
-  const [loadError, setLoadError] = useState(false);
 
   const init = usePersistFn(async () => {
-    const success = await loadMapScript();
-    if (!success) {
-      setLoadError(true);
-      onMapError?.();
-      return;
-    }
+    await loadMapScript();
     if (!mapContainer.current) {
       console.error("Map container not found");
       return;
     }
-    try {
-      map.current = new window.google!.maps.Map(mapContainer.current, {
-        zoom: initialZoom,
-        center: initialCenter,
-        mapTypeControl: true,
-        fullscreenControl: true,
-        zoomControl: true,
-        streetViewControl: true,
-        mapId: "DEMO_MAP_ID",
-      });
-      if (onMapReady) {
-        onMapReady(map.current);
-      }
-    } catch (err) {
-      console.error("Failed to initialize Google Maps:", err);
-      setLoadError(true);
-      onMapError?.();
+    map.current = new window.google.maps.Map(mapContainer.current, {
+      zoom: initialZoom,
+      center: initialCenter,
+      mapTypeControl: true,
+      fullscreenControl: true,
+      zoomControl: true,
+      streetViewControl: true,
+      mapId: "DEMO_MAP_ID",
+    });
+    if (onMapReady) {
+      onMapReady(map.current);
     }
   });
 
   useEffect(() => {
     init();
   }, [init]);
-
-  if (loadError) {
-    return (
-      <div className={cn("w-full h-[500px] flex items-center justify-center bg-[var(--color-cp-base,#0a1628)]", className)}>
-        <div className="flex flex-col items-center gap-3 text-center px-4">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-cp-text-tertiary,#6b7280)]">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-            <circle cx="12" cy="9" r="2.5" />
-          </svg>
-          <span className="text-xs text-[var(--color-cp-text-tertiary,#6b7280)] font-mono">
-            Map unavailable in this environment
-          </span>
-          <span className="text-[10px] text-[var(--color-cp-text-tertiary,#6b7280)] opacity-60">
-            Source: {initialCenter.lat.toFixed(2)}, {initialCenter.lng.toFixed(2)}
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />

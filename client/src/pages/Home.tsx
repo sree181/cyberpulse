@@ -13,16 +13,8 @@
  *   - Whitespace as a design element
  *   - Restrained animations — purposeful, not decorative
  *   - 4-level typography scale only
- * 
- * Kiosk Mode:
- *   PASSIVE: Globe fills viewport, minimal UI chrome, auto-rotating
- *   INTERACTIVE: Full dashboard with all panels visible
  */
-import { useState } from 'react';
 import { ThreatProvider } from '@/contexts/ThreatContext';
-import { KioskProvider, useKiosk } from '@/contexts/KioskContext';
-import { useSoundFeedback } from '@/hooks/useSoundFeedback';
-import { useTimelinePersistence } from '@/hooks/useTimelinePersistence';
 import HeaderBar from '@/components/HeaderBar';
 import ThreatGlobe from '@/components/ThreatGlobe';
 import ThreatFeed from '@/components/ThreatFeed';
@@ -32,144 +24,75 @@ import TimeSeriesChart from '@/components/TimeSeriesChart';
 import PortHeatmap from '@/components/PortHeatmap';
 import ThreatSpotlight from '@/components/ThreatSpotlight';
 import WeeklyBriefing from '@/components/WeeklyBriefing';
-import CompareMode from '@/components/CompareMode';
-import ParticleField from '@/components/ParticleField';
-import ImpactRipples from '@/components/ImpactRipples';
-import GlobeOverlays from '@/components/GlobeOverlays';
-import { useCinematicTransitions } from '@/hooks/useCinematicTransitions';
-import { useDataSonification } from '@/hooks/useDataSonification';
-import { soundEngine } from '@/lib/soundEngine';
 
 export default function Home() {
   return (
     <ThreatProvider>
-      <KioskProvider>
-        <HomeContent />
-      </KioskProvider>
-    </ThreatProvider>
-  );
-}
-
-function HomeContent() {
-  const { mode, isTransitioning } = useKiosk();
-  const [showCompare, setShowCompare] = useState(false);
-  const isPassive = mode === 'passive';
-
-  // Sound effects and haptic feedback
-  useSoundFeedback();
-
-  // Persist threat events for 24h timeline replay
-  useTimelinePersistence();
-
-  // Cinematic transitions (dolly zoom + spring physics)
-  const { dollyActive, dollyScale } = useCinematicTransitions();
-
-  // Data sonification layer (pitch-shifted pings per attack)
-  useDataSonification(soundEngine.isEnabled());
-
-  return (
-    <div className={`h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-cp-base)] transition-all duration-500 ${isTransitioning ? 'opacity-80' : 'opacity-100'}`}>
-      
-      {/* Particle Field Background — neural mesh behind all panels */}
-      <ParticleField />
-
-      {/* HEADER — Hidden in passive mode */}
-      <div className={`transition-all duration-500 ${isPassive ? 'h-0 opacity-0 overflow-hidden' : 'h-16 opacity-100'}`}>
-        <HeaderBar />
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div className="flex-1 flex gap-3 p-3 pt-0 overflow-hidden">
+      <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-cp-base)]">
         
-        {/* LEFT SIDEBAR — Hidden in passive mode */}
-        <div className={`shrink-0 flex flex-col gap-3 transition-all duration-500 ${
-          isPassive ? 'w-0 opacity-0 overflow-hidden' : 'w-[220px] opacity-100'
-        }`}>
-          <div className="cp-panel flex-[3] spring-lift">
-            <StatsPanel />
-          </div>
-          <div className="cp-panel flex-[4] spring-lift">
-            <MitreHeatmap />
-          </div>
-        </div>
+        {/* HEADER — Minimal, elegant */}
+        <HeaderBar />
 
-        {/* CENTER — Globe (hero) + Time Series */}
-        <div className="flex-1 flex flex-col gap-3 overflow-hidden">
-          {/* Globe — dominant visual, dark bg for contrast */}
-          <div className={`cp-panel relative overflow-hidden transition-all duration-500 ${
-            isPassive ? 'flex-1' : 'flex-[5]'
-          } ${dollyActive ? 'dolly-zoom-active' : ''}`} style={{ 
-            background: 'oklch(0.12 0.04 255)',
-            transform: dollyActive ? `scale(${dollyScale})` : 'scale(1)',
-          }}>
-            <ThreatGlobe />
-            {/* Globe overlays — CSS-only day/night terminator, orbital ring, comet tails */}
-            <GlobeOverlays />
-            {/* Impact ripples — sonar pings at attack target locations */}
-            <ImpactRipples />
-            {/* Compare Mode overlay — rendered inside globe panel for full coverage */}
-            <CompareMode isVisible={showCompare} onClose={() => setShowCompare(false)} />
+        {/* MAIN CONTENT — Responsive layout: 3-col on normal screens, 2-col on ultra-wide */}
+        <div className="flex-1 flex flex-col gap-[0.75vw] p-[0.75vw] pt-0 overflow-hidden">
+          
+          {/* TOP ROW: Left sidebar + Globe area (3-col on normal, 2-col on ultra-wide) */}
+          <div className="flex-1 flex flex-col xl:flex-row gap-[0.75vw] overflow-hidden">
             
-            {/* Passive mode branding overlay */}
-            {isPassive && (
-              <div className="absolute top-4 left-4 z-10 animate-in fade-in duration-500">
-                <div className="text-[11px] font-bold text-[var(--color-cp-text-primary)] tracking-[0.15em] opacity-60">
-                  CYBERPULSE
+            {/* LEFT SIDEBAR — Compact metrics + MITRE */}
+            <div className="w-full xl:w-[12vw] xl:min-w-[160px] xl:max-w-[240px] xl:shrink-0 h-[12vh] xl:h-auto flex xl:flex-col gap-[0.75vw]">
+              <div className="cp-panel flex-1 lg:flex-[3] overflow-hidden">
+                <StatsPanel />
+              </div>
+              <div className="cp-panel flex-1 lg:flex-[4] overflow-hidden">
+                <MitreHeatmap />
+              </div>
+            </div>
+
+            {/* CENTER — Globe (hero) + Time Series + Bottom panels */}
+            <div className="flex-1 flex flex-col gap-[0.75vw] overflow-hidden">
+              {/* Globe — dominant visual, dark bg for contrast */}
+              <div className="flex-[5] cp-panel relative overflow-hidden" style={{ background: 'oklch(0.12 0.04 255)' }}>
+                <ThreatGlobe />
+              </div>
+              {/* Time Series — subtle, integrated */}
+              <div className="h-[5.5vh] min-h-[70px] cp-panel shrink-0 overflow-hidden">
+                <TimeSeriesChart />
+              </div>
+              {/* Bottom row: Spotlight + Briefing */}
+              <div className="flex-[2] flex gap-[0.75vw] overflow-hidden">
+                <div className="flex-1 cp-panel overflow-hidden">
+                  <ThreatSpotlight />
                 </div>
-                <div className="text-[8px] text-[var(--color-cp-accent)] tracking-[0.2em] opacity-40 mt-0.5">
-                  REAL-TIME THREAT INTELLIGENCE
+                <div className="flex-1 cp-panel overflow-hidden">
+                  <WeeklyBriefing />
                 </div>
               </div>
-            )}
-          </div>
-          
-          {/* Time Series — hidden in passive mode */}
-          <div className={`cp-panel shrink-0 overflow-hidden transition-all duration-500 ${
-            isPassive ? 'h-0 opacity-0' : 'h-[90px] opacity-100'
-          }`}>
-            <TimeSeriesChart />
-          </div>
-          
-          {/* Bottom row: Spotlight + Briefing — hidden in passive mode */}
-          <div className={`flex gap-3 overflow-hidden transition-all duration-500 ${
-            isPassive ? 'flex-[0] h-0 opacity-0' : 'flex-[2] opacity-100'
-          }`}>
-            <div className="flex-1 cp-panel overflow-hidden spring-lift">
-              <ThreatSpotlight />
             </div>
-            <div className="flex-1 cp-panel overflow-hidden spring-lift">
-              <WeeklyBriefing />
-            </div>
-          </div>
-        </div>
 
-        {/* RIGHT SIDEBAR — Hidden in passive mode */}
-        <div className={`shrink-0 flex flex-col gap-3 transition-all duration-500 ${
-          isPassive ? 'w-0 opacity-0 overflow-hidden' : 'w-[260px] opacity-100'
-        }`}>
-          <div className="cp-panel flex-[2] overflow-hidden spring-lift">
-            <PortHeatmap />
-          </div>
-          <div className="cp-panel flex-[5] overflow-hidden spring-lift">
-            <ThreatFeed />
-          </div>
-          {/* Compare Mode trigger button */}
-          <button
-            onClick={() => setShowCompare(true)}
-            className="cp-panel px-3 py-2 flex items-center justify-center gap-2 hover:border-[var(--color-cp-accent)] transition-colors cursor-pointer shrink-0"
-          >
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-              <span className="text-[9px] text-[var(--color-cp-text-tertiary)]">vs</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            {/* RIGHT SIDEBAR — Port Activity + Threat Feed (hidden on ultra-wide, shown on normal screens) */}
+            <div className="hidden xl:flex w-[14vw] min-w-[200px] max-w-[300px] shrink-0 flex-col gap-[0.75vw]">
+              <div className="cp-panel flex-[2] overflow-hidden">
+                <PortHeatmap />
+              </div>
+              <div className="cp-panel flex-[5] overflow-hidden">
+                <ThreatFeed />
+              </div>
             </div>
-            <span className="text-caption font-data text-[var(--color-cp-text-secondary)]">
-              Compare Mode
-            </span>
-          </button>
-        </div>
+          </div>
 
+          {/* BOTTOM ROW: Port Activity + Threat Feed (shown on ultra-wide displays) */}
+          <div className="flex xl:hidden gap-[0.75vw] h-[16vh] overflow-hidden">
+            <div className="flex-1 cp-panel overflow-hidden">
+              <PortHeatmap />
+            </div>
+            <div className="flex-1 cp-panel overflow-hidden">
+              <ThreatFeed />
+            </div>
+          </div>
+
+        </div>
       </div>
-    </div>
+    </ThreatProvider>
   );
 }

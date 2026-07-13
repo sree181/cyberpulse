@@ -5,7 +5,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import AIInsights from "./pages/AIInsights";
-import Present from "./pages/Present";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -13,7 +12,6 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/ai"} component={AIInsights} />
-      <Route path={"/present"} component={Present} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

@@ -4,14 +4,12 @@
  * Design: Clean horizontal bar with 3 zones:
  *   Left: Auburn logo + BASY branding (prominent)
  *   Center: Key metrics (3 max)
- *   Right: Data source status + timestamp + Kiosk toggle
+ *   Right: Data source status + timestamp
  */
 import { useThreatData } from '@/contexts/ThreatContext';
 import { useEffect, useState } from 'react';
 import { BRANDING } from '@/lib/branding';
 import { Link } from 'wouter';
-import KioskToggle from '@/components/KioskToggle';
-import SoundControl from '@/components/SoundControl';
 
 export default function HeaderBar() {
   const { stats, isLive, realDataStatus } = useThreatData();
@@ -39,7 +37,7 @@ export default function HeaderBar() {
         : 'bg-neutral-500';
 
   return (
-    <header className="h-16 shrink-0 flex items-center justify-between px-6 bg-[var(--color-cp-elevated)] border-b border-[var(--color-cp-border)] shadow-sm">
+    <header className="h-[clamp(3.5rem,4vh,6rem)] shrink-0 flex items-center justify-between px-[clamp(1rem,1.5vw,3rem)] bg-[var(--color-cp-elevated)] border-b border-[var(--color-cp-border)] shadow-sm">
       
       {/* Left: Auburn Logo + BASY Branding — PROMINENT */}
       <div className="flex items-center gap-5">
@@ -48,15 +46,15 @@ export default function HeaderBar() {
           <img 
             src={BRANDING.logoUrl} 
             alt={BRANDING.logoAlt} 
-            className="h-10 w-auto object-contain"
+            className="h-[clamp(2.5rem,3vh,5rem)] w-auto object-contain"
           />
         </div>
         <div className="w-px h-9 bg-[var(--color-cp-border)]" />
         <div className="flex flex-col">
-          <h1 className="text-[15px] font-bold text-[var(--color-cp-text-primary)] tracking-[0.15em] leading-tight">
+          <h1 className="text-[clamp(15px,1vw,30px)] font-bold text-[var(--color-cp-text-primary)] tracking-[0.15em] leading-tight">
             {BRANDING.institutionName}
           </h1>
-          <span className="text-[11px] font-semibold tracking-[0.2em] text-[var(--color-cp-accent)] leading-tight mt-0.5">
+          <span className="text-[clamp(11px,0.7vw,22px)] font-semibold tracking-[0.2em] text-[var(--color-cp-accent)] leading-tight mt-0.5">
             {BRANDING.subtitle}
           </span>
         </div>
@@ -65,18 +63,18 @@ export default function HeaderBar() {
       {/* Center: Key metrics — 3 max */}
       <div className="flex items-center gap-8">
         <div className="flex flex-col items-center">
-          <span className="font-data text-[14px] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.total}</span>
-          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>THREATS</span>
+          <span className="font-data text-[clamp(14px,0.9vw,28px)] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.total}</span>
+          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(8px, 0.5vw, 16px)' }}>THREATS</span>
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex flex-col items-center">
-          <span className="font-data text-[14px] font-light text-[var(--color-cp-accent)] tabular-nums glow-critical">{stats.critical}</span>
-          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>CRITICAL</span>
+          <span className="font-data text-[clamp(14px,0.9vw,28px)] font-light text-[var(--color-cp-accent)] tabular-nums">{stats.critical}</span>
+          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(8px, 0.5vw, 16px)' }}>CRITICAL</span>
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex flex-col items-center">
-          <span className="font-data text-[14px] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.attacksPerMinute}</span>
-          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: '8px' }}>ATK/MIN</span>
+          <span className="font-data text-[clamp(14px,0.9vw,28px)] font-light text-[var(--color-cp-text-primary)] tabular-nums">{stats.attacksPerMinute}</span>
+          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(8px, 0.5vw, 16px)' }}>ATK/MIN</span>
         </div>
         <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         {/* AI Insights link */}
@@ -88,11 +86,8 @@ export default function HeaderBar() {
         </Link>
       </div>
 
-      {/* Right: Status + Time + Kiosk Toggle + Sound */}
+      {/* Right: Status + Time */}
       <div className="flex items-center gap-4">
-        <SoundControl />
-        <KioskToggle />
-        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
         <div className="flex items-center gap-1.5">
           <div className={`w-1.5 h-1.5 rounded-full ${statusColor} ${isLive ? 'animate-live-pulse' : ''}`} />
           <span className="text-caption text-[var(--color-cp-text-tertiary)]">{statusLabel}</span>

@@ -8,7 +8,6 @@
  * - Color-coded by attack type with subtle gradient (source bright → target faded)
  * - Hybrid zoom: auto-zoom on critical attacks every 30s + click-to-zoom
  * - Google Maps detail panel on zoom
- * - Touch gestures: long-press country dossier, swipe-up timeline, double-tap reset
  * 
  * Inspired by Stripe's globe and Kaspersky's threat map.
  */
@@ -18,10 +17,6 @@ import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
 import { MapView } from '@/components/Map';
 import { trpc } from '@/lib/trpc';
-import { useGlobeGestures } from '@/hooks/useGlobeGestures';
-import CountryDossier from '@/components/CountryDossier';
-import TimelineScrubber from '@/components/TimelineScrubber';
-import { useCameraChoreography } from '@/hooks/useCameraChoreography';
 
 // Attack type legend entries
 const LEGEND_ITEMS = [
@@ -65,39 +60,6 @@ interface GlobeArcDatum {
   originalArc?: ArcData;
 }
 
-// Map screen coordinates to approximate country code using globe reference
-function findNearestCountry(arcs: ArcData[], globeInstance: any, screenX: number, screenY: number, containerRect: DOMRect): string {
-  // Use globe.gl's toGlobeCoords to convert screen → lat/lng if available
-  if (globeInstance && globeInstance.toGlobeCoords) {
-    const relX = screenX - containerRect.left;
-    const relY = screenY - containerRect.top;
-    const coords = globeInstance.toGlobeCoords(relX, relY);
-    if (coords && coords.lat !== undefined && coords.lng !== undefined) {
-      // Find the nearest arc source to these coordinates
-      let nearest = '';
-      let minDist = Infinity;
-      arcs.forEach(arc => {
-        const dLat = arc.startLat - coords.lat;
-        const dLng = arc.startLng - coords.lng;
-        const dist = dLat * dLat + dLng * dLng;
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = arc.sourceCountry;
-        }
-      });
-      if (nearest) return nearest;
-    }
-  }
-  
-  // Fallback: pick the most common source country from active arcs
-  const countryCounts: Record<string, number> = {};
-  arcs.forEach(arc => {
-    countryCounts[arc.sourceCountry] = (countryCounts[arc.sourceCountry] || 0) + 1;
-  });
-  const sorted = Object.entries(countryCounts).sort(([, a], [, b]) => b - a);
-  return sorted[0]?.[0] || 'US';
-}
-
 export default function ThreatGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<any>(null);
@@ -110,61 +72,10 @@ export default function ThreatGlobe() {
   const [mapLoading, setMapLoading] = useState(true);
   const mapMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   
-  // Touch interaction state
-  const [dossierCountry, setDossierCountry] = useState<string | null>(null);
-  const [showTimeline, setShowTimeline] = useState(false);
-  const [timelineFilter, setTimelineFilter] = useState<number | null>(null);
-  
   const { activeArcs, setSelectedArc } = useThreatData();
 
   // Default camera position
   const defaultPOV = { lat: 25, lng: -10, altitude: 2.0 };
-
-  // Touch gesture integration
-  useGlobeGestures(containerRef, {
-    onLongPress: (_lat, _lng, screenX, screenY) => {
-      if (isZoomedRef.current) return; // Don't trigger dossier when zoomed
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const country = findNearestCountry(activeArcs, globeRef.current, screenX, screenY, rect);
-      setDossierCountry(country);
-    },
-    onSwipeUp: () => {
-      if (!isZoomedRef.current) {
-        setShowTimeline(true);
-      }
-    },
-    onDoubleTap: () => {
-      if (isZoomedRef.current) {
-        returnToOverview();
-      }
-    },
-  }, !isZoomed && !dossierCountry);
-
-  // Camera choreography for kiosk/passive mode
-  // Listen for kiosk mode changes via custom event from KioskContext
-  const [isPassiveMode, setIsPassiveMode] = useState(false);
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setIsPassiveMode(detail?.mode === 'passive');
-    };
-    window.addEventListener('cyberpulse:kioskchange', handler);
-    return () => window.removeEventListener('cyberpulse:kioskchange', handler);
-  }, []);
-
-  // Derive hotspots from active arcs (top attack sources)
-  const hotspots = useMemo(() => {
-    const seen = new Set<string>();
-    return activeArcs.slice(0, 5).filter(a => {
-      const k = `${a.startLat.toFixed(0)},${a.startLng.toFixed(0)}`;
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    }).map(a => ({ lat: a.startLat, lng: a.startLng }));
-  }, [activeArcs]);
-
-  useCameraChoreography({ globeRef, isPassive: isPassiveMode, hotspots });
 
   /**
    * COMBINED DUAL-LAYER ARC DATASET
@@ -177,55 +88,38 @@ export default function ThreatGlobe() {
    * 
    * Per-arc accessor functions allow different dash/stroke properties per entry.
    */
-  // When timeline is scrubbing, show a reduced/highlighted subset
-  // In live mode (timelineFilter === null), show all arcs normally
-  // When scrubbing, we dim arcs and pulse the playhead position indicator
-  const isReplaying = timelineFilter !== null;
-
   const combinedArcs = useMemo(() => {
     const result: GlobeArcDatum[] = [];
     
-    // Limit to 20 arcs to keep GPU happy while still looking dense
-    const limitedArcs = activeArcs.slice(0, 20);
-
-    limitedArcs.forEach((arc, index) => {
-      // Severity-based trail opacity (critical arcs leave stronger traces)
-      const trailOpacity = arc.severity === 'critical' ? '55' : arc.severity === 'high' ? '44' : '33';
-      const trailEndOpacity = arc.severity === 'critical' ? '22' : '11';
-
+    activeArcs.forEach((arc, index) => {
       // Layer 1: Trail (the persistent fiber — always visible, subtle)
       result.push({
         startLat: arc.startLat,
         startLng: arc.startLng,
         endLat: arc.endLat,
         endLng: arc.endLng,
-        color: [`${arc.color}${trailOpacity}`, `${arc.color}${trailEndOpacity}`],
-        stroke: arc.severity === 'critical' ? 0.12 : null, // Critical gets thin tube, others hairline
-        dashLength: 1,
-        dashGap: 0,
-        animateTime: 0,
+        color: [`${arc.color}44`, `${arc.color}11`], // 27% → 7% opacity gradient
+        stroke: null, // null = ThreeJS Line (1px constant width, elegant hairline)
+        dashLength: 1,    // Full length visible
+        dashGap: 0,       // No gaps — solid line
+        animateTime: 0,   // No animation — static trail
         dashInitialGap: 0,
         id: `trail-${arc.id}`,
         layer: 'trail',
       });
 
       // Layer 2: Pulse (the traveling photon — bright, animated)
-      // Critical attacks travel faster and are wider
-      const pulseSpeed = arc.severity === 'critical' ? 1200 : arc.severity === 'high' ? 1500 : 2000;
-      const pulseWidth = arc.severity === 'critical' ? 0.55 : arc.severity === 'high' ? 0.4 : 0.25;
-      const pulseDashLen = arc.severity === 'critical' ? 0.3 : 0.25;
-
       result.push({
         startLat: arc.startLat,
         startLng: arc.startLng,
         endLat: arc.endLat,
         endLng: arc.endLng,
-        color: [`${arc.color}FF`, `${arc.color}99`], // Full brightness head → 60% tail
-        stroke: pulseWidth,
-        dashLength: pulseDashLen,
-        dashGap: 1 - pulseDashLen,
-        animateTime: pulseSpeed + (index % 5) * 100, // Stagger for organic feel
-        dashInitialGap: Math.random(),
+        color: [`${arc.color}EE`, `${arc.color}88`], // 93% → 53% opacity (bright head, dimmer tail)
+        stroke: arc.severity === 'critical' ? 0.45 : arc.severity === 'high' ? 0.35 : 0.25,
+        dashLength: 0.25,  // 25% of arc visible — substantial enough to see
+        dashGap: 0.75,     // 75% invisible — creates single traveling segment
+        animateTime: 1800 + (index % 5) * 200, // Stagger speeds slightly for organic feel
+        dashInitialGap: Math.random(), // Random starting position — avoids synchronized movement
         id: `pulse-${arc.id}`,
         layer: 'pulse',
         originalArc: arc,
@@ -334,8 +228,6 @@ export default function ThreatGlobe() {
       
       if (criticalArc) {
         zoomToArc(criticalArc);
-        // Dispatch cinematic dolly zoom event
-        window.dispatchEvent(new CustomEvent('cyberpulse:autozoom'));
       }
     }, 30000);
 
@@ -352,9 +244,8 @@ export default function ThreatGlobe() {
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
       .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-      .showAtmosphere(true)
-      .atmosphereColor('#dd550c')
-      .atmosphereAltitude(0.2)
+      .atmosphereColor('rgba(221, 85, 12, 0.2)')
+      .atmosphereAltitude(0.15)
       // ARCS — per-arc accessor functions for dual-layer rendering
       .arcsData([])
       .arcColor('color')
@@ -363,8 +254,8 @@ export default function ThreatGlobe() {
       .arcDashGap((d: any) => d.dashGap)                  // 0=no gap, 0.75=traveling effect
       .arcDashInitialGap((d: any) => d.dashInitialGap)    // Random start offset
       .arcDashAnimateTime((d: any) => d.animateTime)      // 0=static, 1800+=animated
-      .arcAltitudeAutoScale(0.35)  // Slightly taller arcs for drama
-      .arcCurveResolution(48)      // Smooth curves
+      .arcAltitudeAutoScale(0.3)  // Elegant, restrained arc height
+      .arcCurveResolution(64)     // Silky smooth curves
       // Click handler — only respond to pulse arcs (not trails)
       .onArcClick((arc: any) => {
         if (arc && arc.layer === 'pulse' && arc.originalArc) {
@@ -421,11 +312,6 @@ export default function ThreatGlobe() {
     globeRef.current.arcsData(combinedArcs);
     globeRef.current.pointsData(pointsData);
   }, [combinedArcs, pointsData]);
-
-  // Handle Google Maps error
-  const handleMapError = useCallback(() => {
-    setMapLoading(false);
-  }, []);
 
   // Handle Google Maps ready
   const handleMapReady = useCallback((map: google.maps.Map) => {
@@ -514,7 +400,6 @@ export default function ThreatGlobe() {
               initialCenter={{ lat: zoomedArc.startLat, lng: zoomedArc.startLng }}
               initialZoom={8}
               onMapReady={handleMapReady}
-              onMapError={handleMapError}
             />
           )}
 
@@ -525,8 +410,8 @@ export default function ThreatGlobe() {
         </div>
       </div>
 
-      {/* Attack Type Legend — bottom left (only when not zoomed and no overlays) */}
-      {!isZoomed && !dossierCountry && !showTimeline && (
+      {/* Attack Type Legend — bottom left (only when not zoomed) */}
+      {!isZoomed && (
         <div className="absolute bottom-3 left-4 z-10">
           <div className="flex flex-col gap-1">
             {LEGEND_ITEMS.map(item => (
@@ -581,62 +466,13 @@ export default function ThreatGlobe() {
         </div>
       )}
 
-      {/* Interaction hint — bottom-center with animated gesture icons */}
-      {!isZoomed && !dossierCountry && !showTimeline && (
-        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10">
-          <div className="flex items-center gap-4 font-data text-[10px] text-[var(--color-cp-text-secondary)] bg-[var(--color-cp-surface)]/75 backdrop-blur-sm px-3 py-1.5 rounded-full border border-[var(--color-cp-border)]/40">
-            {/* Tap icon */}
-            <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 animate-[tap_2s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M15 8h.01M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9" strokeLinecap="round" />
-                <path d="M12 12v-2m0 0V8m0 2h2m-2 0H10" strokeLinecap="round" />
-              </svg>
-              <span>Tap arc</span>
-            </span>
-            <span className="text-[var(--color-cp-border)]">•</span>
-            {/* Hold icon */}
-            <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 animate-[hold_2.5s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="3" />
-                <circle cx="12" cy="12" r="7" strokeDasharray="4 2" opacity="0.5" />
-              </svg>
-              <span>Hold for dossier</span>
-            </span>
-            <span className="text-[var(--color-cp-border)]">•</span>
-            {/* Swipe up icon */}
-            <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 animate-[swipeUp_2s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M12 19V5m0 0l-4 4m4-4l4 4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span>Swipe for timeline</span>
-            </span>
-          </div>
+      {/* Subtle interaction hint */}
+      {!isZoomed && (
+        <div className="absolute top-3 right-4 z-10">
+          <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-30">
+            Click arc to inspect
+          </span>
         </div>
-      )}
-
-      {/* Country Dossier Overlay */}
-      {dossierCountry && (
-        <CountryDossier 
-          country={dossierCountry} 
-          onClose={() => setDossierCountry(null)} 
-        />
-      )}
-
-      {/* Timeline Scrubber */}
-      <TimelineScrubber 
-        isVisible={showTimeline} 
-        onClose={() => { setShowTimeline(false); setTimelineFilter(null); }} 
-        onTimeChange={(ts) => setTimelineFilter(ts)}
-      />
-
-      {/* Timeline toggle button — bottom right, subtle */}
-      {!isZoomed && !showTimeline && !dossierCountry && (
-        <button
-          onClick={() => setShowTimeline(true)}
-          className="absolute bottom-3 right-4 z-10 px-2.5 py-1 rounded-md bg-[var(--color-cp-surface)]/80 backdrop-blur-sm border border-[var(--color-cp-border)] text-[9px] font-data text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-accent)] hover:border-[var(--color-cp-accent)] transition-all cursor-pointer"
-        >
-          ⏱ 24H Timeline
-        </button>
       )}
     </div>
   );
