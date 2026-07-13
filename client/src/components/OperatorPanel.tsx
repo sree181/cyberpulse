@@ -13,6 +13,7 @@
  * Auto-hides after 30s of inactivity.
  */
 import { useEffect, useState, useRef } from 'react';
+import { useSoundEngine } from '@/components/SoundEngine';
 
 interface OperatorPanelProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ interface OperatorPanelProps {
 }
 
 export default function OperatorPanel({ isOpen, onClose, diagnostics, onAction }: OperatorPanelProps) {
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled, volume, setVolume } = useSoundEngine();
   const [autoCloseTimer, setAutoCloseTimer] = useState(30);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -128,6 +130,44 @@ export default function OperatorPanel({ isOpen, onClose, diagnostics, onAction }
               +
             </button>
           </div>
+        </div>
+
+        {/* Audio Volume Control */}
+        <div className="mb-6 p-4 bg-[#0c1e38] rounded-lg border border-[#1a3a5c]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-400 uppercase tracking-wider">Audio</span>
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`text-xs px-2 py-0.5 rounded cursor-pointer ${
+                soundEnabled ? 'bg-green-700/50 text-green-300' : 'bg-gray-700/50 text-gray-400'
+              }`}
+            >
+              {soundEnabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          {soundEnabled && (
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setVolume(Math.max(0, volume - 0.1))}
+                className="w-10 h-10 rounded-lg bg-[#1a3a5c] text-white flex items-center justify-center text-xl hover:bg-[#2a4a6c] transition-colors cursor-pointer"
+              >
+                −
+              </button>
+              <div className="flex-1 h-2 bg-[#1a3a5c] rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-cyan-500 rounded-full transition-all duration-300"
+                  style={{ width: `${volume * 100}%` }}
+                />
+              </div>
+              <button 
+                onClick={() => setVolume(Math.min(1, volume + 0.1))}
+                className="w-10 h-10 rounded-lg bg-[#1a3a5c] text-white flex items-center justify-center text-xl hover:bg-[#2a4a6c] transition-colors cursor-pointer"
+              >
+                +
+              </button>
+              <span className="text-sm text-white font-mono w-10 text-right">{Math.round(volume * 100)}%</span>
+            </div>
+          )}
         </div>
 
         {/* Last Error */}

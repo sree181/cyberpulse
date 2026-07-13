@@ -539,3 +539,118 @@ canvas, svg {
     filter: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HOLLYWOOD VISUALIZATION — Cinematic CSS Effects
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Bloom glow class — apply to elements that should emit light */
+.hollywood-bloom {
+  filter: drop-shadow(0 0 6px var(--color-cp-accent)) drop-shadow(0 0 12px var(--color-cp-accent));
+}
+
+.hollywood-bloom-critical {
+  filter: drop-shadow(0 0 6px var(--color-cp-critical)) drop-shadow(0 0 12px var(--color-cp-critical));
+}
+
+/* FUI Panel corner pulse animation */
+@keyframes fui-corner-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.fui-corner-pulse {
+  animation: fui-corner-pulse 3s ease-in-out infinite;
+}
+
+/* Globe bloom enhancement — CSS glow on the globe container */
+.globe-bloom {
+  box-shadow: 
+    inset 0 0 60px rgba(221, 85, 12, 0.03),
+    0 0 80px rgba(221, 85, 12, 0.05);
+}
+
+/* Chromatic aberration on hover for interactive elements */
+.chromatic-hover:hover {
+  text-shadow: 
+    -1px 0 rgba(255, 0, 0, 0.15),
+    1px 0 rgba(0, 255, 255, 0.15);
+}
+
+/* Threat entry glow for critical items */
+.threat-entry-critical {
+  box-shadow: inset 3px 0 0 var(--color-cp-critical);
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.03) 0%, transparent 30%);
+}
+
+/* Animated gradient border for active panels */
+@keyframes gradient-border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border-active {
+  border-image: linear-gradient(
+    90deg, 
+    var(--color-cp-border), 
+    var(--color-cp-accent), 
+    var(--color-cp-border)
+  ) 1;
+  animation: gradient-border-flow 4s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Holographic shimmer effect */
+@keyframes holographic-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.holographic-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.02) 55%,
+    transparent 100%
+  );
+  animation: holographic-shimmer 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Data stream animation for background elements */
+@keyframes data-stream {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+/* Sound wave animation for audio indicator */
+@keyframes sound-wave {
+  0%, 100% { height: 3px; }
+  50% { height: 10px; }
+}
+
+.sound-wave-bar {
+  animation: sound-wave 0.8s ease-in-out infinite;
+}
+
+.sound-wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.sound-wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.sound-wave-bar:nth-child(4) { animation-delay: 0.3s; }
+
+/* Subtle glow pulse for active status indicators */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 4px currentColor; }
+  50% { box-shadow: 0 0 12px currentColor, 0 0 20px currentColor; }
+}
+
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}

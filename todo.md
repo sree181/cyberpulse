@@ -92,3 +92,20 @@
 - [x] Connection Resilience: Auto-reconnect with visual indicator, stale data detection, graceful degradation
 - [x] Performance Monitor: FPS counter, memory usage, auto-quality reduction if dropping below 30fps
 - [x] Touch Feedback: Ripple effects, haptic-style visual feedback on touch interactions
+
+## Hollywood Visualization Upgrade (July 2026)
+
+- [x] Cinematic Post-Processing: Vignette, film grain canvas, scanlines, chromatic aberration (CSS + Canvas)
+- [x] GSAP Text Scramble: Threat feed entries decode from hex characters
+- [x] GSAP Text Scramble: IP addresses resolve with scramble effect
+- [x] GSAP NumberMorph: Header metrics animate between values with rolling digit effect
+- [x] tsParticles: Reactive particle network background behind globe
+- [x] tsParticles: Particle color/density responds to threat level (blue→amber→red)
+- [x] FUI Panel Borders: Animated SVG borders that draw-in on panel mount (GSAP)
+- [x] FUI Panel Borders: Corner indicators with pulse animation
+- [x] FUI HUD Elements: Rotating concentric rings/reticles on the globe
+- [x] Web Audio: Subtle bleep on new threat arrival
+- [x] Web Audio: Ambient low-frequency hum (adjustable volume)
+- [x] Web Audio: Alert tone escalation for critical threats
+- [x] Sound Toggle: Header button to enable/disable audio
+- [x] Hollywood CSS: Bloom glow, chromatic-hover, holographic shimmer, gradient-border-flow

@@ -1,13 +1,14 @@
 /**
- * ThreatFeed — Live scrolling threat log
+ * ThreatFeed — Live scrolling threat log with Hollywood text effects
  * 
- * Redesign: Clean, readable entries. Only severity dot uses color.
- * No flashing, no scan lines, no competing colored badges.
+ * Redesign: Clean, readable entries with GSAP text scramble on new arrivals.
+ * IP addresses decode from hex characters, attack types scramble in.
  * Typography-driven hierarchy: time → type → source → target.
  */
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useThreatData } from '@/contexts/ThreatContext';
 import { type ThreatEvent } from '@/lib/threatEngine';
+import { TextScramble } from '@/components/TextScramble';
 
 function formatTime(date: Date): string {
   return date.toISOString().slice(11, 19);
@@ -22,15 +23,24 @@ function getSeverityClass(severity: string): string {
   }
 }
 
-function ThreatEntry({ threat }: { threat: ThreatEvent }) {
+function ThreatEntry({ threat, isNew }: { threat: ThreatEvent; isNew: boolean }) {
   return (
     <div className="animate-fade-in px-3 py-2 border-b border-[var(--color-cp-border)]/50 last:border-b-0 hover:bg-[var(--color-cp-elevated)]/50 transition-colors">
       <div className="flex items-center gap-2">
         {/* Severity dot */}
         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${getSeverityClass(threat.severity)}`} />
-        {/* Attack type */}
+        {/* Attack type — scrambles in for new entries */}
         <span className="text-body text-[var(--color-cp-text-primary)] font-medium truncate">
-          {threat.attackType}
+          {isNew ? (
+            <TextScramble 
+              text={threat.attackType} 
+              mode="cyber" 
+              duration={0.6} 
+              trigger={threat.id}
+            />
+          ) : (
+            threat.attackType
+          )}
         </span>
         {/* Time */}
         <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] ml-auto tabular-nums shrink-0">
@@ -38,7 +48,20 @@ function ThreatEntry({ threat }: { threat: ThreatEvent }) {
         </span>
       </div>
       <div className="mt-1 ml-3.5 flex items-center gap-1.5 text-caption text-[var(--color-cp-text-secondary)]">
-        <span className="font-data tabular-nums">{threat.sourceIp}</span>
+        {/* IP address — decodes from hex for new entries */}
+        <span className="font-data tabular-nums">
+          {isNew ? (
+            <TextScramble 
+              text={threat.sourceIp} 
+              mode="hex" 
+              duration={0.8} 
+              delay={0.2}
+              trigger={threat.id}
+            />
+          ) : (
+            threat.sourceIp
+          )}
+        </span>
         <span className="text-[var(--color-cp-text-tertiary)]">&rarr;</span>
         <span className="truncate">{threat.targetName}</span>
         <span className="text-[var(--color-cp-text-tertiary)]">:{threat.port}</span>
@@ -50,6 +73,30 @@ function ThreatEntry({ threat }: { threat: ThreatEvent }) {
 export default function ThreatFeed() {
   const { recentThreats, isLive, realDataStatus } = useThreatData();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const prevIdsRef = useRef<Set<string>>(new Set());
+
+  // Track which entries are "new" (just appeared)
+  useEffect(() => {
+    const currentIds = new Set(recentThreats.map(t => t.id));
+    const freshIds = new Set<string>();
+    
+    currentIds.forEach(id => {
+      if (!prevIdsRef.current.has(id)) {
+        freshIds.add(id);
+      }
+    });
+
+    if (freshIds.size > 0) {
+      setNewIds(freshIds);
+      // Clear "new" status after animation completes
+      setTimeout(() => {
+        setNewIds(new Set());
+      }, 1500);
+    }
+
+    prevIdsRef.current = currentIds;
+  }, [recentThreats]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -77,7 +124,7 @@ export default function ThreatFeed() {
           </span>
         </div>
       </div>
-      
+
       {/* Feed entries */}
       <div 
         ref={scrollRef}
@@ -90,7 +137,11 @@ export default function ThreatFeed() {
           </div>
         ) : (
           recentThreats.map((threat) => (
-            <ThreatEntry key={threat.id} threat={threat} />
+            <ThreatEntry 
+              key={threat.id} 
+              threat={threat} 
+              isNew={newIds.has(threat.id)}
+            />
           ))
         )}
       </div>
