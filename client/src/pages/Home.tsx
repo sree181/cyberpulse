@@ -30,6 +30,8 @@ import { CinematicOverlay, HudRings } from '@/components/CinematicOverlay';
 import ParticleNetwork from '@/components/ParticleNetwork';
 import { SoundEngineProvider } from '@/components/SoundEngine';
 import FuiPanel from '@/components/FuiPanel';
+import CollapsiblePanel from '@/components/CollapsiblePanel';
+import TopCountries from '@/components/TopCountries';
 
 type ViewMode = 'globe' | 'map';
 
@@ -62,14 +64,25 @@ export default function Home() {
                 {/* LEFT SIDEBAR — Compact metrics + MITRE */}
                 <div className="w-full xl:w-[12vw] xl:min-w-[160px] xl:max-w-[240px] xl:shrink-0 h-[12vh] xl:h-auto flex xl:flex-col gap-[0.75vw]">
                   <FuiPanel className="flex-1 lg:flex-[3] overflow-hidden" delay={0.2} cornerSize={8}>
-                    <div className="cp-panel h-full">
-                      <StatsPanel />
-                    </div>
+                    <CollapsiblePanel title="Analytics">
+                      <div className="cp-panel h-full">
+                        <StatsPanel />
+                      </div>
+                    </CollapsiblePanel>
                   </FuiPanel>
                   <FuiPanel className="flex-1 lg:flex-[4] overflow-hidden" delay={0.5} cornerSize={8}>
-                    <div className="cp-panel h-full">
-                      <MitreHeatmap />
-                    </div>
+                    <CollapsiblePanel title="MITRE ATT&CK">
+                      <div className="cp-panel h-full">
+                        <MitreHeatmap />
+                      </div>
+                    </CollapsiblePanel>
+                  </FuiPanel>
+                  <FuiPanel className="flex-1 lg:flex-[3] overflow-hidden" delay={0.7} cornerSize={8}>
+                    <CollapsiblePanel title="Top Countries">
+                      <div className="cp-panel h-full">
+                        <TopCountries />
+                      </div>
+                    </CollapsiblePanel>
                   </FuiPanel>
                 </div>
 
@@ -80,11 +93,11 @@ export default function Home() {
                     <div className="cp-panel relative h-full" style={{ background: 'oklch(0.12 0.04 255)' }}>
                       {viewMode === 'globe' && <HudRings />}
                       
-                      {/* View Toggle Button */}
-                      <ViewToggle viewMode={viewMode} onChange={setViewMode} />
-
                       {/* Render active view */}
                       {viewMode === 'globe' ? <ThreatGlobe /> : <ThreatFlatMap />}
+
+                      {/* View Toggle Button — rendered AFTER globe so it's on top in DOM stacking */}
+                      <ViewToggle viewMode={viewMode} onChange={setViewMode} />
                     </div>
                   </FuiPanel>
                   {/* Time Series — subtle, integrated */}
@@ -94,14 +107,18 @@ export default function Home() {
                   {/* Bottom row: Spotlight + Briefing */}
                   <div className="flex-[2] flex gap-[0.75vw] overflow-hidden">
                     <FuiPanel className="flex-1 overflow-hidden" delay={0.8} cornerSize={8}>
-                      <div className="cp-panel h-full">
-                        <ThreatSpotlight />
-                      </div>
+                      <CollapsiblePanel title="CVE Spotlight">
+                        <div className="cp-panel h-full">
+                          <ThreatSpotlight />
+                        </div>
+                      </CollapsiblePanel>
                     </FuiPanel>
                     <FuiPanel className="flex-1 overflow-hidden" delay={1.0} cornerSize={8}>
-                      <div className="cp-panel h-full">
-                        <WeeklyBriefing />
-                      </div>
+                      <CollapsiblePanel title="Weekly Briefing">
+                        <div className="cp-panel h-full">
+                          <WeeklyBriefing />
+                        </div>
+                      </CollapsiblePanel>
                     </FuiPanel>
                   </div>
                 </div>
@@ -109,14 +126,18 @@ export default function Home() {
                 {/* RIGHT SIDEBAR — Port Activity + Threat Feed */}
                 <div className="hidden xl:flex w-[14vw] min-w-[200px] max-w-[300px] shrink-0 flex-col gap-[0.75vw]">
                   <FuiPanel className="flex-[2] overflow-hidden" delay={0.3} cornerSize={8}>
-                    <div className="cp-panel h-full">
-                      <PortHeatmap />
-                    </div>
+                    <CollapsiblePanel title="Port Activity">
+                      <div className="cp-panel h-full">
+                        <PortHeatmap />
+                      </div>
+                    </CollapsiblePanel>
                   </FuiPanel>
                   <FuiPanel className="flex-[5] overflow-hidden" delay={0.6} cornerSize={8}>
-                    <div className="cp-panel h-full">
-                      <ThreatFeed />
-                    </div>
+                    <CollapsiblePanel title="Threat Feed">
+                      <div className="cp-panel h-full">
+                        <ThreatFeed />
+                      </div>
+                    </CollapsiblePanel>
                   </FuiPanel>
                 </div>
               </div>
@@ -124,14 +145,18 @@ export default function Home() {
               {/* BOTTOM ROW: Port Activity + Threat Feed (shown on smaller screens) */}
               <div className="flex xl:hidden gap-[0.75vw] h-[16vh] overflow-hidden">
                 <FuiPanel className="flex-1 overflow-hidden" delay={0.4} cornerSize={8}>
-                  <div className="cp-panel h-full">
-                    <PortHeatmap />
-                  </div>
+                  <CollapsiblePanel title="Port Activity">
+                    <div className="cp-panel h-full">
+                      <PortHeatmap />
+                    </div>
+                  </CollapsiblePanel>
                 </FuiPanel>
                 <FuiPanel className="flex-1 overflow-hidden" delay={0.7} cornerSize={8}>
-                  <div className="cp-panel h-full">
-                    <ThreatFeed />
-                  </div>
+                  <CollapsiblePanel title="Threat Feed">
+                    <div className="cp-panel h-full">
+                      <ThreatFeed />
+                    </div>
+                  </CollapsiblePanel>
                 </FuiPanel>
               </div>
 
@@ -148,10 +173,21 @@ export default function Home() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function ViewToggle({ viewMode, onChange }: { viewMode: ViewMode; onChange: (mode: ViewMode) => void }) {
+  const handleClick = (mode: ViewMode, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onChange(mode);
+  };
+
   return (
-    <div className="absolute top-3 left-4 z-20 flex items-center gap-1 bg-[var(--color-cp-surface)]/80 backdrop-blur-sm rounded-md p-0.5 border border-white/[0.06]">
+    <div 
+      className="absolute top-3 left-4 z-[50] flex items-center gap-1 bg-[var(--color-cp-surface)]/80 backdrop-blur-sm rounded-md p-0.5 border border-white/[0.06]"
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <button
-        onClick={() => onChange('globe')}
+        onClick={(e) => handleClick('globe', e)}
+        onPointerDown={(e) => e.stopPropagation()}
         className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-data font-medium transition-all duration-200 cursor-pointer ${
           viewMode === 'globe'
             ? 'bg-[var(--color-cp-accent)]/15 text-[var(--color-cp-accent)] shadow-sm'
@@ -166,7 +202,8 @@ function ViewToggle({ viewMode, onChange }: { viewMode: ViewMode; onChange: (mod
         Globe
       </button>
       <button
-        onClick={() => onChange('map')}
+        onClick={(e) => handleClick('map', e)}
+        onPointerDown={(e) => e.stopPropagation()}
         className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-data font-medium transition-all duration-200 cursor-pointer ${
           viewMode === 'map'
             ? 'bg-[var(--color-cp-accent)]/15 text-[var(--color-cp-accent)] shadow-sm'

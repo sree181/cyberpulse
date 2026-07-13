@@ -142,3 +142,9 @@
 - [x] Remove orange FUI panel borders from all panels (replace with clean borderless cards + subtle backdrop blur)
 - [x] Add globe/map toggle button (switch between 3D globe and 2D flat threat map view)
 - [x] Keep existing layout structure intact (no panel removal)
+
+## Bug Fixes & UX Improvements (July 2026)
+- [x] Fix globe/map toggle — currently not switching to map view on click
+- [x] Make all info panels minimizable/collapsible (reduce information overload)
+- [x] Add top attack source countries panel (like Kaspersky CyberMap ranking)
+- [x] Add top target countries panel (like Kaspersky CyberMap ranking)
