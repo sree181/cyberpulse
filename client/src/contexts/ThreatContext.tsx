@@ -64,6 +64,7 @@ export interface ArcData {
   targetName: string;
   port: number;
   protocol: string;
+  timestamp: number;
 }
 
 const ThreatContext = createContext<ThreatContextType | null>(null);
@@ -180,6 +181,7 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
       targetName: threat.targetName,
       port: threat.port,
       protocol: threat.protocol,
+      timestamp: Date.now(),
     };
 
     setActiveArcs(prev => {

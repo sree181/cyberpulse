@@ -151,8 +151,9 @@ export class CorridorAggregator {
     const now = Date.now();
     const corridorId = `${arc.sourceCountry}→${arc.targetName}`;
 
-    // Record the event
-    this.events.push({ arc, timestamp: now, corridorId });
+    // Record the event — use arc's timestamp if available, otherwise now
+    const eventTime = arc.timestamp || now;
+    this.events.push({ arc, timestamp: eventTime, corridorId });
 
     // Prune old events outside the window
     this.events = this.events.filter(e => now - e.timestamp < WINDOW_MS);

@@ -112,13 +112,13 @@
 
 ## Arc Redesign — From Ornamental to Meaningful (July 2026)
 
-- [ ] Corridor Aggregator: Group events by source_country→target into rolling 5-min corridors
-- [ ] Arc WIDTH = corridor volume (log scale, thin=few events, thick=campaign)
-- [ ] Arc OPACITY/BRIGHTNESS = recency (last 30s bright, older fades over 2 min)
-- [ ] Arc COLOR = dominant severity (critical=red, high=amber, medium=cyan)
-- [ ] Arc SPEED = urgency (critical corridors pulse faster)
-- [ ] Source Heatmap Glow: Radial glow at countries with many attackers
-- [ ] Target Pressure Rings: Dynamic pulse rate/size based on actual attack volume
-- [ ] Temporal Decay: Corridors persist and fade over 2 min instead of vanishing at 15s
-- [ ] Event Pulses: Single bright pulse travels along corridor when new attack arrives
-- [ ] Remove spaghetti: Max 12 corridors visible, not 60 individual arcs
+- [x] Corridor Aggregator: Group events by source_country→target into rolling 5-min corridors
+- [x] Arc WIDTH = corridor volume (log scale, thin=few events, thick=campaign)
+- [x] Arc OPACITY/BRIGHTNESS = recency (last 30s bright, older fades over 2 min)
+- [x] Arc COLOR = dominant severity (critical=red, high=amber, medium=cyan)
+- [x] Arc SPEED = urgency (critical corridors pulse faster)
+- [x] Source Heatmap Glow: Radial glow at countries with many attackers
+- [x] Target Pressure Rings: Dynamic pulse rate/size based on actual attack volume
+- [x] Temporal Decay: Corridors persist and fade over 2 min instead of vanishing at 15s
+- [x] Event Pulses: Single bright pulse travels along corridor when new attack arrives
+- [x] Remove spaghetti: Max 12 corridors visible, not 60 individual arcs

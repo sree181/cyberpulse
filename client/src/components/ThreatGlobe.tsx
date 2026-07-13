@@ -147,17 +147,34 @@ export default function ThreatGlobe() {
     return result;
   }, [corridors, corridorPulses]);
 
-  // Source hotspot points — glow at countries with concentrated attackers
-  const pointsData = useMemo(() => {
+  // Source hotspot glow elements — radial CSS glow at countries with concentrated attackers
+  const hotspotElements = useMemo(() => {
     return sourceHotspots.map(hotspot => ({
       lat: hotspot.lat,
       lng: hotspot.lng,
       color: hotspot.color,
-      size: hotspot.radius * 0.08,
-      altitude: 0.001,
-      label: `${hotspot.country}: ${hotspot.totalEvents} attacks`,
+      radius: hotspot.radius,
+      intensity: hotspot.intensity,
+      country: hotspot.country,
+      totalEvents: hotspot.totalEvents,
     }));
   }, [sourceHotspots]);
+
+  // Create/update glow DOM elements for source hotspots
+  const hotspotElementFn = useCallback((d: any) => {
+    const el = document.createElement('div');
+    const size = Math.max(30, d.radius * 25);
+    el.style.width = `${size}px`;
+    el.style.height = `${size}px`;
+    el.style.borderRadius = '50%';
+    el.style.background = `radial-gradient(circle, ${d.color} 0%, transparent 70%)`;
+    el.style.boxShadow = `0 0 ${size * 0.6}px ${size * 0.3}px ${d.color}`;
+    el.style.animation = `pulse-glow ${2 + (1 - d.intensity) * 2}s ease-in-out infinite`;
+    el.style.pointerEvents = 'none';
+    el.style.transform = 'translate(-50%, -50%)';
+    el.title = `${d.country}: ${d.totalEvents} attacks`;
+    return el;
+  }, []);
 
   // Dynamic target rings — pulse rate/size based on actual attack pressure
   const ringsData = useMemo(() => {
@@ -327,11 +344,10 @@ export default function ThreatGlobe() {
           zoomToArc(arc.originalArc);
         }
       })
-      // Points — source hotspot markers
-      .pointsData([])
-      .pointColor('color')
-      .pointAltitude('altitude')
-      .pointRadius('size')
+      // HTML Elements — source hotspot glow
+      .htmlElementsData([])
+      .htmlElement(hotspotElementFn)
+      .htmlAltitude(0.01)
       // Rings — dynamic target pressure
       .ringsData(ringsData)
       .ringColor('color')
@@ -411,8 +427,8 @@ export default function ThreatGlobe() {
   useEffect(() => {
     if (!globeRef.current) return;
     globeRef.current.arcsData(combinedArcs);
-    globeRef.current.pointsData(pointsData);
-  }, [combinedArcs, pointsData]);
+    globeRef.current.htmlElementsData(hotspotElements);
+  }, [combinedArcs, hotspotElements]);
 
   // Update rings separately (dynamic pressure)
   useEffect(() => {

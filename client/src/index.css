@@ -654,3 +654,15 @@ canvas, svg {
 .glow-pulse {
   animation: glow-pulse 2s ease-in-out infinite;
 }
+
+/* Source Hotspot Glow Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+}
