@@ -103,16 +103,16 @@ interface Campaign {
 
 // Realistic campaign templates (what real APT campaigns look like)
 const CAMPAIGN_TEMPLATES: { attackType: AttackType; severity: Severity; port: number; protocol: string; tactic: string; technique: string; burstSize: [number, number]; intervalMs: [number, number] }[] = [
-  { attackType: 'SSH Brute Force', severity: 'high', port: 22, protocol: 'SSH', tactic: 'Credential Access', technique: 'T1110 - Brute Force', burstSize: [5, 10], intervalMs: [800, 2000] },
-  { attackType: 'DDoS', severity: 'critical', port: 80, protocol: 'HTTP', tactic: 'Impact', technique: 'T1498 - Network DoS', burstSize: [8, 15], intervalMs: [300, 800] },
-  { attackType: 'SQL Injection', severity: 'critical', port: 443, protocol: 'HTTPS', tactic: 'Initial Access', technique: 'T1190 - Exploit Public App', burstSize: [3, 6], intervalMs: [1500, 3000] },
-  { attackType: 'Credential Stuffing', severity: 'high', port: 443, protocol: 'HTTPS', tactic: 'Credential Access', technique: 'T1110.004 - Credential Stuffing', burstSize: [6, 12], intervalMs: [600, 1500] },
-  { attackType: 'Port Scan', severity: 'low', port: 0, protocol: 'TCP', tactic: 'Reconnaissance', technique: 'T1046 - Network Scanning', burstSize: [4, 8], intervalMs: [400, 1000] },
-  { attackType: 'Malware C2', severity: 'critical', port: 8443, protocol: 'HTTPS', tactic: 'Command and Control', technique: 'T1071 - Application Layer', burstSize: [3, 5], intervalMs: [2000, 4000] },
-  { attackType: 'Ransomware', severity: 'critical', port: 445, protocol: 'SMB', tactic: 'Impact', technique: 'T1486 - Data Encrypted', burstSize: [2, 4], intervalMs: [2000, 5000] },
-  { attackType: 'Phishing', severity: 'medium', port: 25, protocol: 'SMTP', tactic: 'Initial Access', technique: 'T1566 - Phishing', burstSize: [4, 8], intervalMs: [1000, 2500] },
-  { attackType: 'DNS Tunneling', severity: 'high', port: 53, protocol: 'DNS', tactic: 'Exfiltration', technique: 'T1048 - Exfil Over Alt Protocol', burstSize: [3, 6], intervalMs: [1500, 3000] },
-  { attackType: 'XSS', severity: 'medium', port: 443, protocol: 'HTTPS', tactic: 'Initial Access', technique: 'T1189 - Drive-by Compromise', burstSize: [3, 5], intervalMs: [1200, 2500] },
+  { attackType: 'SSH Brute Force', severity: 'high', port: 22, protocol: 'SSH', tactic: 'Credential Access', technique: 'T1110 - Brute Force', burstSize: [6, 10], intervalMs: [2000, 3500] },
+  { attackType: 'DDoS', severity: 'critical', port: 80, protocol: 'HTTP', tactic: 'Impact', technique: 'T1498 - Network DoS', burstSize: [7, 10], intervalMs: [2000, 3000] },
+  { attackType: 'SQL Injection', severity: 'critical', port: 443, protocol: 'HTTPS', tactic: 'Initial Access', technique: 'T1190 - Exploit Public App', burstSize: [5, 8], intervalMs: [2500, 4000] },
+  { attackType: 'Credential Stuffing', severity: 'high', port: 443, protocol: 'HTTPS', tactic: 'Credential Access', technique: 'T1110.004 - Credential Stuffing', burstSize: [6, 10], intervalMs: [2000, 3500] },
+  { attackType: 'Port Scan', severity: 'low', port: 0, protocol: 'TCP', tactic: 'Reconnaissance', technique: 'T1046 - Network Scanning', burstSize: [5, 9], intervalMs: [2000, 3500] },
+  { attackType: 'Malware C2', severity: 'critical', port: 8443, protocol: 'HTTPS', tactic: 'Command and Control', technique: 'T1071 - Application Layer', burstSize: [5, 7], intervalMs: [3000, 5000] },
+  { attackType: 'Ransomware', severity: 'critical', port: 445, protocol: 'SMB', tactic: 'Impact', technique: 'T1486 - Data Encrypted', burstSize: [5, 7], intervalMs: [3000, 5000] },
+  { attackType: 'Phishing', severity: 'medium', port: 25, protocol: 'SMTP', tactic: 'Initial Access', technique: 'T1566 - Phishing', burstSize: [5, 8], intervalMs: [2500, 4000] },
+  { attackType: 'DNS Tunneling', severity: 'high', port: 53, protocol: 'DNS', tactic: 'Exfiltration', technique: 'T1048 - Exfil Over Alt Protocol', burstSize: [5, 8], intervalMs: [2500, 4000] },
+  { attackType: 'XSS', severity: 'medium', port: 443, protocol: 'HTTPS', tactic: 'Initial Access', technique: 'T1189 - Drive-by Compromise', burstSize: [5, 7], intervalMs: [3000, 4500] },
 ];
 
 // Target infrastructure (fewer, more distinct locations)
@@ -137,7 +137,7 @@ function generateIp(): string {
 let campaignCounter = 0;
 let threatCounter = 0;
 
-function createCampaign(realAttackers: any[]): Campaign {
+function createCampaign(realAttackers: any[], excludeCountries: string[] = []): Campaign {
   campaignCounter++;
   const template = CAMPAIGN_TEMPLATES[Math.floor(Math.random() * CAMPAIGN_TEMPLATES.length)];
   const target = TARGETS[Math.floor(Math.random() * TARGETS.length)];
@@ -149,8 +149,10 @@ function createCampaign(realAttackers: any[]): Campaign {
   const sourceIps: string[] = [];
 
   if (realAttackers.length > 0 && Math.random() < 0.85) {
-    // Use a real attacker as the campaign origin
-    const attacker = realAttackers[Math.floor(Math.random() * realAttackers.length)];
+    // Use a real attacker as the campaign origin — prefer one from a different region
+    let candidates = realAttackers.filter(a => !excludeCountries.includes(a.country));
+    if (candidates.length === 0) candidates = realAttackers; // fallback if all excluded
+    const attacker = candidates[Math.floor(Math.random() * candidates.length)];
     sourceLat = attacker.lat;
     sourceLng = attacker.lng;
     sourceCountry = attacker.country;
@@ -164,7 +166,7 @@ function createCampaign(realAttackers: any[]): Campaign {
       sourceIps.push(parts.join('.'));
     }
   } else {
-    // Fallback: pick from known threat actor regions
+    // Fallback: pick from known threat actor regions — avoid recently used countries
     const FALLBACK_SOURCES = [
       { country: 'CN', city: 'Beijing', lat: 39.9042, lng: 116.4074 },
       { country: 'RU', city: 'Moscow', lat: 55.7558, lng: 37.6173 },
@@ -174,7 +176,9 @@ function createCampaign(realAttackers: any[]): Campaign {
       { country: 'KP', city: 'Pyongyang', lat: 39.0392, lng: 125.7625 },
       { country: 'NG', city: 'Lagos', lat: 6.5244, lng: 3.3792 },
     ];
-    const src = FALLBACK_SOURCES[Math.floor(Math.random() * FALLBACK_SOURCES.length)];
+    let available = FALLBACK_SOURCES.filter(s => !excludeCountries.includes(s.country));
+    if (available.length === 0) available = FALLBACK_SOURCES;
+    const src = available[Math.floor(Math.random() * available.length)];
     sourceLat = src.lat;
     sourceLng = src.lng;
     sourceCountry = src.country;
@@ -400,7 +404,9 @@ export function ThreatProvider({ children }: { children: ReactNode }) {
 
     function spawnNewCampaign() {
       if (activeCampaignsRef.current.length >= MAX_CONCURRENT_CAMPAIGNS) return;
-      const campaign = createCampaign(realAttackersRef.current);
+      // Exclude countries already used by active campaigns for geographic diversity
+      const excludeCountries = activeCampaignsRef.current.map(c => c.sourceCountry);
+      const campaign = createCampaign(realAttackersRef.current, excludeCountries);
       activeCampaignsRef.current.push(campaign);
       runCampaign(campaign);
     }
