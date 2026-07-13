@@ -5,8 +5,9 @@
  * - Animated SVG border that "draws in" on mount
  * - Corner indicators with pulse animation
  * - Subtle glow on the border
- * - Optional header with scramble text effect
+ * - Content fades in after border animation completes
  * 
+ * Uses a viewBox-based SVG (1000x1000) that scales to fill the container.
  * Inspired by: Iron Man HUD, Star Citizen UI, Halo waypoint interfaces
  */
 import { useEffect, useRef, useState, type ReactNode, memo } from 'react';
@@ -32,7 +33,6 @@ const FuiPanel = memo(function FuiPanel({
   delay = 0,
 }: FuiPanelProps) {
   const borderRef = useRef<SVGSVGElement>(null);
-  const cornerRefs = useRef<(SVGPathElement | null)[]>([]);
   const [isRevealed, setIsRevealed] = useState(false);
 
   useEffect(() => {
@@ -45,11 +45,13 @@ const FuiPanel = memo(function FuiPanel({
     paths.forEach((path) => {
       const el = path as SVGPathElement;
       const length = el.getTotalLength();
-      gsap.set(el, {
-        strokeDasharray: length,
-        strokeDashoffset: length,
-        opacity: 0,
-      });
+      if (length > 0) {
+        gsap.set(el, {
+          strokeDasharray: length,
+          strokeDashoffset: length,
+          opacity: 0,
+        });
+      }
     });
 
     corners.forEach((corner) => {
@@ -82,53 +84,53 @@ const FuiPanel = memo(function FuiPanel({
     return () => { tl.kill(); };
   }, [animationDuration, delay]);
 
-  const cs = cornerSize;
+  // Use a 1000x1000 viewBox — corners are proportional
+  const vb = 1000;
+  const cs = Math.round((cornerSize / 12) * 30); // Scale corner size to viewBox
 
   return (
     <div className={`relative ${className}`}>
-      {/* SVG Border Overlay */}
+      {/* SVG Border Overlay — uses viewBox for proper scaling */}
       <svg
         ref={borderRef}
         className="absolute inset-0 w-full h-full pointer-events-none z-10"
+        viewBox={`0 0 ${vb} ${vb}`}
         preserveAspectRatio="none"
+        fill="none"
       >
         {/* Top border */}
         <path
           className="fui-border-path"
-          d={`M ${cs},0 L calc(100% - ${cs}),0`}
-          fill="none"
+          d={`M ${cs},0 L ${vb - cs},0`}
           stroke={glowColor}
-          strokeWidth="1"
+          strokeWidth="2"
           vectorEffect="non-scaling-stroke"
           style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}
         />
         {/* Right border */}
         <path
           className="fui-border-path"
-          d={`M 100%,${cs} L 100%,calc(100% - ${cs})`}
-          fill="none"
+          d={`M ${vb},${cs} L ${vb},${vb - cs}`}
           stroke={glowColor}
-          strokeWidth="1"
+          strokeWidth="2"
           vectorEffect="non-scaling-stroke"
           style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}
         />
         {/* Bottom border */}
         <path
           className="fui-border-path"
-          d={`M calc(100% - ${cs}),100% L ${cs},100%`}
-          fill="none"
+          d={`M ${vb - cs},${vb} L ${cs},${vb}`}
           stroke={glowColor}
-          strokeWidth="1"
+          strokeWidth="2"
           vectorEffect="non-scaling-stroke"
           style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}
         />
         {/* Left border */}
         <path
           className="fui-border-path"
-          d={`M 0,calc(100% - ${cs}) L 0,${cs}`}
-          fill="none"
+          d={`M 0,${vb - cs} L 0,${cs}`}
           stroke={glowColor}
-          strokeWidth="1"
+          strokeWidth="2"
           vectorEffect="non-scaling-stroke"
           style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}
         />
@@ -138,46 +140,42 @@ const FuiPanel = memo(function FuiPanel({
         <path
           className="fui-corner"
           d={`M 0,${cs} L 0,0 L ${cs},0`}
-          fill="none"
           stroke={glowColor}
-          strokeWidth="1.5"
+          strokeWidth="3"
           vectorEffect="non-scaling-stroke"
           style={{ filter: `drop-shadow(0 0 4px ${glowColor})`, transformOrigin: '0 0' }}
         />
         {/* Top-right */}
         <path
           className="fui-corner"
-          d={`M calc(100% - ${cs}),0 L 100%,0 L 100%,${cs}`}
-          fill="none"
+          d={`M ${vb - cs},0 L ${vb},0 L ${vb},${cs}`}
           stroke={glowColor}
-          strokeWidth="1.5"
+          strokeWidth="3"
           vectorEffect="non-scaling-stroke"
-          style={{ filter: `drop-shadow(0 0 4px ${glowColor})`, transformOrigin: '100% 0' }}
+          style={{ filter: `drop-shadow(0 0 4px ${glowColor})`, transformOrigin: `${vb}px 0` }}
         />
         {/* Bottom-right */}
         <path
           className="fui-corner"
-          d={`M 100%,calc(100% - ${cs}) L 100%,100% L calc(100% - ${cs}),100%`}
-          fill="none"
+          d={`M ${vb},${vb - cs} L ${vb},${vb} L ${vb - cs},${vb}`}
           stroke={glowColor}
-          strokeWidth="1.5"
+          strokeWidth="3"
           vectorEffect="non-scaling-stroke"
-          style={{ filter: `drop-shadow(0 0 4px ${glowColor})`, transformOrigin: '100% 100%' }}
+          style={{ filter: `drop-shadow(0 0 4px ${glowColor})`, transformOrigin: `${vb}px ${vb}px` }}
         />
         {/* Bottom-left */}
         <path
           className="fui-corner"
-          d={`M ${cs},100% L 0,100% L 0,calc(100% - ${cs})`}
-          fill="none"
+          d={`M ${cs},${vb} L 0,${vb} L 0,${vb - cs}`}
           stroke={glowColor}
-          strokeWidth="1.5"
+          strokeWidth="3"
           vectorEffect="non-scaling-stroke"
-          style={{ filter: `drop-shadow(0 0 4px ${glowColor})`, transformOrigin: '0 100%' }}
+          style={{ filter: `drop-shadow(0 0 4px ${glowColor})`, transformOrigin: `0 ${vb}px` }}
         />
       </svg>
 
-      {/* Content with fade-in */}
-      <div className={`relative z-0 transition-opacity duration-500 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Content — visible immediately, fades in after border animation for polish */}
+      <div className={`relative z-0 h-full transition-opacity duration-500 ${isRevealed ? 'opacity-100' : 'opacity-70'}`}>
         {children}
       </div>
     </div>
