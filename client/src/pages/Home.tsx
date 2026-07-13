@@ -89,17 +89,18 @@ export default function Home() {
                 {/* CENTER — Globe/Map (hero) + Time Series + Bottom panels */}
                 <div className="flex-1 flex flex-col gap-[0.75vw] overflow-hidden">
                   {/* Globe/Map — dominant visual with toggle */}
-                  <FuiPanel className="flex-[5] overflow-hidden" delay={0} cornerSize={14} glowColor="var(--color-cp-accent)">
-                    <div className="cp-panel relative h-full" style={{ background: 'oklch(0.12 0.04 255)' }}>
-                      {viewMode === 'globe' && <HudRings />}
-                      
-                      {/* Render active view */}
-                      {viewMode === 'globe' ? <ThreatGlobe /> : <ThreatFlatMap />}
-
-                      {/* View Toggle Button — rendered AFTER globe so it's on top in DOM stacking */}
-                      <ViewToggle viewMode={viewMode} onChange={setViewMode} />
-                    </div>
-                  </FuiPanel>
+                  <div className="relative flex-[5] overflow-hidden">
+                    <FuiPanel className="h-full" delay={0} cornerSize={14} glowColor="var(--color-cp-accent)">
+                      <div className="cp-panel relative h-full" style={{ background: 'oklch(0.12 0.04 255)' }}>
+                        {viewMode === 'globe' && <HudRings />}
+                        
+                        {/* Render active view */}
+                        {viewMode === 'globe' ? <ThreatGlobe /> : <ThreatFlatMap />}
+                      </div>
+                    </FuiPanel>
+                    {/* View Toggle — OUTSIDE the globe container to avoid Three.js event capture */}
+                    <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+                  </div>
                   {/* Time Series — subtle, integrated */}
                   <div className="h-[5.5vh] min-h-[70px] cp-panel shrink-0 overflow-hidden">
                     <TimeSeriesChart />

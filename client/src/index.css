@@ -400,8 +400,8 @@ button, a, input, [role="button"], .interactive {
   touch-action: auto;
 }
 
-/* Canvas and SVG elements should allow pointer events */
-canvas, svg {
+/* Canvas and SVG elements should allow pointer events — but NOT decorative overlays */
+canvas:not(.pointer-events-none), svg:not(.pointer-events-none) {
   pointer-events: auto;
   touch-action: auto;
 }
