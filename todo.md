@@ -154,3 +154,10 @@
 - [x] Add max-width constraints to side panels so they don't over-stretch
 - [x] Ensure globe maintains circular aspect ratio on any screen width
 - [x] Prevent horizontal over-stretching of bottom panels
+
+## Wall Display Optimization (July 2026)
+- [x] Optimize layout for 7680x2160 (32:9) Planar video wall
+- [x] Optimize layout for 5760x2160 (24:9) Planar video wall
+- [x] Ensure no warping or stretching at either resolution
+- [x] Globe stays circular (not elliptical) at ultra-wide aspect ratios
+- [x] Panels use proportional sizing that works at both 32:9 and 24:9

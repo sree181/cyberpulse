@@ -361,31 +361,23 @@
   }
 }
 
-/* === ULTRA-WIDE ASPECT RATIO HANDLING (21:9, 32:9, 48:9) === */
-/* On ultra-wide, the viewport is very short — prioritize globe, shrink bottom panels */
-@media (min-aspect-ratio: 21/9) {
-  /* Reduce font sizes slightly to fit more content vertically */
+/* === VIDEO WALL ASPECT RATIO HANDLING === */
+/* Optimized for Planar DirectLight Pro walls:
+   - 7680×2160 (32:9) and 5760×2160 (24:9)
+   - Both have 2160px height, so vertical space is generous
+   - Use viewport-relative sizing that scales with the wall width */
+
+/* 24:9 and wider (5760x2160+) */
+@media (min-aspect-ratio: 24/9) {
   .cp-panel {
-    font-size: 0.85em;
-  }
-  .cp-panel-header {
-    padding: 0.4rem 0.75rem;
-  }
-  .cp-panel-body {
-    padding: 0.4rem 0.75rem;
+    font-size: clamp(0.75rem, 0.6vw, 1.1rem);
   }
 }
 
-/* Super ultra-wide (32:9 and wider) — aggressively compact bottom panels */
-@media (min-aspect-ratio: 28/9) {
+/* 32:9 (7680x2160) — wider wall, scale text up slightly since we have more horizontal room */
+@media (min-aspect-ratio: 32/9) {
   .cp-panel {
-    font-size: 0.8em;
-  }
-  .cp-panel-header {
-    padding: 0.3rem 0.6rem;
-  }
-  .cp-panel-body {
-    padding: 0.3rem 0.6rem;
+    font-size: clamp(0.8rem, 0.55vw, 1.2rem);
   }
 }
 
