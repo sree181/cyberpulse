@@ -80,8 +80,8 @@ export default function ThreatGlobe() {
   
   const { activeArcs, corridors, targetPressures, sourceHotspots, setSelectedArc } = useThreatData();
 
-  // Default camera position
-  const defaultPOV = { lat: 25, lng: -10, altitude: 2.0 };
+  // Default camera position — closer to globe for better arc visibility
+  const defaultPOV = { lat: 20, lng: 30, altitude: 1.6 };
 
   /**
    * EVENT-LEVEL ARC DATASET
@@ -119,23 +119,23 @@ export default function ThreatGlobe() {
 
     // Layer 2 (PRIMARY): Individual event arcs — each one maps 1:1 to a threat feed entry
     activeArcs.forEach((arc) => {
-      // Directional animation: bright head traveling from source to target
-      const severityStroke = arc.severity === 'critical' ? 2.5 
-        : arc.severity === 'high' ? 1.8 
-        : 1.0;
+      // Thick, bold strokes for large-format display visibility
+      const severityStroke = arc.severity === 'critical' ? 4.0 
+        : arc.severity === 'high' ? 3.0 
+        : 2.0;
       
       // Animation speed based on severity (critical = fast, low = slow)
-      const animSpeed = arc.severity === 'critical' ? 800 
-        : arc.severity === 'high' ? 1200 
-        : arc.severity === 'medium' ? 1800 
-        : 2400;
+      const animSpeed = arc.severity === 'critical' ? 1000 
+        : arc.severity === 'high' ? 1500 
+        : arc.severity === 'medium' ? 2000 
+        : 2800;
 
-      // Age-based opacity: newer arcs are brighter, older ones fade
+      // Age-based opacity: newer arcs are fully opaque, older ones fade slightly
       const age = Date.now() - arc.timestamp;
-      const maxAge = 15000; // arcs live 15 seconds
-      const ageFactor = Math.max(0.3, 1 - (age / maxAge) * 0.7);
+      const maxAge = 10000; // arcs live 10 seconds
+      const ageFactor = Math.max(0.5, 1 - (age / maxAge) * 0.5);
       const headOpacity = Math.round(ageFactor * 255).toString(16).padStart(2, '0');
-      const tailOpacity = Math.round(ageFactor * 0.4 * 255).toString(16).padStart(2, '0');
+      const tailOpacity = Math.round(ageFactor * 0.6 * 255).toString(16).padStart(2, '0');
 
       result.push({
         startLat: arc.startLat,
@@ -144,10 +144,10 @@ export default function ThreatGlobe() {
         endLng: arc.endLng,
         color: [`${arc.color}${headOpacity}`, `${arc.color}${tailOpacity}`],
         stroke: severityStroke,
-        dashLength: 0.4,       // Visible segment (projectile)
-        dashGap: 0.2,          // Gap between segments
+        dashLength: 0.6,       // Longer visible segment (more visible projectile)
+        dashGap: 0.15,         // Smaller gap = more continuous look
         animateTime: animSpeed, // Directional animation speed
-        dashInitialGap: Math.random() * 0.5, // Stagger so arcs don't all sync
+        dashInitialGap: Math.random() * 0.3, // Less stagger for campaign coherence
         id: `event-${arc.id}`,
         layer: 'event',
         originalArc: arc,
@@ -269,25 +269,41 @@ export default function ThreatGlobe() {
   const activeArcsRef = useRef<ArcData[]>([]);
   useEffect(() => { activeArcsRef.current = activeArcs; }, [activeArcs]);
 
-  // Auto-zoom on critical events every 30s
+  // Auto-track: gently pan the globe to face where arcs are concentrated
+  // This ensures arcs are always visible (not on the far side of the globe)
   useEffect(() => {
     autoZoomTimerRef.current = setInterval(() => {
-      if (isZoomedRef.current) return;
+      if (isZoomedRef.current || !globeRef.current) return;
 
       const arcs = activeArcsRef.current;
-      // Find the most critical recent arc
-      const criticalArc = arcs.find(a => a.severity === 'critical')
-        || arcs.find(a => a.severity === 'high');
-      
-      if (criticalArc) {
-        zoomToArc(criticalArc);
+      if (arcs.length === 0) return;
+
+      // Compute centroid of all active arc midpoints
+      let sumLat = 0, sumLng = 0;
+      arcs.forEach(a => {
+        sumLat += (a.startLat + a.endLat) / 2;
+        sumLng += (a.startLng + a.endLng) / 2;
+      });
+      const centroidLat = sumLat / arcs.length;
+      const centroidLng = sumLng / arcs.length;
+
+      // Gently pan toward the centroid (smooth 3s transition)
+      const currentPov = globeRef.current.pointOfView();
+      // Only pan if the centroid is significantly different from current view
+      const latDiff = Math.abs(currentPov.lat - centroidLat);
+      const lngDiff = Math.abs(currentPov.lng - centroidLng);
+      if (latDiff > 15 || lngDiff > 25) {
+        globeRef.current.pointOfView(
+          { lat: centroidLat, lng: centroidLng, altitude: currentPov.altitude },
+          3000 // smooth 3-second pan
+        );
       }
-    }, 30000);
+    }, 8000); // Check every 8 seconds
 
     return () => {
       if (autoZoomTimerRef.current) clearInterval(autoZoomTimerRef.current);
     };
-  }, [zoomToArc]);
+  }, []);
 
   // Initialize globe
   useEffect(() => {
@@ -307,7 +323,7 @@ export default function ThreatGlobe() {
       .arcDashGap((d: any) => d.dashGap)
       .arcDashInitialGap((d: any) => d.dashInitialGap)
       .arcDashAnimateTime((d: any) => d.animateTime)
-      .arcAltitudeAutoScale(0.35)
+      .arcAltitudeAutoScale(0.5)
       .arcCurveResolution(64)
       // Click handler — event arcs are clickable
       .onArcClick((arc: any) => {

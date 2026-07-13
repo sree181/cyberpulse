@@ -124,7 +124,16 @@
 - [x] Remove spaghetti: Max 12 corridors visible, not 60 individual arcs
 
 ## Arc-Feed Sync Fix (July 2026)
-- [ ] Globe PRIMARY layer: render activeArcs directly (1 arc = 1 feed event, exact source→target coords)
-- [ ] Globe SECONDARY layer: keep corridors as faint background beams (reduced opacity)
-- [ ] Remove TextScramble from IP addresses in threat feed (makes feed unreadable)
-- [ ] Keep TextScramble only on attack type (short, decorative, resolves quickly)
+- [x] Globe PRIMARY layer: render activeArcs directly (1 arc = 1 feed event, exact source→target coords)
+- [x] Globe SECONDARY layer: keep corridors as faint background beams (reduced opacity)
+- [x] Remove TextScramble from IP addresses in threat feed (makes feed unreadable)
+- [x] Keep TextScramble only on attack type (short, decorative, resolves quickly)
+
+## Campaign-Based Arc Logic (July 2026)
+- [ ] Replace random scatter with campaign-based threat generation (3-5 active campaigns at a time)
+- [ ] Each campaign: one source region → one target, sustained burst of 5-10 events, then fades
+- [ ] Geographic coherence: attackers from same country hit same target (not random)
+- [ ] Temporal clustering: events arrive in bursts, not uniform random intervals
+- [ ] Visual clarity: max 6-8 arcs visible simultaneously (not 18+ tangled mess)
+- [ ] Arc lifecycle: new arc animates in, holds for 8-10s, fades out gracefully
+- [ ] Campaign rotation: every 20-30s, one campaign ends and a new one begins from different region
