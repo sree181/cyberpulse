@@ -209,3 +209,15 @@
 - [x] Make Attack Type Legend bigger for large Planar display
 - [x] Make header logo, title, and metric numbers bigger/more prominent for large screen
 - [x] Move AI Models link to bottom (like Globe/Map toggle), make it prominent and touch-enabled
+
+## AI Models Page Redesign for Planar Wall (July 2026)
+- [x] Redesign AI Models page with multi-column grid layout (4 columns) to fill 8192x2160 wall
+- [x] Column 1: CVE sidebar (keep existing)
+- [x] Column 2: AI Analyst Brief + Threat Narrative
+- [x] Column 3: Attack pattern cards in grid layout (not vertical list)
+- [x] Convert Column 3 linkage cards from vertical list to CSS grid
+- [x] Add error/fallback states for AI model query failures (LLM quota exhaustion)
+- [x] Column 4: Real-time metrics — model confidence, historical trends, MITRE coverage
+- [ ] Add historical trend indicators to Column 4 (week-over-week changes)
+- [x] Add floating bottom navigation bar with "Back to Command Center" (touch-friendly, min-h-[48px])
+- [x] Remove top "Back to Command Center" link
