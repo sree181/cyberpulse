@@ -296,7 +296,7 @@
   -webkit-backdrop-filter: blur(8px);
   border-radius: 0.625rem;
   border: 1px solid oklch(0.35 0.02 255 / 0.15);
-  overflow: hidden;
+  overflow: clip;
   box-shadow: none;
 }
 
@@ -351,7 +351,7 @@
   }
 }
 
-/* 8K / video wall (7680px+) */
+/* Video wall — Left wall is 8192px wide */
 @media (min-width: 7680px) {
   html {
     font-size: 36px;
@@ -363,7 +363,8 @@
 
 /* === VIDEO WALL ASPECT RATIO HANDLING === */
 /* Optimized for Planar DirectLight Pro walls:
-   - 7680×2160 (32:9) and 5760×2160 (24:9)
+   - Left wall:  8192×2160 (~3.8:1)
+   - Right wall: 3840×2160 (16:9)
    - Both have 2160px height, so vertical space is generous
    - Use viewport-relative sizing that scales with the wall width */
 
@@ -374,8 +375,8 @@
   }
 }
 
-/* 32:9 (7680x2160) — wider wall, scale text up slightly since we have more horizontal room */
-@media (min-aspect-ratio: 32/9) {
+/* ~3.8:1 (8192x2160) — wider wall, scale text up slightly since we have more horizontal room */
+@media (min-aspect-ratio: 3.5/1) {
   .cp-panel {
     font-size: clamp(0.8rem, 0.55vw, 1.2rem);
   }
@@ -396,8 +397,8 @@
   }
 }
 
-/* Ultra-wide aspect ratios (32:9, triple-wide) */
-@media (min-aspect-ratio: 32/9) {
+/* Ultra-wide aspect ratios (~3.8:1 left wall = 8192x2160) */
+@media (min-aspect-ratio: 3.5/1) {
   html {
     font-size: 20px;
   }
@@ -446,9 +447,9 @@ canvas:not(.pointer-events-none), svg:not(.pointer-events-none) {
 }
 
 
-/* === ULTRA-WIDE DISPLAY DETECTION (32:9 and wider) === */
-/* True ultra-wide aspect ratio detection for wall displays */
-@media (min-aspect-ratio: 32/9) {
+/* === ULTRA-WIDE DISPLAY DETECTION (~3.8:1 and wider) === */
+/* True ultra-wide aspect ratio detection for wall displays (8192x2160 left wall) */
+@media (min-aspect-ratio: 3.5/1) {
   /* On ultra-wide, further reduce sidebar widths and increase globe dominance */
   :root {
     --sidebar-width-ultra: 10vw;

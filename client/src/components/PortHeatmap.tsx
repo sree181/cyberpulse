@@ -4,6 +4,9 @@
  * Redesign: Simple horizontal bars with consistent accent color.
  * Protocol shown as a subtle text label. No canvas animation — 
  * use clean React rendering for maintainability and consistency.
+ *
+ * Text truncation fix: Removed truncate class, widened label column
+ * to fit service names (SSH, SMTP, IMAP, HTTPS, HTTP, FTP, SIP) fully.
  */
 import { useThreatData } from '@/contexts/ThreatContext';
 
@@ -32,7 +35,7 @@ export default function PortHeatmap() {
             const serviceName = port.service || `Port ${port.port}`;
             return (
               <div key={`${port.port}-${i}`} className="flex items-center gap-2">
-                <span className="text-caption text-[var(--color-cp-text-secondary)] w-[60px] truncate text-right font-data">
+                <span className="text-caption text-[var(--color-cp-text-secondary)] w-[4.5rem] shrink-0 whitespace-nowrap text-right font-data">
                   {serviceName}
                 </span>
                 <div className="flex-1 h-[5px] bg-[var(--color-cp-base)] rounded-full overflow-hidden relative">
@@ -47,7 +50,7 @@ export default function PortHeatmap() {
                     }}
                   />
                 </div>
-                <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] w-[32px] text-right tabular-nums">
+                <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] w-[2.5rem] shrink-0 text-right tabular-nums">
                   {port.records > 1000 ? `${(port.records / 1000).toFixed(0)}K` : port.records}
                 </span>
               </div>

@@ -54,7 +54,7 @@ export default function StatsPanel() {
             </div>
             <div className="flex justify-between items-baseline">
               <span className="text-body text-[var(--color-cp-text-secondary)]">Top Vector</span>
-              <span className="font-data text-body text-[var(--color-cp-text-primary)]">{stats.topAttackType}</span>
+              <span className="font-data text-body text-[var(--color-cp-text-primary)] text-right break-words">{stats.topAttackType}</span>
             </div>
             <div className="flex justify-between items-baseline">
               <span className="text-body text-[var(--color-cp-text-secondary)]">Blocked</span>

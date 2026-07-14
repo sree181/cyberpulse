@@ -162,7 +162,7 @@ export default function TopCountries() {
               {/* Bar + name */}
               <div className="flex-1 flex flex-col gap-0.5 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="font-data text-[8px] text-[var(--color-cp-text-secondary)] truncate">
+                  <span className="font-data text-[8px] text-[var(--color-cp-text-secondary)] whitespace-nowrap">
                     {item.name}
                   </span>
                   <span className="font-data text-[8px] text-[var(--color-cp-text-tertiary)] tabular-nums shrink-0 ml-1">

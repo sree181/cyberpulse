@@ -2,8 +2,8 @@
  * CyberPulse — Hollywood-Grade Threat Intelligence Command Center
  * 
  * Optimized for Planar DirectLight Pro video walls:
- *   - Larger wall: 7680 × 2160 (32:9)
- *   - Smaller wall: 5760 × 2160 (24:9)
+ *   - Left wall:  8192 × 2160 (~3.8:1)
+ *   - Right wall: 3840 × 2160 (16:9)
  * 
  * Layout strategy for ultra-wide walls:
  *   The globe is HEIGHT-constrained (stays circular) and centered.
@@ -66,7 +66,7 @@ export default function Home() {
               <div className="flex-[7] flex gap-[0.4vw] overflow-hidden min-h-0">
                 
                 {/* LEFT COLUMN — Analytics + MITRE + Top Countries */}
-                <div className="w-[14%] min-w-[180px] max-w-[400px] shrink-0 flex flex-col gap-[0.4vw] overflow-hidden">
+                <div className="w-[16%] min-w-[200px] max-w-[520px] shrink-0 flex flex-col gap-[0.4vw] overflow-visible">
                   <FuiPanel className="flex-[3] overflow-hidden" delay={0.2} cornerSize={8}>
                     <CollapsiblePanel title="Analytics">
                       <div className="cp-panel h-full">
@@ -106,7 +106,7 @@ export default function Home() {
                 </div>
 
                 {/* RIGHT COLUMN — Port Activity + Threat Feed */}
-                <div className="w-[14%] min-w-[180px] max-w-[400px] shrink-0 flex flex-col gap-[0.4vw] overflow-hidden">
+                <div className="w-[16%] min-w-[200px] max-w-[520px] shrink-0 flex flex-col gap-[0.4vw] overflow-visible">
                   <FuiPanel className="flex-[3] overflow-hidden" delay={0.3} cornerSize={8}>
                     <CollapsiblePanel title="Port Activity">
                       <div className="cp-panel h-full">

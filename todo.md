@@ -170,3 +170,11 @@
 ## Globe Stability Fix (July 2026)
 - [x] Fix globe re-mounting/refreshing — should stay in place with continuous rotation
 - [x] Arcs should appear/disappear smoothly without causing globe to reset
+
+## Text Truncation & Wall Dimension Fix (July 2026)
+- [x] Fix MITRE ATT&CK tactic names truncated ("Reco...", "Reso...", "Initia...", "Exec...", "Persi...")
+- [x] Fix Port Activity service names truncated ("SM...", "IM...", "HT...", "HT...")
+- [x] Fix Threat Feed target names truncated ("US...")
+- [x] Fix Analytics "Top Vector" text cut off ("Credential Stuffi...")
+- [x] Update wall dimensions in code/comments: Left=8192x2160, Right=3840x2160
+- [x] Widen side panels to accommodate full text at wall resolution

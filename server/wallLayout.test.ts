@@ -2,15 +2,15 @@
  * Wall Display Layout Tests
  * 
  * Verifies that the layout proportions work correctly for the two Planar video walls:
- * - Larger wall: 7680 × 2160 (32:9)
- * - Smaller wall: 5760 × 2160 (24:9)
+ * - Left wall:  8192 × 2160 (~3.8:1)
+ * - Right wall: 3840 × 2160 (16:9)
  */
 import { describe, it, expect } from 'vitest';
 
 // Layout constants from Home.tsx
-const SIDE_COLUMN_PERCENT = 0.14; // w-[14%]
-const SIDE_COLUMN_MIN = 180; // min-w-[180px]
-const SIDE_COLUMN_MAX = 400; // max-w-[400px]
+const SIDE_COLUMN_PERCENT = 0.16; // w-[16%]
+const SIDE_COLUMN_MIN = 200; // min-w-[200px]
+const SIDE_COLUMN_MAX = 520; // max-w-[520px]
 const GAP = 0.004; // 0.4vw
 
 // Header height (approximately 50px on these walls)
@@ -48,11 +48,11 @@ function calculateLayout(viewportWidth: number, viewportHeight: number) {
   };
 }
 
-describe('Wall Display Layout — 7680×2160 (32:9)', () => {
-  const layout = calculateLayout(7680, 2160);
+describe('Wall Display Layout — 8192×2160 (Left Wall, ~3.8:1)', () => {
+  const layout = calculateLayout(8192, 2160);
   
   it('side columns are capped at max width', () => {
-    expect(layout.sideColumnWidth).toBe(400);
+    expect(layout.sideColumnWidth).toBe(520);
   });
   
   it('center area is wide enough for the globe', () => {
@@ -60,7 +60,7 @@ describe('Wall Display Layout — 7680×2160 (32:9)', () => {
   });
   
   it('globe diameter is constrained by height (not width)', () => {
-    // On 32:9, height is the constraining dimension
+    // On ~3.8:1, height is the constraining dimension
     expect(layout.globeDiameter).toBeLessThanOrEqual(layout.topRowHeight);
     expect(layout.globeDiameter).toBeGreaterThan(1400); // At least 1400px diameter
   });
@@ -75,20 +75,20 @@ describe('Wall Display Layout — 7680×2160 (32:9)', () => {
   });
   
   it('no element exceeds viewport bounds', () => {
-    expect(layout.sideColumnWidth * 2 + layout.centerWidth).toBeLessThanOrEqual(7680);
+    expect(layout.sideColumnWidth * 2 + layout.centerWidth).toBeLessThanOrEqual(8192);
     expect(layout.topRowHeight + layout.bottomRowHeight + HEADER_HEIGHT).toBeLessThanOrEqual(2160);
   });
 });
 
-describe('Wall Display Layout — 5760×2160 (24:9)', () => {
-  const layout = calculateLayout(5760, 2160);
+describe('Wall Display Layout — 3840×2160 (Right Wall, 16:9)', () => {
+  const layout = calculateLayout(3840, 2160);
   
   it('side columns are capped at max width', () => {
-    expect(layout.sideColumnWidth).toBe(400);
+    expect(layout.sideColumnWidth).toBe(520);
   });
   
   it('center area is wide enough for the globe', () => {
-    expect(layout.centerWidth).toBeGreaterThan(4000);
+    expect(layout.centerWidth).toBeGreaterThan(2000);
   });
   
   it('globe diameter is constrained by height (not width)', () => {
@@ -106,21 +106,21 @@ describe('Wall Display Layout — 5760×2160 (24:9)', () => {
   });
   
   it('no element exceeds viewport bounds', () => {
-    expect(layout.sideColumnWidth * 2 + layout.centerWidth).toBeLessThanOrEqual(5760);
+    expect(layout.sideColumnWidth * 2 + layout.centerWidth).toBeLessThanOrEqual(3840);
     expect(layout.topRowHeight + layout.bottomRowHeight + HEADER_HEIGHT).toBeLessThanOrEqual(2160);
   });
 });
 
 describe('Globe stays circular at ultra-wide aspect ratios', () => {
-  it('globe is height-constrained on 32:9 (not width-stretched)', () => {
-    const layout = calculateLayout(7680, 2160);
+  it('globe is height-constrained on ~3.8:1 (8192x2160)', () => {
+    const layout = calculateLayout(8192, 2160);
     // Globe diameter should be determined by height, not width
     expect(layout.globeDiameter).toBe(layout.topRowHeight);
     expect(layout.globeDiameter).toBeLessThan(layout.centerWidth);
   });
   
-  it('globe is height-constrained on 24:9', () => {
-    const layout = calculateLayout(5760, 2160);
+  it('globe is height-constrained on 16:9 (3840x2160)', () => {
+    const layout = calculateLayout(3840, 2160);
     expect(layout.globeDiameter).toBe(layout.topRowHeight);
     expect(layout.globeDiameter).toBeLessThan(layout.centerWidth);
   });

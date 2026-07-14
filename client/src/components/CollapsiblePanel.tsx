@@ -25,7 +25,7 @@ const CollapsiblePanel = memo(function CollapsiblePanel({
   if (collapsed) {
     return (
       <div className={`flex items-center justify-between px-2 py-1.5 rounded-md bg-[var(--color-cp-surface)]/40 backdrop-blur-sm border border-white/[0.04] ${className}`}>
-        <span className="font-display text-[9px] uppercase tracking-wider text-[var(--color-cp-text-tertiary)] opacity-70 truncate">
+        <span className="font-display text-[9px] uppercase tracking-wider text-[var(--color-cp-text-tertiary)] opacity-70">
           {title}
         </span>
         <button

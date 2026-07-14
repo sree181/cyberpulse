@@ -30,7 +30,7 @@ function ThreatEntry({ threat, isNew }: { threat: ThreatEvent; isNew: boolean })
         {/* Severity dot */}
         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${getSeverityClass(threat.severity)}`} />
         {/* Attack type — scrambles in for new entries */}
-        <span className="text-body text-[var(--color-cp-text-primary)] font-medium truncate">
+        <span className="text-body text-[var(--color-cp-text-primary)] font-medium whitespace-nowrap">
           {isNew ? (
             <TextScramble 
               text={threat.attackType} 
@@ -47,14 +47,14 @@ function ThreatEntry({ threat, isNew }: { threat: ThreatEvent; isNew: boolean })
           {formatTime(threat.timestamp)}
         </span>
       </div>
-      <div className="mt-1 ml-3.5 flex items-center gap-1.5 text-caption text-[var(--color-cp-text-secondary)]">
+      <div className="mt-1 ml-3.5 flex items-center gap-1.5 text-caption text-[var(--color-cp-text-secondary)] flex-wrap">
         {/* IP address — always readable, no scramble */}
-        <span className="font-data tabular-nums">
+        <span className="font-data tabular-nums shrink-0">
           {threat.sourceIp}
         </span>
-        <span className="text-[var(--color-cp-text-tertiary)]">&rarr;</span>
-        <span className="truncate">{threat.targetName}</span>
-        <span className="text-[var(--color-cp-text-tertiary)]">:{threat.port}</span>
+        <span className="text-[var(--color-cp-text-tertiary)] shrink-0">&rarr;</span>
+        <span className="break-all">{threat.targetName}</span>
+        <span className="text-[var(--color-cp-text-tertiary)] shrink-0">:{threat.port}</span>
       </div>
     </div>
   );
