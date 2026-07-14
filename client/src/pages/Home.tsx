@@ -66,7 +66,7 @@ export default function Home() {
               {/* PRIMARY ROW: Left panels + Globe (height-constrained) + Right panels */}
               <div className="flex-[7] flex gap-[0.4vw] overflow-hidden min-h-0">
                 
-                {/* LEFT COLUMN — Analytics + MITRE + Top Countries */}
+                {/* LEFT COLUMN — Analytics + MITRE */}
                 <div className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-visible">
                   <FuiPanel className="flex-[3] overflow-hidden" delay={0.2} cornerSize={8}>
                     <CollapsiblePanel title="Analytics">
@@ -75,17 +75,10 @@ export default function Home() {
                       </div>
                     </CollapsiblePanel>
                   </FuiPanel>
-                  <FuiPanel className="flex-[4] overflow-hidden" delay={0.5} cornerSize={8}>
+                  <FuiPanel className="flex-[5] overflow-hidden" delay={0.5} cornerSize={8}>
                     <CollapsiblePanel title="MITRE ATT&CK">
                       <div className="cp-panel h-full">
                         <MitreHeatmap />
-                      </div>
-                    </CollapsiblePanel>
-                  </FuiPanel>
-                  <FuiPanel className="flex-[3] overflow-hidden" delay={0.7} cornerSize={8}>
-                    <CollapsiblePanel title="Top Sources">
-                      <div className="cp-panel h-full">
-                        <TopSourceCountries />
                       </div>
                     </CollapsiblePanel>
                   </FuiPanel>
@@ -102,11 +95,22 @@ export default function Home() {
                       {viewMode === 'globe' ? <ThreatGlobe /> : <ThreatFlatMap />}
                     </div>
                   </FuiPanel>
+
+                  {/* Top Sources — floating overlay on left side of globe */}
+                  <div className="absolute top-3 left-3 z-20 w-[180px] bg-[var(--color-cp-base)]/80 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md pointer-events-none">
+                    <TopSourceCountries />
+                  </div>
+
+                  {/* Top Targets — floating overlay on right side of globe */}
+                  <div className="absolute top-3 right-3 z-20 w-[180px] bg-[var(--color-cp-base)]/80 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md pointer-events-none">
+                    <TopTargetCountries />
+                  </div>
+
                   {/* View Toggle — BOTTOM CENTER, touch-friendly, OUTSIDE globe to avoid Three.js event capture */}
                   <ViewToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
 
-                {/* RIGHT COLUMN — Port Activity + Top Targets + Threat Feed */}
+                {/* RIGHT COLUMN — Port Activity + Threat Feed */}
                 <div className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-visible">
                   <FuiPanel className="flex-[3] overflow-hidden" delay={0.3} cornerSize={8}>
                     <CollapsiblePanel title="Port Activity">
@@ -115,14 +119,7 @@ export default function Home() {
                       </div>
                     </CollapsiblePanel>
                   </FuiPanel>
-                  <FuiPanel className="flex-[3] overflow-hidden" delay={0.55} cornerSize={8}>
-                    <CollapsiblePanel title="Top Targets">
-                      <div className="cp-panel h-full">
-                        <TopTargetCountries />
-                      </div>
-                    </CollapsiblePanel>
-                  </FuiPanel>
-                  <FuiPanel className="flex-[4] overflow-hidden" delay={0.6} cornerSize={8}>
+                  <FuiPanel className="flex-[5] overflow-hidden" delay={0.6} cornerSize={8}>
                     <CollapsiblePanel title="Threat Feed">
                       <div className="cp-panel h-full">
                         <ThreatFeed />
