@@ -221,3 +221,14 @@
 - [x] Add historical trend indicators to Column 4 (week-over-week changes)
 - [x] Add floating bottom navigation bar with "Back to Command Center" (touch-friendly, min-h-[48px])
 - [x] Remove top "Back to Command Center" link
+
+## Zone-Based Drag-and-Drop & Bar Overflow Fix (July 2026)
+- [x] Fix MITRE ATT&CK orange bars overflowing/extending beyond panel boundaries
+- [x] Fix left panel alignment issues visible on the Planar wall
+- [x] Install @dnd-kit/core and @dnd-kit/sortable for touch-friendly drag-and-drop
+- [x] Create usePanelOrder hook with localStorage persistence for panel positions
+- [x] Implement zone-based drag-and-drop for left column panels (Analytics, MITRE ATT&CK)
+- [x] Implement zone-based drag-and-drop for right column panels (Port Activity, Threat Feed)
+- [x] Implement zone-based drag-and-drop for bottom row panels (Attack Source, CVE Spotlight, Weekly Briefing)
+- [x] Add visual drag handle indicator for touch affordance
+- [x] Ensure drag works with touch (touch-manipulation, pointer events)

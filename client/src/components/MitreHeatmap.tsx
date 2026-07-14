@@ -40,7 +40,7 @@ export default function MitreHeatmap() {
       </div>
 
       {/* Tactic rows */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 space-y-1">
         {MITRE_TACTICS.map(tactic => {
           const count = tacticCounts[tactic] || 0;
           const pct = Math.min((count / maxCount) * 100, 100);
@@ -48,11 +48,11 @@ export default function MitreHeatmap() {
           const shortLabel = TACTIC_SHORT_LABELS[tactic] || tactic;
           
           return (
-            <div key={tactic} className="flex items-center gap-2">
-              <span className="text-caption text-[var(--color-cp-text-secondary)] w-[5.5rem] shrink-0 whitespace-nowrap overflow-visible">
+            <div key={tactic} className="flex items-center gap-2 min-w-0">
+              <span className="text-caption text-[var(--color-cp-text-secondary)] w-[clamp(5rem,5vw,7rem)] shrink-0 whitespace-nowrap overflow-hidden text-ellipsis">
                 {shortLabel}
               </span>
-              <div className="flex-1 h-[4px] bg-[var(--color-cp-base)] rounded-full overflow-hidden">
+              <div className="flex-1 min-w-0 h-[clamp(4px,0.3vw,6px)] bg-[var(--color-cp-base)] rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all duration-1000 ease-out"
                   style={{ 
@@ -61,7 +61,7 @@ export default function MitreHeatmap() {
                   }}
                 />
               </div>
-              <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] w-6 text-right tabular-nums shrink-0">
+              <span className="font-data text-caption text-[var(--color-cp-text-tertiary)] w-[clamp(1.5rem,2vw,3rem)] text-right tabular-nums shrink-0">
                 {count || ''}
               </span>
             </div>

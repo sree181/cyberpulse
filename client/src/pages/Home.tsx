@@ -16,8 +16,11 @@
  *   z[97] — Film grain (texture)
  *   z[98] — Scanlines (retro-futurism)
  *   z[99] — Vignette (focus)
+ *
+ * DRAG-AND-DROP: Panels within each zone (left, right, bottom) can be
+ * reordered via touch drag. Order persists in localStorage.
  */
-import { useState } from 'react';
+import { useState, useMemo, ReactNode } from 'react';
 import { ThreatProvider } from '@/contexts/ThreatContext';
 import HeaderBar from '@/components/HeaderBar';
 import ThreatGlobe from '@/components/ThreatGlobe';
@@ -38,11 +41,71 @@ import CollapsiblePanel from '@/components/CollapsiblePanel';
 import { TopSourceCountries, TopTargetCountries } from '@/components/TopCountries';
 import AttackLocationMap from '@/components/AttackLocationMap';
 import { Link } from 'wouter';
+import { SortableZone, SortablePanel } from '@/components/SortableZone';
+import { usePanelOrder, ZoneConfig } from '@/hooks/usePanelOrder';
 
 type ViewMode = 'globe' | 'map';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ZONE CONFIGURATION — defines which panels belong to which zone
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const ZONE_CONFIGS: ZoneConfig[] = [
+  { id: 'left', defaultOrder: ['analytics', 'mitre'] },
+  { id: 'right', defaultOrder: ['port-activity', 'threat-feed'] },
+  { id: 'bottom', defaultOrder: ['timeseries', 'attack-map', 'cve-spotlight', 'weekly-briefing'] },
+];
+
+// Panel registry — maps panel IDs to their flex ratios and content
+interface PanelDef {
+  flex: number;
+  delay: number;
+  title?: string;
+  collapsible?: boolean;
+}
+
+const LEFT_PANELS: Record<string, PanelDef> = {
+  'analytics': { flex: 3, delay: 0.2, title: 'Analytics', collapsible: true },
+  'mitre': { flex: 5, delay: 0.5, title: 'MITRE ATT&CK', collapsible: true },
+};
+
+const RIGHT_PANELS: Record<string, PanelDef> = {
+  'port-activity': { flex: 3, delay: 0.3, title: 'Port Activity', collapsible: true },
+  'threat-feed': { flex: 5, delay: 0.6, title: 'Threat Feed', collapsible: true },
+};
+
+const BOTTOM_PANELS: Record<string, PanelDef> = {
+  'timeseries': { flex: 2, delay: 0.4 },
+  'attack-map': { flex: 2, delay: 0.7 },
+  'cve-spotlight': { flex: 3, delay: 0.8, title: 'CVE Spotlight', collapsible: true },
+  'weekly-briefing': { flex: 3, delay: 1.0, title: 'Weekly Briefing', collapsible: true },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PANEL CONTENT RENDERER — returns the inner content for each panel ID
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function PanelContent({ id }: { id: string }) {
+  switch (id) {
+    case 'analytics': return <StatsPanel />;
+    case 'mitre': return <MitreHeatmap />;
+    case 'port-activity': return <PortHeatmap />;
+    case 'threat-feed': return <ThreatFeed />;
+    case 'timeseries': return <TimeSeriesChart />;
+    case 'attack-map': return <AttackLocationMap />;
+    case 'cve-spotlight': return <ThreatSpotlight />;
+    case 'weekly-briefing': return <WeeklyBriefing />;
+    default: return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('globe');
+  const { order, reorder } = usePanelOrder(ZONE_CONFIGS);
 
   return (
     <ThreatProvider>
@@ -67,32 +130,46 @@ export default function Home() {
               {/* PRIMARY ROW: Left panels + Globe (height-constrained) + Right panels */}
               <div className="flex-[7] flex gap-[0.4vw] overflow-hidden min-h-0">
                 
-                {/* LEFT COLUMN — Analytics + MITRE */}
-                <div className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-visible">
-                  <FuiPanel className="flex-[3] overflow-hidden" delay={0.2} cornerSize={8}>
-                    <CollapsiblePanel title="Analytics">
-                      <div className="cp-panel h-full">
-                        <StatsPanel />
-                      </div>
-                    </CollapsiblePanel>
-                  </FuiPanel>
-                  <FuiPanel className="flex-[5] overflow-hidden" delay={0.5} cornerSize={8}>
-                    <CollapsiblePanel title="MITRE ATT&CK">
-                      <div className="cp-panel h-full">
-                        <MitreHeatmap />
-                      </div>
-                    </CollapsiblePanel>
-                  </FuiPanel>
-                </div>
+                {/* LEFT COLUMN — Sortable zone */}
+                <SortableZone
+                  zoneId="left"
+                  items={order['left']}
+                  direction="vertical"
+                  onReorder={reorder}
+                  className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-hidden"
+                >
+                  {(orderedIds) => (
+                    <>
+                      {orderedIds.map(id => {
+                        const def = LEFT_PANELS[id];
+                        if (!def) return null;
+                        return (
+                          <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }}>
+                            <FuiPanel className="h-full overflow-hidden" delay={def.delay} cornerSize={8}>
+                              {def.collapsible ? (
+                                <CollapsiblePanel title={def.title!}>
+                                  <div className="cp-panel h-full">
+                                    <PanelContent id={id} />
+                                  </div>
+                                </CollapsiblePanel>
+                              ) : (
+                                <div className="cp-panel h-full">
+                                  <PanelContent id={id} />
+                                </div>
+                              )}
+                            </FuiPanel>
+                          </SortablePanel>
+                        );
+                      })}
+                    </>
+                  )}
+                </SortableZone>
 
-                {/* CENTER — Globe/Map (hero) — Three.js sphere always renders circular
-                    regardless of container aspect ratio. On ultra-wide walls (32:9),
-                    the globe fills the height and the extra width shows starfield. */}
+                {/* CENTER — Globe/Map (hero) */}
                 <div className="flex-1 relative overflow-hidden min-h-0">
                   <FuiPanel className="h-full" delay={0} cornerSize={14} glowColor="var(--color-cp-accent)">
                     <div className="cp-panel relative h-full w-full" style={{ background: 'oklch(0.12 0.04 255)' }}>
                       {viewMode === 'globe' && <HudRings />}
-                      {/* Render active view */}
                       {viewMode === 'globe' ? <ThreatGlobe /> : <ThreatFlatMap />}
                     </div>
                   </FuiPanel>
@@ -107,10 +184,10 @@ export default function Home() {
                     <TopTargetCountries />
                   </div>
 
-                  {/* View Toggle — BOTTOM CENTER, touch-friendly, OUTSIDE globe to avoid Three.js event capture */}
+                  {/* View Toggle — BOTTOM CENTER */}
                   <ViewToggle viewMode={viewMode} onChange={setViewMode} />
 
-                  {/* AI Models — bottom right, prominent touch-friendly button */}
+                  {/* AI Models — bottom right */}
                   <Link href="/ai">
                     <div
                       className="absolute bottom-4 right-[clamp(16px,1.5vw,40px)] z-[50] flex items-center gap-[clamp(6px,0.4vw,10px)] bg-violet-500/15 backdrop-blur-md rounded-lg px-[clamp(12px,0.8vw,20px)] py-[clamp(8px,0.5vw,14px)] border border-violet-500/30 shadow-lg cursor-pointer touch-manipulation min-h-[48px] hover:bg-violet-500/25 transition-all duration-200"
@@ -126,54 +203,82 @@ export default function Home() {
                   </Link>
                 </div>
 
-                {/* RIGHT COLUMN — Port Activity + Threat Feed */}
-                <div className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-visible">
-                  <FuiPanel className="flex-[3] overflow-hidden" delay={0.3} cornerSize={8}>
-                    <CollapsiblePanel title="Port Activity">
-                      <div className="cp-panel h-full">
-                        <PortHeatmap />
-                      </div>
-                    </CollapsiblePanel>
-                  </FuiPanel>
-                  <FuiPanel className="flex-[5] overflow-hidden" delay={0.6} cornerSize={8}>
-                    <CollapsiblePanel title="Threat Feed">
-                      <div className="cp-panel h-full">
-                        <ThreatFeed />
-                      </div>
-                    </CollapsiblePanel>
-                  </FuiPanel>
-                </div>
+                {/* RIGHT COLUMN — Sortable zone */}
+                <SortableZone
+                  zoneId="right"
+                  items={order['right']}
+                  direction="vertical"
+                  onReorder={reorder}
+                  className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-hidden"
+                >
+                  {(orderedIds) => (
+                    <>
+                      {orderedIds.map(id => {
+                        const def = RIGHT_PANELS[id];
+                        if (!def) return null;
+                        return (
+                          <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }}>
+                            <FuiPanel className="h-full overflow-hidden" delay={def.delay} cornerSize={8}>
+                              {def.collapsible ? (
+                                <CollapsiblePanel title={def.title!}>
+                                  <div className="cp-panel h-full">
+                                    <PanelContent id={id} />
+                                  </div>
+                                </CollapsiblePanel>
+                              ) : (
+                                <div className="cp-panel h-full">
+                                  <PanelContent id={id} />
+                                </div>
+                              )}
+                            </FuiPanel>
+                          </SortablePanel>
+                        );
+                      })}
+                    </>
+                  )}
+                </SortableZone>
               </div>
 
-              {/* SECONDARY ROW: Time Series + Attack Location Map + CVE Spotlight + Weekly Briefing */}
-              <div className="flex-[2] flex gap-[0.4vw] overflow-hidden min-h-[80px]">
-                {/* Time Series — spans a portion of the width */}
-                <div className="flex-[2] cp-panel overflow-hidden">
-                  <TimeSeriesChart />
-                </div>
-                {/* Attack Location Map — auto-cycling Google Map */}
-                <FuiPanel className="flex-[2] overflow-hidden" delay={0.7} cornerSize={8}>
-                  <div className="cp-panel h-full">
-                    <AttackLocationMap />
-                  </div>
-                </FuiPanel>
-                {/* CVE Spotlight */}
-                <FuiPanel className="flex-[3] overflow-hidden" delay={0.8} cornerSize={8}>
-                  <CollapsiblePanel title="CVE Spotlight">
-                    <div className="cp-panel h-full">
-                      <ThreatSpotlight />
-                    </div>
-                  </CollapsiblePanel>
-                </FuiPanel>
-                {/* Weekly Briefing */}
-                <FuiPanel className="flex-[3] overflow-hidden" delay={1.0} cornerSize={8}>
-                  <CollapsiblePanel title="Weekly Briefing">
-                    <div className="cp-panel h-full">
-                      <WeeklyBriefing />
-                    </div>
-                  </CollapsiblePanel>
-                </FuiPanel>
-              </div>
+              {/* SECONDARY ROW — Sortable zone (horizontal) */}
+              <SortableZone
+                zoneId="bottom"
+                items={order['bottom']}
+                direction="horizontal"
+                onReorder={reorder}
+                className="flex-[2] flex gap-[0.4vw] overflow-hidden min-h-[80px]"
+              >
+                {(orderedIds) => (
+                  <>
+                    {orderedIds.map(id => {
+                      const def = BOTTOM_PANELS[id];
+                      if (!def) return null;
+                      return (
+                        <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }} direction="horizontal">
+                          {def.collapsible ? (
+                            <FuiPanel className="h-full overflow-hidden" delay={def.delay} cornerSize={8}>
+                              <CollapsiblePanel title={def.title!}>
+                                <div className="cp-panel h-full">
+                                  <PanelContent id={id} />
+                                </div>
+                              </CollapsiblePanel>
+                            </FuiPanel>
+                          ) : id === 'timeseries' ? (
+                            <div className="cp-panel h-full overflow-hidden">
+                              <PanelContent id={id} />
+                            </div>
+                          ) : (
+                            <FuiPanel className="h-full overflow-hidden" delay={def.delay} cornerSize={8}>
+                              <div className="cp-panel h-full">
+                                <PanelContent id={id} />
+                              </div>
+                            </FuiPanel>
+                          )}
+                        </SortablePanel>
+                      );
+                    })}
+                  </>
+                )}
+              </SortableZone>
 
             </div>
           </div>
