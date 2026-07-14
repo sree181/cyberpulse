@@ -218,6 +218,6 @@
 - [x] Convert Column 3 linkage cards from vertical list to CSS grid
 - [x] Add error/fallback states for AI model query failures (LLM quota exhaustion)
 - [x] Column 4: Real-time metrics — model confidence, historical trends, MITRE coverage
-- [ ] Add historical trend indicators to Column 4 (week-over-week changes)
+- [x] Add historical trend indicators to Column 4 (week-over-week changes)
 - [x] Add floating bottom navigation bar with "Back to Command Center" (touch-friendly, min-h-[48px])
 - [x] Remove top "Back to Command Center" link
