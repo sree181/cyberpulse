@@ -241,3 +241,11 @@
 
 ## Edit Mode Bottom Toggle (July 2026)
 - [x] Add touch-friendly Edit Mode toggle button at the bottom of the dashboard (like Globe/Map toggle)
+
+## Snap-to-Corner Drag & Country Drill-Down (July 2026)
+- [x] Create snap-to-corner draggable wrapper for Top Sources/Targets (6 positions within globe)
+- [x] Persist snap positions in localStorage
+- [x] Make country names tappable in Top Sources/Targets lists
+- [x] Create modal overlay drill-down with rich attack intelligence (attack count, top IPs, attack types, MITRE tactics)
+- [x] Auto-dismiss drill-down modal after 20s
+- [x] Touch-friendly close button at bottom of modal

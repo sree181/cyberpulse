@@ -49,6 +49,8 @@ const COUNTRY_NAMES: Record<string, string> = {
   BG: 'Bulgaria',
 };
 
+export { COUNTRY_NAMES };
+
 // Target name → country mapping
 const TARGET_COUNTRIES: Record<string, { code: string; name: string }> = {
   'US-EAST HQ': { code: 'US', name: 'United States' },
@@ -60,11 +62,12 @@ const TARGET_COUNTRIES: Record<string, { code: string; name: string }> = {
 };
 
 /** Ranked list rendering shared by both panels */
-function RankedList({ data, maxCount, label, totalEvents }: {
+function RankedList({ data, maxCount, label, totalEvents, onCountryClick }: {
   data: { code: string; name: string; count: number }[];
   maxCount: number;
   label: string;
   totalEvents: number;
+  onCountryClick?: (code: string, name: string) => void;
 }) {
   return (
     <div className="h-full flex flex-col p-[clamp(8px,0.6vw,16px)] gap-[clamp(6px,0.4vw,12px)]">
@@ -85,7 +88,14 @@ function RankedList({ data, maxCount, label, totalEvents }: {
           </div>
         ) : (
           data.map((item, index) => (
-            <div key={item.code} className="flex items-center gap-[clamp(4px,0.35vw,10px)] group">
+            <div
+              key={item.code}
+              className={`flex items-center gap-[clamp(4px,0.35vw,10px)] group ${onCountryClick ? 'cursor-pointer hover:bg-white/[0.04] active:bg-white/[0.08] rounded-md px-1 -mx-1 transition-colors touch-manipulation' : ''}`}
+              onClick={onCountryClick ? () => onCountryClick(item.code, item.name) : undefined}
+              onTouchEnd={onCountryClick ? (e) => { e.preventDefault(); onCountryClick(item.code, item.name); } : undefined}
+              role={onCountryClick ? 'button' : undefined}
+              tabIndex={onCountryClick ? 0 : undefined}
+            >
               {/* Rank number */}
               <span className={`font-data text-[clamp(9px,0.6vw,14px)] w-[clamp(12px,1vw,20px)] text-right shrink-0 ${
                 index === 0 ? 'text-[var(--color-cp-critical)] font-bold' :
@@ -137,6 +147,7 @@ function RankedList({ data, maxCount, label, totalEvents }: {
       <div className="shrink-0 pt-1 border-t border-white/[0.04]">
         <span className="font-data text-[clamp(8px,0.45vw,12px)] text-[var(--color-cp-text-tertiary)] opacity-50">
           {label === 'Sources' ? 'Attack origins' : 'Attack destinations'} · {totalEvents} total events
+          {onCountryClick && ' · Tap for details'}
         </span>
       </div>
     </div>
@@ -144,7 +155,7 @@ function RankedList({ data, maxCount, label, totalEvents }: {
 }
 
 /** Top Source Countries — for left side of globe */
-export function TopSourceCountries() {
+export function TopSourceCountries({ onCountryClick }: { onCountryClick?: (code: string, name: string) => void } = {}) {
   const { threats } = useThreatData();
 
   const sourceCounts = useMemo(() => {
@@ -167,11 +178,11 @@ export function TopSourceCountries() {
 
   const maxCount = sourceCounts.length > 0 ? sourceCounts[0].count : 1;
 
-  return <RankedList data={sourceCounts} maxCount={maxCount} label="Sources" totalEvents={threats.length} />;
+  return <RankedList data={sourceCounts} maxCount={maxCount} label="Sources" totalEvents={threats.length} onCountryClick={onCountryClick} />;
 }
 
 /** Top Target Countries — for right side of globe */
-export function TopTargetCountries() {
+export function TopTargetCountries({ onCountryClick }: { onCountryClick?: (code: string, name: string) => void } = {}) {
   const { threats } = useThreatData();
 
   const targetCounts = useMemo(() => {
@@ -193,7 +204,7 @@ export function TopTargetCountries() {
 
   const maxCount = targetCounts.length > 0 ? targetCounts[0].count : 1;
 
-  return <RankedList data={targetCounts} maxCount={maxCount} label="Targets" totalEvents={threats.length} />;
+  return <RankedList data={targetCounts} maxCount={maxCount} label="Targets" totalEvents={threats.length} onCountryClick={onCountryClick} />;
 }
 
 /** Default export — legacy combined view (kept for backward compat) */

@@ -20,7 +20,7 @@
  * DRAG-AND-DROP: Panels within each zone (left, right, bottom) can be
  * reordered via touch drag. Order persists in localStorage.
  */
-import { useState, useMemo, ReactNode } from 'react';
+import { useState, useMemo, useCallback, ReactNode } from 'react';
 import { ThreatProvider } from '@/contexts/ThreatContext';
 import HeaderBar from '@/components/HeaderBar';
 import ThreatGlobe from '@/components/ThreatGlobe';
@@ -39,6 +39,8 @@ import { SoundEngineProvider } from '@/components/SoundEngine';
 import FuiPanel from '@/components/FuiPanel';
 import CollapsiblePanel from '@/components/CollapsiblePanel';
 import { TopSourceCountries, TopTargetCountries } from '@/components/TopCountries';
+import { SnapDraggable } from '@/components/SnapDraggable';
+import CountryDrillDown from '@/components/CountryDrillDown';
 import AttackLocationMap from '@/components/AttackLocationMap';
 import { Link } from 'wouter';
 import { SortableZone, SortablePanel } from '@/components/SortableZone';
@@ -106,6 +108,16 @@ function PanelContent({ id }: { id: string }) {
 export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('globe');
   const { order, reorder, isLocked } = usePanelOrder(ZONE_CONFIGS);
+
+  // Country drill-down state
+  const [drillDown, setDrillDown] = useState<{ code: string; name: string; mode: 'source' | 'target' } | null>(null);
+  const handleSourceClick = useCallback((code: string, name: string) => {
+    setDrillDown({ code, name, mode: 'source' });
+  }, []);
+  const handleTargetClick = useCallback((code: string, name: string) => {
+    setDrillDown({ code, name, mode: 'target' });
+  }, []);
+  const closeDrillDown = useCallback(() => setDrillDown(null), []);
 
   return (
     <ThreatProvider>
@@ -175,15 +187,19 @@ export default function Home() {
                     </div>
                   </FuiPanel>
 
-                  {/* Top Sources — floating overlay on left side of globe */}
-                  <div className="absolute top-4 left-4 z-20 w-[clamp(180px,12vw,320px)] bg-[var(--color-cp-base)]/85 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-lg pointer-events-none">
-                    <TopSourceCountries />
-                  </div>
+                  {/* Top Sources — snap-draggable overlay */}
+                  <SnapDraggable id="top-sources" defaultPosition="top-left" className="w-[clamp(180px,12vw,320px)]">
+                    <div className="bg-[var(--color-cp-base)]/85 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-lg pointer-events-auto">
+                      <TopSourceCountries onCountryClick={handleSourceClick} />
+                    </div>
+                  </SnapDraggable>
 
-                  {/* Top Targets — floating overlay on right side of globe */}
-                  <div className="absolute top-4 right-4 z-20 w-[clamp(180px,12vw,320px)] bg-[var(--color-cp-base)]/85 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-lg pointer-events-none">
-                    <TopTargetCountries />
-                  </div>
+                  {/* Top Targets — snap-draggable overlay */}
+                  <SnapDraggable id="top-targets" defaultPosition="top-right" className="w-[clamp(180px,12vw,320px)]">
+                    <div className="bg-[var(--color-cp-base)]/85 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-lg pointer-events-auto">
+                      <TopTargetCountries onCountryClick={handleTargetClick} />
+                    </div>
+                  </SnapDraggable>
 
                   {/* View Toggle — BOTTOM CENTER */}
                   <ViewToggle viewMode={viewMode} onChange={setViewMode} />
@@ -305,6 +321,16 @@ export default function Home() {
               </SortableZone>
 
             </div>
+
+            {/* Country Drill-Down Modal */}
+            {drillDown && (
+              <CountryDrillDown
+                countryCode={drillDown.code}
+                countryName={drillDown.name}
+                mode={drillDown.mode}
+                onClose={closeDrillDown}
+              />
+            )}
           </div>
         </DisplayShell>
       </SoundEngineProvider>
