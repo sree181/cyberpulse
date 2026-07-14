@@ -8,9 +8,9 @@
 import { describe, it, expect } from 'vitest';
 
 // Layout constants from Home.tsx
-const SIDE_COLUMN_PERCENT = 0.16; // w-[16%]
-const SIDE_COLUMN_MIN = 200; // min-w-[200px]
-const SIDE_COLUMN_MAX = 520; // max-w-[520px]
+const SIDE_COLUMN_PERCENT = 0.20; // w-[20%]
+const SIDE_COLUMN_MIN = 220; // min-w-[220px]
+const SIDE_COLUMN_MAX = 640; // max-w-[640px]
 const GAP = 0.004; // 0.4vw
 
 // Header height (approximately 50px on these walls)
@@ -52,7 +52,7 @@ describe('Wall Display Layout — 8192×2160 (Left Wall, ~3.8:1)', () => {
   const layout = calculateLayout(8192, 2160);
   
   it('side columns are capped at max width', () => {
-    expect(layout.sideColumnWidth).toBe(520);
+    expect(layout.sideColumnWidth).toBe(640);
   });
   
   it('center area is wide enough for the globe', () => {
@@ -84,7 +84,7 @@ describe('Wall Display Layout — 3840×2160 (Right Wall, 16:9)', () => {
   const layout = calculateLayout(3840, 2160);
   
   it('side columns are capped at max width', () => {
-    expect(layout.sideColumnWidth).toBe(520);
+    expect(layout.sideColumnWidth).toBe(640);
   });
   
   it('center area is wide enough for the globe', () => {

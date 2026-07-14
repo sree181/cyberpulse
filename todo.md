@@ -178,3 +178,7 @@
 - [x] Fix Analytics "Top Vector" text cut off ("Credential Stuffi...")
 - [x] Update wall dimensions in code/comments: Left=8192x2160, Right=3840x2160
 - [x] Widen side panels to accommodate full text at wall resolution
+
+## Side Panel Width & Toggle Fix (July 2026)
+- [x] Widen both side panels (left and right) to be more proportional with the wall width
+- [x] Move Globe/Map toggle to the bottom of the globe area and make it touch-friendly (larger tap targets)
