@@ -188,6 +188,27 @@ export default function Home() {
                   {/* View Toggle — BOTTOM CENTER */}
                   <ViewToggle viewMode={viewMode} onChange={setViewMode} />
 
+                  {/* Edit Mode Toggle — bottom left */}
+                  <div
+                    className={`absolute bottom-4 left-[clamp(16px,1.5vw,40px)] z-[50] flex items-center gap-[clamp(6px,0.4vw,10px)] backdrop-blur-md rounded-lg px-[clamp(12px,0.8vw,20px)] py-[clamp(8px,0.5vw,14px)] border shadow-lg cursor-pointer touch-manipulation min-h-[48px] transition-all duration-200 ${
+                      isLocked
+                        ? 'bg-gray-500/15 border-gray-500/30 hover:bg-gray-500/25'
+                        : 'bg-cyan-500/20 border-cyan-400/50 hover:bg-cyan-500/30'
+                    }`}
+                    onClick={() => window.dispatchEvent(new CustomEvent('cyberpulse:toggle-layout-lock'))}
+                    onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('cyberpulse:toggle-layout-lock')); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-[clamp(14px,0.9vw,22px)]">{isLocked ? '\uD83D\uDD12' : '\uD83D\uDD13'}</span>
+                    <span className={`font-data font-medium text-[clamp(12px,0.8vw,20px)] tracking-wide ${
+                      isLocked ? 'text-gray-400' : 'text-cyan-300'
+                    }`}>
+                      {isLocked ? 'LOCKED' : 'EDIT MODE'}
+                    </span>
+                    {!isLocked && <div className="w-[clamp(8px,0.5vw,12px)] h-[clamp(8px,0.5vw,12px)] rounded-full bg-cyan-400 animate-live-pulse" />}
+                  </div>
+
                   {/* AI Models — bottom right */}
                   <Link href="/ai">
                     <div

@@ -238,3 +238,6 @@
 - [x] Add lock/unlock toggle — panels locked by default, only draggable when unlocked
 - [x] Ensure lock state persists in localStorage
 - [x] Show visual indicator when in unlocked/edit mode
+
+## Edit Mode Bottom Toggle (July 2026)
+- [x] Add touch-friendly Edit Mode toggle button at the bottom of the dashboard (like Globe/Map toggle)
