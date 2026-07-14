@@ -3,9 +3,13 @@
  * 
  * Inspired by Kaspersky CyberMap's country ranking panel.
  * Derives data from the threat context (all threats seen so far).
- * Displays two ranked lists: Sources (where attacks come from) and Targets (where they land).
+ * 
+ * Exports two components:
+ * - TopSourceCountries (for left side of globe)
+ * - TopTargetCountries (for right side of globe)
+ * - TopCountries (default, legacy combined view)
  */
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useThreatData } from '@/contexts/ThreatContext';
 
 // Country code → full name mapping for display
@@ -40,6 +44,9 @@ const COUNTRY_NAMES: Record<string, string> = {
   SG: 'Singapore',
   BY: 'Belarus',
   LK: 'Sri Lanka',
+  HK: 'Hong Kong',
+  SN: 'Senegal',
+  BG: 'Bulgaria',
 };
 
 // Target name → country mapping
@@ -52,93 +59,32 @@ const TARGET_COUNTRIES: Record<string, { code: string; name: string }> = {
   'INDIA OFFICE': { code: 'IN', name: 'India' },
 };
 
-type Tab = 'sources' | 'targets';
-
-export default function TopCountries() {
-  const { threats } = useThreatData();
-  const [activeTab, setActiveTab] = useState<Tab>('sources');
-
-  // Compute top source countries from all threats
-  const sourceCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const t of threats) {
-      const country = t.sourceCountry;
-      if (country) {
-        counts[country] = (counts[country] || 0) + 1;
-      }
-    }
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([code, count]) => ({
-        code,
-        name: COUNTRY_NAMES[code] || code,
-        count,
-      }));
-  }, [threats]);
-
-  // Compute top target countries from all threats
-  const targetCounts = useMemo(() => {
-    const counts: Record<string, { code: string; name: string; count: number }> = {};
-    for (const t of threats) {
-      const targetName = t.targetName;
-      const target = TARGET_COUNTRIES[targetName];
-      if (target) {
-        if (!counts[target.code]) {
-          counts[target.code] = { code: target.code, name: target.name, count: 0 };
-        }
-        counts[target.code].count++;
-      }
-    }
-    return Object.values(counts)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
-  }, [threats]);
-
-  const activeData = activeTab === 'sources' ? sourceCounts : targetCounts;
-  const maxCount = activeData.length > 0 ? activeData[0].count : 1;
-
+/** Ranked list rendering shared by both panels */
+function RankedList({ data, maxCount, label, totalEvents }: {
+  data: { code: string; name: string; count: number }[];
+  maxCount: number;
+  label: string;
+  totalEvents: number;
+}) {
   return (
     <div className="h-full flex flex-col p-2.5 gap-2">
-      {/* Header with tabs */}
+      {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <h3 className="font-display text-[10px] uppercase tracking-wider text-[var(--color-cp-accent)] font-semibold">
-          Top Countries
+          Top {label}
         </h3>
-        <div className="flex items-center gap-0.5 bg-[var(--color-cp-surface)]/60 rounded p-0.5">
-          <button
-            onClick={() => setActiveTab('sources')}
-            className={`px-2 py-0.5 rounded text-[8px] font-data font-medium transition-all cursor-pointer ${
-              activeTab === 'sources'
-                ? 'bg-[var(--color-cp-accent)]/15 text-[var(--color-cp-accent)]'
-                : 'text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-text-secondary)]'
-            }`}
-          >
-            Sources
-          </button>
-          <button
-            onClick={() => setActiveTab('targets')}
-            className={`px-2 py-0.5 rounded text-[8px] font-data font-medium transition-all cursor-pointer ${
-              activeTab === 'targets'
-                ? 'bg-[var(--color-cp-accent)]/15 text-[var(--color-cp-accent)]'
-                : 'text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-text-secondary)]'
-            }`}
-          >
-            Targets
-          </button>
-        </div>
       </div>
 
       {/* Ranked list */}
       <div className="flex-1 flex flex-col gap-1 overflow-y-auto min-h-0">
-        {activeData.length === 0 ? (
+        {data.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <span className="text-[9px] font-data text-[var(--color-cp-text-tertiary)] opacity-50">
               Collecting data...
             </span>
           </div>
         ) : (
-          activeData.map((item, index) => (
+          data.map((item, index) => (
             <div key={item.code} className="flex items-center gap-2 group">
               {/* Rank number */}
               <span className={`font-data text-[9px] w-3 text-right shrink-0 ${
@@ -190,9 +136,67 @@ export default function TopCountries() {
       {/* Footer */}
       <div className="shrink-0 pt-1 border-t border-white/[0.04]">
         <span className="font-data text-[8px] text-[var(--color-cp-text-tertiary)] opacity-50">
-          {activeTab === 'sources' ? 'Attack origins' : 'Attack destinations'} · {threats.length} total events
+          {label === 'Sources' ? 'Attack origins' : 'Attack destinations'} · {totalEvents} total events
         </span>
       </div>
     </div>
   );
+}
+
+/** Top Source Countries — for left side of globe */
+export function TopSourceCountries() {
+  const { threats } = useThreatData();
+
+  const sourceCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const t of threats) {
+      const country = t.sourceCountry;
+      if (country) {
+        counts[country] = (counts[country] || 0) + 1;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([code, count]) => ({
+        code,
+        name: COUNTRY_NAMES[code] || code,
+        count,
+      }));
+  }, [threats]);
+
+  const maxCount = sourceCounts.length > 0 ? sourceCounts[0].count : 1;
+
+  return <RankedList data={sourceCounts} maxCount={maxCount} label="Sources" totalEvents={threats.length} />;
+}
+
+/** Top Target Countries — for right side of globe */
+export function TopTargetCountries() {
+  const { threats } = useThreatData();
+
+  const targetCounts = useMemo(() => {
+    const counts: Record<string, { code: string; name: string; count: number }> = {};
+    for (const t of threats) {
+      const targetName = t.targetName;
+      const target = TARGET_COUNTRIES[targetName];
+      if (target) {
+        if (!counts[target.code]) {
+          counts[target.code] = { code: target.code, name: target.name, count: 0 };
+        }
+        counts[target.code].count++;
+      }
+    }
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [threats]);
+
+  const maxCount = targetCounts.length > 0 ? targetCounts[0].count : 1;
+
+  return <RankedList data={targetCounts} maxCount={maxCount} label="Targets" totalEvents={threats.length} />;
+}
+
+/** Default export — legacy combined view (kept for backward compat) */
+export default function TopCountries() {
+  return <TopSourceCountries />;
 }

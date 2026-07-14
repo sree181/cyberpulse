@@ -35,7 +35,7 @@ import ParticleNetwork from '@/components/ParticleNetwork';
 import { SoundEngineProvider } from '@/components/SoundEngine';
 import FuiPanel from '@/components/FuiPanel';
 import CollapsiblePanel from '@/components/CollapsiblePanel';
-import TopCountries from '@/components/TopCountries';
+import { TopSourceCountries, TopTargetCountries } from '@/components/TopCountries';
 import AttackLocationMap from '@/components/AttackLocationMap';
 
 type ViewMode = 'globe' | 'map';
@@ -83,9 +83,9 @@ export default function Home() {
                     </CollapsiblePanel>
                   </FuiPanel>
                   <FuiPanel className="flex-[3] overflow-hidden" delay={0.7} cornerSize={8}>
-                    <CollapsiblePanel title="Top Countries">
+                    <CollapsiblePanel title="Top Sources">
                       <div className="cp-panel h-full">
-                        <TopCountries />
+                        <TopSourceCountries />
                       </div>
                     </CollapsiblePanel>
                   </FuiPanel>
@@ -106,7 +106,7 @@ export default function Home() {
                   <ViewToggle viewMode={viewMode} onChange={setViewMode} />
                 </div>
 
-                {/* RIGHT COLUMN — Port Activity + Threat Feed */}
+                {/* RIGHT COLUMN — Port Activity + Top Targets + Threat Feed */}
                 <div className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-visible">
                   <FuiPanel className="flex-[3] overflow-hidden" delay={0.3} cornerSize={8}>
                     <CollapsiblePanel title="Port Activity">
@@ -115,7 +115,14 @@ export default function Home() {
                       </div>
                     </CollapsiblePanel>
                   </FuiPanel>
-                  <FuiPanel className="flex-[5] overflow-hidden" delay={0.6} cornerSize={8}>
+                  <FuiPanel className="flex-[3] overflow-hidden" delay={0.55} cornerSize={8}>
+                    <CollapsiblePanel title="Top Targets">
+                      <div className="cp-panel h-full">
+                        <TopTargetCountries />
+                      </div>
+                    </CollapsiblePanel>
+                  </FuiPanel>
+                  <FuiPanel className="flex-[4] overflow-hidden" delay={0.6} cornerSize={8}>
                     <CollapsiblePanel title="Threat Feed">
                       <div className="cp-panel h-full">
                         <ThreatFeed />

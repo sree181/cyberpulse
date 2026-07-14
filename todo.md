@@ -187,3 +187,6 @@
 - [x] Add persistent Google Map panel in the bottom row that auto-cycles through recent attack source locations every 8-10 seconds
 - [x] Show marker at attack source with brief info overlay (attack type, IP, country)
 - [x] Dark-themed map styling consistent with the dashboard
+
+## Top Countries Repositioning (July 2026)
+- [x] Move Top Countries Sources to left side of globe, Targets to right side of globe
