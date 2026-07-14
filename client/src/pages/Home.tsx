@@ -97,12 +97,12 @@ export default function Home() {
                   </FuiPanel>
 
                   {/* Top Sources — floating overlay on left side of globe */}
-                  <div className="absolute top-3 left-3 z-20 w-[180px] bg-[var(--color-cp-base)]/80 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md pointer-events-none">
+                  <div className="absolute top-4 left-4 z-20 w-[clamp(180px,12vw,320px)] bg-[var(--color-cp-base)]/85 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-lg pointer-events-none">
                     <TopSourceCountries />
                   </div>
 
                   {/* Top Targets — floating overlay on right side of globe */}
-                  <div className="absolute top-3 right-3 z-20 w-[180px] bg-[var(--color-cp-base)]/80 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md pointer-events-none">
+                  <div className="absolute top-4 right-4 z-20 w-[clamp(180px,12vw,320px)] bg-[var(--color-cp-base)]/85 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-lg pointer-events-none">
                     <TopTargetCountries />
                   </div>
 

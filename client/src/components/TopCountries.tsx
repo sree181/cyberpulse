@@ -67,27 +67,27 @@ function RankedList({ data, maxCount, label, totalEvents }: {
   totalEvents: number;
 }) {
   return (
-    <div className="h-full flex flex-col p-2.5 gap-2">
+    <div className="h-full flex flex-col p-[clamp(8px,0.6vw,16px)] gap-[clamp(6px,0.4vw,12px)]">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
-        <h3 className="font-display text-[10px] uppercase tracking-wider text-[var(--color-cp-accent)] font-semibold">
+        <h3 className="font-display text-[clamp(10px,0.7vw,16px)] uppercase tracking-wider text-[var(--color-cp-accent)] font-semibold">
           Top {label}
         </h3>
       </div>
 
       {/* Ranked list */}
-      <div className="flex-1 flex flex-col gap-1 overflow-y-auto min-h-0">
+      <div className="flex-1 flex flex-col gap-[clamp(4px,0.35vw,10px)] overflow-y-auto min-h-0">
         {data.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
-            <span className="text-[9px] font-data text-[var(--color-cp-text-tertiary)] opacity-50">
+            <span className="text-[clamp(9px,0.55vw,14px)] font-data text-[var(--color-cp-text-tertiary)] opacity-50">
               Collecting data...
             </span>
           </div>
         ) : (
           data.map((item, index) => (
-            <div key={item.code} className="flex items-center gap-2 group">
+            <div key={item.code} className="flex items-center gap-[clamp(4px,0.35vw,10px)] group">
               {/* Rank number */}
-              <span className={`font-data text-[9px] w-3 text-right shrink-0 ${
+              <span className={`font-data text-[clamp(9px,0.6vw,14px)] w-[clamp(12px,1vw,20px)] text-right shrink-0 ${
                 index === 0 ? 'text-[var(--color-cp-critical)] font-bold' :
                 index === 1 ? 'text-[var(--color-cp-high)] font-semibold' :
                 index === 2 ? 'text-[var(--color-cp-medium)]' :
@@ -97,7 +97,7 @@ function RankedList({ data, maxCount, label, totalEvents }: {
               </span>
 
               {/* Country code badge */}
-              <span className={`font-data text-[8px] font-bold w-5 shrink-0 ${
+              <span className={`font-data text-[clamp(8px,0.55vw,13px)] font-bold w-[clamp(16px,1.4vw,28px)] shrink-0 ${
                 index === 0 ? 'text-[var(--color-cp-critical)]' :
                 index === 1 ? 'text-[var(--color-cp-high)]' :
                 'text-[var(--color-cp-text-secondary)]'
@@ -106,17 +106,17 @@ function RankedList({ data, maxCount, label, totalEvents }: {
               </span>
 
               {/* Bar + name */}
-              <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+              <div className="flex-1 flex flex-col gap-[clamp(2px,0.15vw,4px)] min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="font-data text-[8px] text-[var(--color-cp-text-secondary)] whitespace-nowrap">
+                  <span className="font-data text-[clamp(8px,0.55vw,13px)] text-[var(--color-cp-text-secondary)] whitespace-nowrap">
                     {item.name}
                   </span>
-                  <span className="font-data text-[8px] text-[var(--color-cp-text-tertiary)] tabular-nums shrink-0 ml-1">
+                  <span className="font-data text-[clamp(8px,0.55vw,13px)] text-[var(--color-cp-text-tertiary)] tabular-nums shrink-0 ml-1">
                     {item.count}
                   </span>
                 </div>
                 {/* Progress bar */}
-                <div className="h-[3px] w-full bg-white/[0.04] rounded-full overflow-hidden">
+                <div className="h-[clamp(3px,0.2vw,5px)] w-full bg-white/[0.04] rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       index === 0 ? 'bg-[var(--color-cp-critical)]' :
@@ -135,7 +135,7 @@ function RankedList({ data, maxCount, label, totalEvents }: {
 
       {/* Footer */}
       <div className="shrink-0 pt-1 border-t border-white/[0.04]">
-        <span className="font-data text-[8px] text-[var(--color-cp-text-tertiary)] opacity-50">
+        <span className="font-data text-[clamp(8px,0.45vw,12px)] text-[var(--color-cp-text-tertiary)] opacity-50">
           {label === 'Sources' ? 'Attack origins' : 'Attack destinations'} · {totalEvents} total events
         </span>
       </div>
