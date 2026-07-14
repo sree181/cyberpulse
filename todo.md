@@ -166,3 +166,7 @@
 - [x] Replace dot-grid flat map with proper SVG world map showing country outlines
 - [x] Add filled country shapes (dark fill with visible borders)
 - [x] Keep attack arcs rendering on top of the map
+
+## Globe Stability Fix (July 2026)
+- [x] Fix globe re-mounting/refreshing — should stay in place with continuous rotation
+- [x] Arcs should appear/disappear smoothly without causing globe to reset

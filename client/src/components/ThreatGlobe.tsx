@@ -265,9 +265,15 @@ export default function ThreatGlobe() {
     }
   }, [setSelectedArc]);
 
-  // Stable refs for auto-zoom
+  // Stable refs for auto-zoom and callbacks
   const activeArcsRef = useRef<ArcData[]>([]);
   useEffect(() => { activeArcsRef.current = activeArcs; }, [activeArcs]);
+
+  const zoomToArcRef = useRef(zoomToArc);
+  useEffect(() => { zoomToArcRef.current = zoomToArc; }, [zoomToArc]);
+
+  const ringsDataRef = useRef(ringsData);
+  useEffect(() => { ringsDataRef.current = ringsData; }, [ringsData]);
 
   // Auto-track: gently pan the globe to face where arcs are concentrated
   // This ensures arcs are always visible (not on the far side of the globe)
@@ -328,7 +334,7 @@ export default function ThreatGlobe() {
       // Click handler — event arcs are clickable
       .onArcClick((arc: any) => {
         if (arc && arc.layer === 'event' && arc.originalArc) {
-          zoomToArc(arc.originalArc);
+          zoomToArcRef.current(arc.originalArc);
         }
       })
       // HTML Elements — source hotspot glow
@@ -336,7 +342,7 @@ export default function ThreatGlobe() {
       .htmlElement(hotspotElementFn)
       .htmlAltitude(0.01)
       // Rings — dynamic target pressure
-      .ringsData(ringsData)
+      .ringsData(ringsDataRef.current)
       .ringColor('color')
       .ringMaxRadius((d: any) => d.maxR || 2)
       .ringPropagationSpeed((d: any) => d.propagationSpeed || 1.2)
@@ -395,7 +401,7 @@ export default function ThreatGlobe() {
         const target = arcs.find(a => a.severity === 'critical') 
           || arcs.find(a => a.severity === 'high') 
           || arcs[0];
-        if (target) zoomToArc(target);
+        if (target) zoomToArcRef.current(target);
       }
     };
     window.addEventListener('display-long-press', handleLongPress);
@@ -408,7 +414,8 @@ export default function ThreatGlobe() {
       if (autoZoomTimerRef.current) clearInterval(autoZoomTimerRef.current);
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
-  }, [ringsData, zoomToArc]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Initialize once — data updates handled by separate effects
 
   // Update arc, point, and ring data
   useEffect(() => {
