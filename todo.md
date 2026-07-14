@@ -182,3 +182,8 @@
 ## Side Panel Width & Toggle Fix (July 2026)
 - [x] Widen both side panels (left and right) to be more proportional with the wall width
 - [x] Move Globe/Map toggle to the bottom of the globe area and make it touch-friendly (larger tap targets)
+
+## Auto-Cycling Google Map Panel (July 2026)
+- [x] Add persistent Google Map panel in the bottom row that auto-cycles through recent attack source locations every 8-10 seconds
+- [x] Show marker at attack source with brief info overlay (attack type, IP, country)
+- [x] Dark-themed map styling consistent with the dashboard

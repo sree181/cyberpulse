@@ -36,6 +36,7 @@ import { SoundEngineProvider } from '@/components/SoundEngine';
 import FuiPanel from '@/components/FuiPanel';
 import CollapsiblePanel from '@/components/CollapsiblePanel';
 import TopCountries from '@/components/TopCountries';
+import AttackLocationMap from '@/components/AttackLocationMap';
 
 type ViewMode = 'globe' | 'map';
 
@@ -124,12 +125,18 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* SECONDARY ROW: Time Series + CVE Spotlight + Weekly Briefing */}
+              {/* SECONDARY ROW: Time Series + Attack Location Map + CVE Spotlight + Weekly Briefing */}
               <div className="flex-[2] flex gap-[0.4vw] overflow-hidden min-h-[80px]">
                 {/* Time Series — spans a portion of the width */}
                 <div className="flex-[2] cp-panel overflow-hidden">
                   <TimeSeriesChart />
                 </div>
+                {/* Attack Location Map — auto-cycling Google Map */}
+                <FuiPanel className="flex-[2] overflow-hidden" delay={0.7} cornerSize={8}>
+                  <div className="cp-panel h-full">
+                    <AttackLocationMap />
+                  </div>
+                </FuiPanel>
                 {/* CVE Spotlight */}
                 <FuiPanel className="flex-[3] overflow-hidden" delay={0.8} cornerSize={8}>
                   <CollapsiblePanel title="CVE Spotlight">
