@@ -30,7 +30,8 @@ const CollapsiblePanel = memo(function CollapsiblePanel({
         </span>
         <button
           onClick={() => setCollapsed(false)}
-          className="p-0.5 rounded hover:bg-white/[0.06] transition-colors cursor-pointer ml-2 shrink-0"
+          onTouchEnd={(e) => { e.preventDefault(); setCollapsed(false); }}
+          className="p-1.5 rounded hover:bg-white/[0.06] transition-colors cursor-pointer touch-manipulation ml-2 shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
           title="Expand panel"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-cp-text-tertiary)]">
@@ -49,7 +50,8 @@ const CollapsiblePanel = memo(function CollapsiblePanel({
       {/* Minimize button — top-right corner */}
       <button
         onClick={() => setCollapsed(true)}
-        className="absolute top-1.5 right-1.5 z-10 p-0.5 rounded hover:bg-white/[0.08] transition-colors cursor-pointer opacity-40 hover:opacity-80"
+        onTouchEnd={(e) => { e.preventDefault(); setCollapsed(true); }}
+        className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded hover:bg-white/[0.08] transition-colors cursor-pointer touch-manipulation opacity-40 hover:opacity-80 min-w-[36px] min-h-[36px] flex items-center justify-center"
         title="Minimize panel"
       >
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-cp-text-tertiary)]">

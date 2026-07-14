@@ -108,7 +108,8 @@ export default function ThreatSpotlight() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => { setMode('cve'); setIsTransitioning(false); }}
-            className={`text-label transition-colors cursor-pointer ${
+            onTouchEnd={(e) => { e.preventDefault(); setMode('cve'); setIsTransitioning(false); }}
+            className={`text-label transition-colors cursor-pointer touch-manipulation min-h-[40px] px-2 ${
               mode === 'cve' ? 'text-[var(--color-cp-accent)]' : 'text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-text-secondary)]'
             }`}
           >
@@ -117,7 +118,8 @@ export default function ThreatSpotlight() {
           <div className="w-px h-3 bg-[var(--color-cp-border)]" />
           <button
             onClick={() => { setMode('ai'); setIsTransitioning(false); }}
-            className={`text-label flex items-center gap-1 transition-colors cursor-pointer ${
+            onTouchEnd={(e) => { e.preventDefault(); setMode('ai'); setIsTransitioning(false); }}
+            className={`text-label flex items-center gap-1 transition-colors cursor-pointer touch-manipulation min-h-[40px] px-2 ${
               mode === 'ai' ? 'text-violet-400' : 'text-[var(--color-cp-text-tertiary)] hover:text-[var(--color-cp-text-secondary)]'
             }`}
           >

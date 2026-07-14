@@ -472,9 +472,10 @@ export default function ThreatGlobe() {
       {/* Globe container */}
       <div 
         ref={containerRef} 
-        className={`absolute inset-0 cursor-pointer transition-all duration-700 ease-in-out ${
+        className={`absolute inset-0 cursor-pointer transition-all duration-700 ease-in-out touch-manipulation ${
           showMap ? 'right-[40%]' : ''
         }`}
+        style={{ touchAction: 'manipulation' }}
       />
 
       {/* Map detail panel (slides in from right on zoom) */}
@@ -556,7 +557,8 @@ export default function ThreatGlobe() {
           </div>
           <button
             onClick={returnToOverview}
-            className="bg-[var(--color-cp-surface)]/90 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md px-3 py-1.5 text-caption font-data text-[var(--color-cp-text-secondary)] hover:text-[var(--color-cp-text-primary)] hover:border-[var(--color-cp-accent)] transition-all duration-200 cursor-pointer"
+            onTouchEnd={(e) => { e.preventDefault(); returnToOverview(); }}
+            className="bg-[var(--color-cp-surface)]/90 backdrop-blur-sm border border-[var(--color-cp-border)] rounded-md px-4 py-2.5 text-caption font-data text-[var(--color-cp-text-secondary)] hover:text-[var(--color-cp-text-primary)] hover:border-[var(--color-cp-accent)] transition-all duration-200 cursor-pointer touch-manipulation min-h-[44px]"
           >
             ← Overview
           </button>
@@ -567,7 +569,7 @@ export default function ThreatGlobe() {
       {!isZoomed && (
         <div className="absolute top-3 right-4 z-10">
           <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-30">
-            Click arc to inspect
+            Tap arc to inspect
           </span>
         </div>
       )}

@@ -190,3 +190,17 @@
 
 ## Top Countries Repositioning (July 2026)
 - [x] Move Top Countries Sources to left side of globe, Targets to right side of globe
+
+## Touch Functionality Audit (July 2026)
+- [x] CollapsiblePanel expand/minimize buttons — added onTouchEnd, touch-manipulation, min-h-[36px]
+- [x] HeaderBar sound toggle — added onTouchEnd, touch-manipulation, min-h-[40px]
+- [x] ThreatSpotlight CVE/AI tab buttons — added onTouchEnd, touch-manipulation, min-h-[40px]
+- [x] ThreatGlobe ← Overview button — added onTouchEnd, touch-manipulation, min-h-[44px]
+- [x] ThreatGlobe container — added touch-manipulation and touchAction style for arc tapping
+- [x] Globe/Map ViewToggle — already had onTouchEnd, touch-manipulation, min-h-[48px]
+- [x] useTouchGestures hook — already handles touchstart/touchmove/touchend globally
+- [x] Updated hint text from "Click arc" to "Tap arc"
+- N/A: OperatorPanel (hidden admin overlay, not user-facing on wall)
+- N/A: DashboardLayout, AIChatBox, ComponentShowcase (not used in wall display mode)
+- N/A: ErrorBoundary, NotFound (error states, not normal wall operation)
+- N/A: AttackLocationMap (intentionally non-interactive, gestureHandling: 'none')

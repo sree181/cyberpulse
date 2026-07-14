@@ -100,7 +100,8 @@ export default function HeaderBar() {
         {/* Sound toggle */}
         <button
           onClick={() => setSoundEnabled(!soundEnabled)}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-caption transition-all cursor-pointer ${
+          onTouchEnd={(e) => { e.preventDefault(); setSoundEnabled(!soundEnabled); }}
+          className={`flex items-center gap-1 px-3 py-2 rounded text-caption transition-all cursor-pointer touch-manipulation min-h-[40px] ${
             soundEnabled 
               ? 'bg-[var(--color-cp-accent)]/10 text-[var(--color-cp-accent)] border border-[var(--color-cp-accent)]/30' 
               : 'text-[var(--color-cp-text-tertiary)] border border-[var(--color-cp-border)] hover:border-[var(--color-cp-accent)]/30'
