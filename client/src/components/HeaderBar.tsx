@@ -40,75 +40,67 @@ export default function HeaderBar() {
         : 'bg-neutral-500';
 
   return (
-    <header className="h-[clamp(3.5rem,4vh,6rem)] shrink-0 flex items-center justify-between px-[clamp(1rem,1.5vw,3rem)] bg-[var(--color-cp-elevated)] border-b border-[var(--color-cp-border)] shadow-sm relative z-20 max-w-[3200px] mx-auto w-full">
+    <header className="h-[clamp(3.5rem,5vh,8rem)] shrink-0 flex items-center justify-between px-[clamp(1rem,2vw,4rem)] bg-[var(--color-cp-elevated)] border-b border-[var(--color-cp-border)] shadow-sm relative z-20 w-full">
       
       {/* Left: Auburn Logo + BASY Branding — PROMINENT */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-[clamp(16px,1.2vw,28px)]">
         {/* Institution Logo — larger and more visible */}
-        <div className="flex items-center gap-3 px-2 py-1.5 bg-white/95 rounded-md">
+        <div className="flex items-center gap-3 px-[clamp(8px,0.5vw,16px)] py-[clamp(4px,0.3vw,10px)] bg-white/95 rounded-md">
           <img 
             src={BRANDING.logoUrl} 
             alt={BRANDING.logoAlt} 
-            className="h-[clamp(2.5rem,3vh,5rem)] w-auto object-contain"
+            className="h-[clamp(2.5rem,4vh,7rem)] w-auto object-contain"
           />
         </div>
-        <div className="w-px h-9 bg-[var(--color-cp-border)]" />
+        <div className="w-px h-[clamp(24px,3vh,48px)] bg-[var(--color-cp-border)]" />
         <div className="flex flex-col">
-          <h1 className="text-[clamp(15px,1vw,30px)] font-bold text-[var(--color-cp-text-primary)] tracking-[0.15em] leading-tight">
+          <h1 className="text-[clamp(16px,1.3vw,38px)] font-bold text-[var(--color-cp-text-primary)] tracking-[0.15em] leading-tight">
             {BRANDING.institutionName}
           </h1>
-          <span className="text-[clamp(11px,0.7vw,22px)] font-semibold tracking-[0.2em] text-[var(--color-cp-accent)] leading-tight mt-0.5">
+          <span className="text-[clamp(11px,0.85vw,26px)] font-semibold tracking-[0.2em] text-[var(--color-cp-accent)] leading-tight mt-0.5">
             {BRANDING.subtitle}
           </span>
         </div>
       </div>
 
       {/* Center: Key metrics with NumberMorph — 3 max */}
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-[clamp(20px,1.5vw,40px)]">
         <div className="flex flex-col items-center">
-          <span className="font-data text-[clamp(14px,0.9vw,28px)] font-light text-[var(--color-cp-text-primary)]">
+          <span className="font-data text-[clamp(18px,1.4vw,42px)] font-light text-[var(--color-cp-text-primary)]">
             <NumberMorph value={stats.total} duration={1.5} />
           </span>
-          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(8px, 0.5vw, 16px)' }}>THREATS</span>
+          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(9px, 0.6vw, 18px)' }}>THREATS</span>
         </div>
-        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
+        <div className="w-px h-[clamp(20px,2.5vh,40px)] bg-[var(--color-cp-border)]" />
         <div className="flex flex-col items-center">
-          <span className="font-data text-[clamp(14px,0.9vw,28px)] font-light text-[var(--color-cp-accent)]">
+          <span className="font-data text-[clamp(18px,1.4vw,42px)] font-light text-[var(--color-cp-accent)]">
             <NumberMorph value={stats.critical} duration={1.0} />
           </span>
-          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(8px, 0.5vw, 16px)' }}>CRITICAL</span>
+          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(9px, 0.6vw, 18px)' }}>CRITICAL</span>
         </div>
-        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
+        <div className="w-px h-[clamp(20px,2.5vh,40px)] bg-[var(--color-cp-border)]" />
         <div className="flex flex-col items-center">
-          <span className="font-data text-[clamp(14px,0.9vw,28px)] font-light text-[var(--color-cp-text-primary)]">
+          <span className="font-data text-[clamp(18px,1.4vw,42px)] font-light text-[var(--color-cp-text-primary)]">
             <NumberMorph value={stats.attacksPerMinute || 0} duration={1.2} />
           </span>
-          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(8px, 0.5vw, 16px)' }}>ATK/MIN</span>
+          <span className="text-label text-[var(--color-cp-text-tertiary)]" style={{ fontSize: 'clamp(9px, 0.6vw, 18px)' }}>ATK/MIN</span>
         </div>
-        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
-        {/* AI Insights link */}
-        <Link href="/ai" className="flex items-center gap-1.5 group">
-          <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-live-pulse" />
-          <span className="text-label text-[var(--color-cp-text-tertiary)] group-hover:text-violet-400 transition-colors" style={{ fontSize: '8px' }}>
-            AI MODELS
-          </span>
-        </Link>
       </div>
 
       {/* Right: Status + Time + Sound Toggle */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-[clamp(12px,1vw,24px)]">
         {/* Sound toggle */}
         <button
           onClick={() => setSoundEnabled(!soundEnabled)}
           onTouchEnd={(e) => { e.preventDefault(); setSoundEnabled(!soundEnabled); }}
-          className={`flex items-center gap-1 px-3 py-2 rounded text-caption transition-all cursor-pointer touch-manipulation min-h-[40px] ${
+          className={`flex items-center gap-[clamp(4px,0.3vw,8px)] px-[clamp(8px,0.6vw,16px)] py-[clamp(6px,0.4vw,12px)] rounded text-[clamp(10px,0.6vw,16px)] transition-all cursor-pointer touch-manipulation min-h-[44px] ${
             soundEnabled 
               ? 'bg-[var(--color-cp-accent)]/10 text-[var(--color-cp-accent)] border border-[var(--color-cp-accent)]/30' 
               : 'text-[var(--color-cp-text-tertiary)] border border-[var(--color-cp-border)] hover:border-[var(--color-cp-accent)]/30'
           }`}
           title={soundEnabled ? 'Mute audio' : 'Enable audio'}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="clamp(12,1vw,20)" height="clamp(12,1vw,20)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[clamp(12px,0.8vw,20px)] h-[clamp(12px,0.8vw,20px)]">
             {soundEnabled ? (
               <>
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -126,15 +118,15 @@ export default function HeaderBar() {
           <span className="hidden sm:inline">{soundEnabled ? 'ON' : 'OFF'}</span>
         </button>
 
-        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
-        <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full ${statusColor} ${isLive ? 'animate-live-pulse' : ''}`} />
-          <span className="text-caption text-[var(--color-cp-text-tertiary)]">{statusLabel}</span>
+        <div className="w-px h-[clamp(16px,2vh,32px)] bg-[var(--color-cp-border)]" />
+        <div className="flex items-center gap-[clamp(4px,0.3vw,8px)]">
+          <div className={`w-[clamp(6px,0.4vw,10px)] h-[clamp(6px,0.4vw,10px)] rounded-full ${statusColor} ${isLive ? 'animate-live-pulse' : ''}`} />
+          <span className="text-[clamp(10px,0.6vw,16px)] text-[var(--color-cp-text-tertiary)]">{statusLabel}</span>
         </div>
-        <div className="w-px h-5 bg-[var(--color-cp-border)]" />
-        <time className="font-data text-body text-[var(--color-cp-text-secondary)] tabular-nums">
+        <div className="w-px h-[clamp(16px,2vh,32px)] bg-[var(--color-cp-border)]" />
+        <time className="font-data text-[clamp(13px,0.9vw,26px)] text-[var(--color-cp-text-secondary)] tabular-nums">
           {time.toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' })}
-          <span className="text-[var(--color-cp-text-tertiary)] ml-1 text-caption">UTC</span>
+          <span className="text-[var(--color-cp-text-tertiary)] ml-1 text-[clamp(9px,0.55vw,16px)]">UTC</span>
         </time>
       </div>
     </header>

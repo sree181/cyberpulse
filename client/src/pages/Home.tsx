@@ -37,6 +37,7 @@ import FuiPanel from '@/components/FuiPanel';
 import CollapsiblePanel from '@/components/CollapsiblePanel';
 import { TopSourceCountries, TopTargetCountries } from '@/components/TopCountries';
 import AttackLocationMap from '@/components/AttackLocationMap';
+import { Link } from 'wouter';
 
 type ViewMode = 'globe' | 'map';
 
@@ -108,6 +109,21 @@ export default function Home() {
 
                   {/* View Toggle — BOTTOM CENTER, touch-friendly, OUTSIDE globe to avoid Three.js event capture */}
                   <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+
+                  {/* AI Models — bottom right, prominent touch-friendly button */}
+                  <Link href="/ai">
+                    <div
+                      className="absolute bottom-4 right-[clamp(16px,1.5vw,40px)] z-[50] flex items-center gap-[clamp(6px,0.4vw,10px)] bg-violet-500/15 backdrop-blur-md rounded-lg px-[clamp(12px,0.8vw,20px)] py-[clamp(8px,0.5vw,14px)] border border-violet-500/30 shadow-lg cursor-pointer touch-manipulation min-h-[48px] hover:bg-violet-500/25 transition-all duration-200"
+                      onTouchEnd={(e) => { e.stopPropagation(); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <div className="w-[clamp(8px,0.5vw,12px)] h-[clamp(8px,0.5vw,12px)] rounded-full bg-violet-500 animate-live-pulse" />
+                      <span className="font-data font-medium text-[clamp(12px,0.8vw,20px)] text-violet-300 tracking-wide">
+                        AI MODELS
+                      </span>
+                    </div>
+                  </Link>
                 </div>
 
                 {/* RIGHT COLUMN — Port Activity + Threat Feed */}

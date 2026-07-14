@@ -204,3 +204,8 @@
 - N/A: DashboardLayout, AIChatBox, ComponentShowcase (not used in wall display mode)
 - N/A: ErrorBoundary, NotFound (error states, not normal wall operation)
 - N/A: AttackLocationMap (intentionally non-interactive, gestureHandling: 'none')
+
+## Planar Display Scaling — Legend, Header, AI Models (July 2026)
+- [x] Make Attack Type Legend bigger for large Planar display
+- [x] Make header logo, title, and metric numbers bigger/more prominent for large screen
+- [x] Move AI Models link to bottom (like Globe/Map toggle), make it prominent and touch-enabled

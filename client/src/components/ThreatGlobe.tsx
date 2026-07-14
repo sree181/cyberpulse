@@ -506,32 +506,32 @@ export default function ThreatGlobe() {
 
       {/* Attack Type Legend — bottom left (only when not zoomed) */}
       {!isZoomed && (
-        <div className="absolute bottom-3 left-4 z-10">
-          <div className="flex flex-col gap-1.5">
-            <div className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-60 uppercase tracking-wider mb-0.5">
+        <div className="absolute bottom-[clamp(12px,1.5vw,32px)] left-[clamp(16px,1vw,32px)] z-10">
+          <div className="flex flex-col gap-[clamp(6px,0.4vw,12px)]">
+            <div className="font-data text-[clamp(10px,0.7vw,16px)] text-[var(--color-cp-text-tertiary)] opacity-60 uppercase tracking-wider mb-[clamp(2px,0.2vw,6px)]">
               Attack Type
             </div>
             {ATTACK_TYPE_LEGEND.map(item => (
-              <div key={item.label} className="flex items-center gap-2">
+              <div key={item.label} className="flex items-center gap-[clamp(8px,0.5vw,14px)]">
                 <div 
-                  className="w-5 h-[2px] rounded-full"
+                  className="w-[clamp(20px,1.5vw,36px)] h-[clamp(2px,0.15vw,4px)] rounded-full"
                   style={{ 
                     backgroundColor: item.color,
-                    boxShadow: `0 0 4px ${item.color}66`,
+                    boxShadow: `0 0 6px ${item.color}66`,
                   }}
                 />
-                <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-70">
+                <span className="font-data text-[clamp(10px,0.65vw,15px)] text-[var(--color-cp-text-tertiary)] opacity-80">
                   {item.label}
                 </span>
               </div>
             ))}
           </div>
           {/* Active event count */}
-          <div className="mt-2 flex flex-col gap-0.5">
-            <div className="font-data text-caption text-[var(--color-cp-text-tertiary)] tabular-nums opacity-50">
+          <div className="mt-[clamp(8px,0.5vw,14px)] flex flex-col gap-[clamp(2px,0.15vw,4px)]">
+            <div className="font-data text-[clamp(10px,0.6vw,14px)] text-[var(--color-cp-text-tertiary)] tabular-nums opacity-50">
               {activeArcs.length} active event{activeArcs.length !== 1 ? 's' : ''}
             </div>
-            <div className="font-data text-[8px] text-[var(--color-cp-text-tertiary)] opacity-30">
+            <div className="font-data text-[clamp(9px,0.5vw,12px)] text-[var(--color-cp-text-tertiary)] opacity-30">
               Each arc = one threat feed entry
             </div>
           </div>
