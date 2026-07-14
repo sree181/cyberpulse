@@ -105,7 +105,7 @@ function PanelContent({ id }: { id: string }) {
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('globe');
-  const { order, reorder } = usePanelOrder(ZONE_CONFIGS);
+  const { order, reorder, isLocked } = usePanelOrder(ZONE_CONFIGS);
 
   return (
     <ThreatProvider>
@@ -136,6 +136,7 @@ export default function Home() {
                   items={order['left']}
                   direction="vertical"
                   onReorder={reorder}
+                  isLocked={isLocked}
                   className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-hidden"
                 >
                   {(orderedIds) => (
@@ -144,7 +145,7 @@ export default function Home() {
                         const def = LEFT_PANELS[id];
                         if (!def) return null;
                         return (
-                          <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }}>
+                          <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }} isLocked={isLocked}>
                             <FuiPanel className="h-full overflow-hidden" delay={def.delay} cornerSize={8}>
                               {def.collapsible ? (
                                 <CollapsiblePanel title={def.title!}>
@@ -209,6 +210,7 @@ export default function Home() {
                   items={order['right']}
                   direction="vertical"
                   onReorder={reorder}
+                  isLocked={isLocked}
                   className="w-[20%] min-w-[220px] max-w-[640px] shrink-0 flex flex-col gap-[0.4vw] overflow-hidden"
                 >
                   {(orderedIds) => (
@@ -217,7 +219,7 @@ export default function Home() {
                         const def = RIGHT_PANELS[id];
                         if (!def) return null;
                         return (
-                          <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }}>
+                          <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }} isLocked={isLocked}>
                             <FuiPanel className="h-full overflow-hidden" delay={def.delay} cornerSize={8}>
                               {def.collapsible ? (
                                 <CollapsiblePanel title={def.title!}>
@@ -245,6 +247,7 @@ export default function Home() {
                 items={order['bottom']}
                 direction="horizontal"
                 onReorder={reorder}
+                isLocked={isLocked}
                 className="flex-[2] flex gap-[0.4vw] overflow-hidden min-h-[80px]"
               >
                 {(orderedIds) => (
@@ -253,7 +256,7 @@ export default function Home() {
                       const def = BOTTOM_PANELS[id];
                       if (!def) return null;
                       return (
-                        <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }} direction="horizontal">
+                        <SortablePanel key={id} id={id} className="overflow-hidden" style={{ flex: def.flex }} direction="horizontal" isLocked={isLocked}>
                           {def.collapsible ? (
                             <FuiPanel className="h-full overflow-hidden" delay={def.delay} cornerSize={8}>
                               <CollapsiblePanel title={def.title!}>

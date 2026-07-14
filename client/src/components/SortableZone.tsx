@@ -3,6 +3,8 @@
  * 
  * Panels within a zone can be reordered via touch drag on the drag handle.
  * Uses @dnd-kit for accessible, touch-friendly sorting.
+ * Supports lock/unlock mode — when locked, drag handles are hidden and
+ * sorting is disabled.
  */
 import { ReactNode, useMemo } from 'react';
 import {
@@ -29,9 +31,10 @@ interface SortableZoneProps {
   onReorder: (zoneId: string, oldIndex: number, newIndex: number) => void;
   children: (orderedIds: string[]) => ReactNode;
   className?: string;
+  isLocked?: boolean;
 }
 
-export function SortableZone({ zoneId, items, direction, onReorder, children, className }: SortableZoneProps) {
+export function SortableZone({ zoneId, items, direction, onReorder, children, className, isLocked = true }: SortableZoneProps) {
   const sensors = useSensors(
     useSensor(TouchSensor, {
       activationConstraint: {
@@ -49,6 +52,7 @@ export function SortableZone({ zoneId, items, direction, onReorder, children, cl
   const strategy = direction === 'vertical' ? verticalListSortingStrategy : horizontalListSortingStrategy;
 
   function handleDragEnd(event: DragEndEvent) {
+    if (isLocked) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = items.indexOf(active.id as string);
@@ -57,6 +61,15 @@ export function SortableZone({ zoneId, items, direction, onReorder, children, cl
         onReorder(zoneId, oldIndex, newIndex);
       }
     }
+  }
+
+  // When locked, render without DnD context for zero overhead
+  if (isLocked) {
+    return (
+      <div className={className}>
+        {children(items)}
+      </div>
+    );
   }
 
   return (
@@ -76,9 +89,10 @@ interface SortablePanelProps {
   className?: string;
   style?: React.CSSProperties;
   direction?: 'vertical' | 'horizontal';
+  isLocked?: boolean;
 }
 
-export function SortablePanel({ id, children, className, style: externalStyle, direction = 'vertical' }: SortablePanelProps) {
+export function SortablePanel({ id, children, className, style: externalStyle, direction = 'vertical', isLocked = true }: SortablePanelProps) {
   const {
     attributes,
     listeners,
@@ -86,7 +100,7 @@ export function SortablePanel({ id, children, className, style: externalStyle, d
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: isLocked });
 
   const style = useMemo(() => ({
     ...externalStyle,
@@ -96,16 +110,25 @@ export function SortablePanel({ id, children, className, style: externalStyle, d
     zIndex: isDragging ? 50 : undefined,
   }), [externalStyle, transform, transition, isDragging]);
 
+  // When locked, render as a plain div without any drag infrastructure
+  if (isLocked) {
+    return (
+      <div style={externalStyle} className={`${className || ''} relative`}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div ref={setNodeRef} style={style} className={`${className || ''} relative group`} {...attributes}>
-      {/* Drag Handle — always subtly visible for touch discovery */}
+      {/* Drag Handle — visible when unlocked */}
       <div
         {...listeners}
-        className="absolute top-1 left-1/2 -translate-x-1/2 z-30 opacity-30 group-hover:opacity-80 active:opacity-100 transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-manipulation"
+        className="absolute top-1 left-1/2 -translate-x-1/2 z-30 opacity-50 group-hover:opacity-100 active:opacity-100 transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-manipulation"
         style={{ touchAction: 'none' }}
         aria-label="Drag to reorder"
       >
-        <div className="flex items-center gap-[2px] px-3 py-1.5 rounded-full bg-[var(--color-cp-surface)]/80 backdrop-blur-sm border border-white/10">
+        <div className="flex items-center gap-[2px] px-3 py-1.5 rounded-full bg-cyan-900/80 backdrop-blur-sm border border-cyan-400/30">
           <DragDots />
         </div>
       </div>
@@ -116,7 +139,7 @@ export function SortablePanel({ id, children, className, style: externalStyle, d
 
 function DragDots() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-[var(--color-cp-text-tertiary)]">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="text-cyan-300">
       <circle cx="3" cy="3" r="1.2" />
       <circle cx="9" cy="3" r="1.2" />
       <circle cx="3" cy="6" r="1.2" />

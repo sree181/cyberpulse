@@ -232,3 +232,9 @@
 - [x] Implement zone-based drag-and-drop for bottom row panels (Attack Source, CVE Spotlight, Weekly Briefing)
 - [x] Add visual drag handle indicator for touch affordance
 - [x] Ensure drag works with touch (touch-manipulation, pointer events)
+
+## Reset Layout & Lock/Unlock Mode (July 2026)
+- [x] Add "Reset Layout" button in operator panel to restore default panel order
+- [x] Add lock/unlock toggle — panels locked by default, only draggable when unlocked
+- [x] Ensure lock state persists in localStorage
+- [x] Show visual indicator when in unlocked/edit mode

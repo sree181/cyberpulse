@@ -34,8 +34,18 @@ export default function DisplayShell({ children, kioskEnabled = true }: DisplayS
   const [qualityLevel, setQualityLevel] = useState<'high' | 'medium' | 'low'>('high');
   const [staleData, setStaleData] = useState(false);
   const [lastDataTimestamp, setLastDataTimestamp] = useState(Date.now());
+  const [isLayoutLocked, setIsLayoutLocked] = useState(true);
   const rippleIdRef = useRef(0);
   const lowFpsCountRef = useRef(0);
+
+  // Listen for layout lock state changes from Home component
+  useEffect(() => {
+    const handleLockChange = (e: Event) => {
+      setIsLayoutLocked((e as CustomEvent).detail.isLocked);
+    };
+    window.addEventListener('cyberpulse:layout-lock-changed', handleLockChange);
+    return () => window.removeEventListener('cyberpulse:layout-lock-changed', handleLockChange);
+  }, []);
 
   // ─── Core Hooks ───────────────────────────────────────────────────────────
   const kiosk = useKioskMode(kioskEnabled);
@@ -254,6 +264,12 @@ export default function DisplayShell({ children, kioskEnabled = true }: DisplayS
       case 'brightness_down':
         setBrightness(prev => Math.max(prev - 0.1, 0.2));
         break;
+      case 'reset_layout':
+        window.dispatchEvent(new CustomEvent('cyberpulse:reset-layout'));
+        break;
+      case 'toggle_layout_lock':
+        window.dispatchEvent(new CustomEvent('cyberpulse:toggle-layout-lock'));
+        break;
     }
   }, [kiosk]);
 
@@ -345,6 +361,7 @@ export default function DisplayShell({ children, kioskEnabled = true }: DisplayS
           brightness,
         }}
         onAction={handleOperatorAction}
+        isLayoutLocked={isLayoutLocked}
       />
     </div>
   );

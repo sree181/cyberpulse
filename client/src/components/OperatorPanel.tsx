@@ -28,10 +28,11 @@ interface OperatorPanelProps {
     idleState: string;
     brightness: number;
   };
-  onAction: (action: 'refresh' | 'fullscreen' | 'exit_fullscreen' | 'clear_cache' | 'brightness_up' | 'brightness_down') => void;
+  onAction: (action: 'refresh' | 'fullscreen' | 'exit_fullscreen' | 'clear_cache' | 'brightness_up' | 'brightness_down' | 'reset_layout' | 'toggle_layout_lock') => void;
+  isLayoutLocked?: boolean;
 }
 
-export default function OperatorPanel({ isOpen, onClose, diagnostics, onAction }: OperatorPanelProps) {
+export default function OperatorPanel({ isOpen, onClose, diagnostics, onAction, isLayoutLocked = true }: OperatorPanelProps) {
   const { enabled: soundEnabled, setEnabled: setSoundEnabled, volume, setVolume } = useSoundEngine();
   const [autoCloseTimer, setAutoCloseTimer] = useState(30);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -176,6 +177,30 @@ export default function OperatorPanel({ isOpen, onClose, diagnostics, onAction }
             <span className="text-xs text-red-300 font-mono">{diagnostics.lastError}</span>
           </div>
         )}
+
+        {/* Layout Controls */}
+        <div className="mb-4 p-3 bg-[#0c1e38] rounded-lg border border-cyan-900/50">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Panel Layout</div>
+          <div className="grid grid-cols-2 gap-2">
+            <ActionButton 
+              label={isLayoutLocked ? "Unlock Panels" : "Lock Panels"} 
+              icon={isLayoutLocked ? "🔒" : "🔓"} 
+              onClick={() => onAction('toggle_layout_lock')} 
+              variant={isLayoutLocked ? 'default' : 'primary'}
+            />
+            <ActionButton 
+              label="Reset Layout" 
+              icon="↺" 
+              onClick={() => onAction('reset_layout')} 
+              variant="default"
+            />
+          </div>
+          {!isLayoutLocked && (
+            <div className="mt-2 text-[10px] text-cyan-400 font-mono">
+              ✦ Edit mode active — drag panel handles to reorder
+            </div>
+          )}
+        </div>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
