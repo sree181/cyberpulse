@@ -1,13 +1,13 @@
 /**
  * ThreatFlatMap — 2D Flat World Map with GPU-Accelerated Attack Arcs
  * 
- * Uses Maplibre GL JS for the base map with CARTO Dark Matter tiles,
+ * Uses Maplibre GL JS for the base map with CARTO Dark Matter tiles (brightness-boosted),
  * and Deck.gl ArcLayer for rendering attack trajectories on the GPU.
  * 
  * Replaces the previous D3 + SVG implementation for better performance
  * at 4K/8K resolutions on the Planar wall display.
  */
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
 import maplibregl from 'maplibre-gl';
@@ -15,37 +15,41 @@ import { Deck } from '@deck.gl/core';
 import { ArcLayer, ScatterplotLayer } from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Stadia Alidade Smooth Dark — better land/water contrast than CARTO Dark Matter
+// CARTO Dark Matter with brightness boost — no auth required, better contrast than default
 const DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   name: 'CyberPulse Flat Map',
   sources: {
-    'stadia-dark': {
+    'carto-dark': {
       type: 'raster',
       tiles: [
-        'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png',
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
       ],
       tileSize: 256,
-      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxzoom: 20,
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      maxzoom: 18,
     },
   },
   layers: [
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#080e18' },
+      paint: { 'background-color': '#0a1628' },
     },
     {
-      id: 'stadia-dark',
+      id: 'carto-dark',
       type: 'raster',
-      source: 'stadia-dark',
+      source: 'carto-dark',
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 18,
       paint: {
-        'raster-opacity': 0.85,
+        'raster-opacity': 0.95,
         'raster-saturation': -0.1,
-        'raster-contrast': 0.05,
+        'raster-contrast': 0.15,
+        'raster-brightness-min': 0.08,
+        'raster-brightness-max': 0.85,
       },
     },
   ],
@@ -89,6 +93,7 @@ export default function ThreatFlatMap() {
       fadeDuration: 0,
       maxZoom: 6,
       minZoom: 1,
+      renderWorldCopies: false, // Prevent map from repeating horizontally
     });
 
     // Create Deck.gl instance overlaid on the map
@@ -149,6 +154,7 @@ export default function ThreatFlatMap() {
     const now = Date.now();
 
     // Arc layer — GPU-instanced attack trajectories
+    // Height reduced to 0.15 for flat, low-profile arcs that stay within the map
     const arcLayer = new ArcLayer({
       id: 'attack-arcs',
       data: activeArcs,
@@ -165,14 +171,14 @@ export default function ThreatFlatMap() {
         return hexToRGBA(d.color, alpha);
       },
       getWidth: (d: ArcData) => {
-        if (d.severity === 'critical') return 4;
-        if (d.severity === 'high') return 3;
-        return 2;
+        if (d.severity === 'critical') return 3;
+        if (d.severity === 'high') return 2.5;
+        return 1.5;
       },
-      getHeight: 0.4,
+      getHeight: 0.12, // Low-profile arcs — stay close to the map surface
       greatCircle: true,
       widthMinPixels: 1,
-      widthMaxPixels: 6,
+      widthMaxPixels: 4,
       updateTriggers: {
         getSourceColor: [now],
         getTargetColor: [now],
@@ -218,15 +224,9 @@ export default function ThreatFlatMap() {
   useEffect(() => {
     let running = true;
 
-    const animate = () => {
-      if (!running) return;
-      updateLayers();
-      animFrameRef.current = requestAnimationFrame(animate);
-    };
-
     // Start animation loop (throttled to ~15fps for layer updates)
     const interval = setInterval(() => {
-      updateLayers();
+      if (running) updateLayers();
     }, 66); // ~15fps is enough for opacity fading
 
     // Initial render
@@ -242,7 +242,7 @@ export default function ThreatFlatMap() {
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg">
       {/* Maplibre GL + Deck.gl container */}
-      <div ref={containerRef} className="w-full h-full" style={{ background: '#080e18' }} />
+      <div ref={containerRef} className="w-full h-full" style={{ background: '#0a1628' }} />
 
       {/* Attack Type Legend — bottom left */}
       <div className="absolute bottom-3 left-4 z-10">

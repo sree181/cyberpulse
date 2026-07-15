@@ -257,3 +257,8 @@
 
 ## Map Tile Brightness Fix (July 2026)
 - [x] Switch both AttackLocationMap and ThreatFlatMap from CARTO Dark Matter to Stadia Alidade Smooth Dark tiles
+
+## Map View Fixes (July 2026)
+- [x] Fix 401 tile errors: Switch from Stadia (requires auth) back to CARTO with brightness boost
+- [x] Fix map repeating: Add renderWorldCopies: false to prevent horizontal tiling
+- [x] Fix arc positioning: Reduce arc height (0.4 → 0.12) and width for low-profile arcs

@@ -1,49 +1,53 @@
 /**
  * AttackLocationMap — Auto-cycling Maplibre GL map showing recent attack source locations
  * 
- * Displays a dark-themed vector map that automatically cycles through
+ * Displays a dark-themed raster map that automatically cycles through
  * the most recent attack source locations every 8 seconds.
  * Shows a pulsing marker at each attack source with a brief info overlay.
  * 
  * Designed for passive wall display — no interaction required.
- * Uses Maplibre GL JS for GPU-accelerated vector rendering.
+ * Uses Maplibre GL JS with CARTO Dark Matter tiles (brightness-boosted).
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Stadia Alidade Smooth Dark — better land/water contrast than CARTO Dark Matter
+// CARTO Dark Matter with brightness boost — no auth required, better contrast
 const DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   name: 'CyberPulse Dark',
   sources: {
-    'stadia-dark': {
+    'carto-dark': {
       type: 'raster',
       tiles: [
-        'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png',
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
       ],
       tileSize: 256,
-      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxzoom: 20,
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      maxzoom: 18,
     },
   },
   layers: [
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#0a0f1a' },
+      paint: { 'background-color': '#0a1628' },
     },
     {
-      id: 'stadia-dark',
+      id: 'carto-dark',
       type: 'raster',
-      source: 'stadia-dark',
+      source: 'carto-dark',
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 18,
       paint: {
-        'raster-opacity': 0.9,
+        'raster-opacity': 0.95,
         'raster-saturation': -0.1,
-        'raster-contrast': 0.05,
+        'raster-contrast': 0.15,
+        'raster-brightness-min': 0.08,
+        'raster-brightness-max': 0.85,
       },
     },
   ],
@@ -78,6 +82,7 @@ export default function AttackLocationMap() {
       interactive: false, // Passive display — no interaction
       attributionControl: false,
       fadeDuration: 0,
+      renderWorldCopies: false, // Prevent map from repeating horizontally
     });
 
     map.on('load', () => {
