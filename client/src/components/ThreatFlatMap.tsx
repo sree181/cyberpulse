@@ -95,9 +95,11 @@ export default function ThreatFlatMap() {
       renderWorldCopies: false, // Prevent map from repeating horizontally
     });
 
-    // Create MapboxOverlay — this properly syncs Deck.gl with Maplibre's camera
+    // Create MapboxOverlay — interleaved mode renders Deck.gl layers WITHIN
+    // the Maplibre render pipeline, ensuring pixel-perfect alignment even when
+    // parent containers have CSS transforms (will-change, translateZ, etc.)
     const overlay = new MapboxOverlay({
-      interleaved: false, // Overlaid mode — Deck.gl renders on top
+      interleaved: true,
       layers: [],
     });
 
@@ -142,8 +144,9 @@ export default function ThreatFlatMap() {
         if (d.severity === 'high') return 2.5;
         return 1.5;
       },
-      getHeight: 0.15, // Low-profile arcs
+      getHeight: 0.3, // Visible arc curve
       greatCircle: true,
+      numSegments: 50, // Smooth arc curve
       widthMinPixels: 1,
       widthMaxPixels: 4,
       updateTriggers: {
