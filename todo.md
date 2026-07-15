@@ -263,3 +263,5 @@
 - [x] Fix map repeating: Add renderWorldCopies: false to prevent horizontal tiling
 - [x] Fix arc positioning: Reduce arc height (0.4 → 0.12) and width for low-profile arcs
 - [x] Fix arc alignment: Switched from standalone Deck instance to MapboxOverlay for proper coordinate sync with Maplibre
+- [x] Fix MapboxOverlay not rendering: Add control immediately instead of waiting for 'load' event
+- [x] Remove coordinate jitter from ThreatContext so arcs hit exact source/target positions

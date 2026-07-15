@@ -101,10 +101,8 @@ export default function ThreatFlatMap() {
       layers: [],
     });
 
-    map.on('load', () => {
-      // Add the overlay as a map control — ensures coordinate sync
-      map.addControl(overlay as any);
-    });
+    // Add the overlay immediately — it handles its own initialization timing
+    map.addControl(overlay as any);
 
     mapRef.current = map;
     overlayRef.current = overlay;

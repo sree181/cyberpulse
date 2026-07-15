@@ -223,12 +223,12 @@ function generateThreatFromCampaign(campaign: Campaign): ThreatEvent {
     sourceIp: ip,
     sourceCountry: campaign.sourceCountry,
     sourceCity: campaign.sourceCity,
-    // Small jitter within the source city (same neighborhood, not random continent)
-    sourceLat: campaign.sourceLat + (Math.random() - 0.5) * 0.3,
-    sourceLng: campaign.sourceLng + (Math.random() - 0.5) * 0.3,
-    // Minimal jitter on target (same data center)
-    targetLat: campaign.targetLat + (Math.random() - 0.5) * 0.1,
-    targetLng: campaign.targetLng + (Math.random() - 0.5) * 0.1,
+    // Exact source coordinates (no jitter — arcs must start/end at precise locations)
+    sourceLat: campaign.sourceLat,
+    sourceLng: campaign.sourceLng,
+    // Exact target coordinates
+    targetLat: campaign.targetLat,
+    targetLng: campaign.targetLng,
     targetName: campaign.targetName,
     port: campaign.port,
     protocol: campaign.protocol,
