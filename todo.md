@@ -265,3 +265,4 @@
 - [x] Fix arc alignment: Switched from standalone Deck instance to MapboxOverlay for proper coordinate sync with Maplibre
 - [x] Fix MapboxOverlay not rendering: Add control immediately instead of waiting for 'load' event
 - [x] Remove coordinate jitter from ThreatContext so arcs hit exact source/target positions
+- [x] FINAL FIX: Remove Deck.gl entirely from ThreatFlatMap — use native Maplibre GeoJSON line layers with Bezier curves in geographic coordinates (guaranteed alignment at any viewport size)
