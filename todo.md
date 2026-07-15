@@ -266,3 +266,8 @@
 - [x] Fix MapboxOverlay not rendering: Add control immediately instead of waiting for 'load' event
 - [x] Remove coordinate jitter from ThreatContext so arcs hit exact source/target positions
 - [x] FINAL FIX: Remove Deck.gl entirely from ThreatFlatMap — use native Maplibre GeoJSON line layers with Bezier curves in geographic coordinates (guaranteed alignment at any viewport size)
+
+## Flat Map Arc Enhancements (July 2026)
+- [x] Add animated traveling dots along each arc (source → target directionality)
+- [x] Increase arc curvature (0.25 → 0.35) and line widths (2.5/3.5/4.5px) for Planar display
+- [x] Add multi-layer glow effect (outer bloom + mid glow + bright core) for dynamic visualization

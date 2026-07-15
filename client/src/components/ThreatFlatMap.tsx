@@ -5,11 +5,13 @@
  * This guarantees pixel-perfect alignment because all geometry (arcs, dots)
  * is rendered by the same engine in the same coordinate system as the map tiles.
  * 
- * Arcs are computed as quadratic Bezier curves in geographic coordinates,
- * then rendered as Maplibre GeoJSON line layers.
+ * ENHANCEMENTS:
+ * - Animated traveling dots along each arc (source → target directionality)
+ * - Increased curvature and line widths for Planar display visibility
+ * - Multi-layer glow effect with gradient-like coloring for dynamic visualization
  */
 import { useEffect, useRef, useCallback } from 'react';
-import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
+import { useThreatData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -64,8 +66,8 @@ const DARK_STYLE: maplibregl.StyleSpecification = {
 function computeArcPath(
   srcLng: number, srcLat: number,
   dstLng: number, dstLat: number,
-  numPoints: number = 40,
-  curvature: number = 0.3
+  numPoints: number = 50,
+  curvature: number = 0.35
 ): [number, number][] {
   // Midpoint
   const midLng = (srcLng + dstLng) / 2;
@@ -76,8 +78,6 @@ function computeArcPath(
   const dLat = dstLat - srcLat;
 
   // Perpendicular offset (rotated 90°) — this creates the curve
-  // Scale by distance to make longer arcs curve more
-  const dist = Math.sqrt(dLng * dLng + dLat * dLat);
   const perpLng = -dLat * curvature;
   const perpLat = dLng * curvature;
 
@@ -107,6 +107,36 @@ function computeArcPath(
   return points;
 }
 
+/**
+ * Get a point along the arc at parameter t (0 = source, 1 = target)
+ * Used for the animated traveling dot
+ */
+function getPointOnArc(path: [number, number][], t: number): [number, number] {
+  const clampedT = Math.max(0, Math.min(1, t));
+  const index = clampedT * (path.length - 1);
+  const lower = Math.floor(index);
+  const upper = Math.min(lower + 1, path.length - 1);
+  const frac = index - lower;
+
+  return [
+    path[lower][0] + (path[upper][0] - path[lower][0]) * frac,
+    path[lower][1] + (path[upper][1] - path[lower][1]) * frac,
+  ];
+}
+
+/**
+ * Lighten a hex color by a factor (0-1) for gradient head effect
+ */
+function lightenColor(hex: string, factor: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lr = Math.min(255, Math.round(r + (255 - r) * factor));
+  const lg = Math.min(255, Math.round(g + (255 - g) * factor));
+  const lb = Math.min(255, Math.round(b + (255 - b) * factor));
+  return `#${lr.toString(16).padStart(2, '0')}${lg.toString(16).padStart(2, '0')}${lb.toString(16).padStart(2, '0')}`;
+}
+
 // Attack type legend
 const ATTACK_TYPE_LEGEND = [
   { label: 'SSH Brute Force', color: BRANDING.attackColors['SSH Brute Force'] },
@@ -116,11 +146,16 @@ const ATTACK_TYPE_LEGEND = [
   { label: 'Malware C2', color: BRANDING.attackColors['Malware C2'] },
 ];
 
+// Travel speed: how fast the dot moves along the arc (0-1 per second)
+const DOT_SPEED = 0.15; // Full arc traversal in ~6.5 seconds
+const DOT_TRAIL_LENGTH = 0.12; // Trail behind the dot (12% of arc)
+
 export default function ThreatFlatMap() {
   const { activeArcs, sourceHotspots, targetPressures } = useThreatData();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const sourcesAdded = useRef(false);
+  const animFrameRef = useRef<number>(0);
 
   // Initialize Maplibre GL map
   useEffect(() => {
@@ -140,8 +175,23 @@ export default function ThreatFlatMap() {
     });
 
     map.on('load', () => {
-      // Add empty GeoJSON sources for arcs, sources, and targets
+      // ─── GeoJSON sources ───
       map.addSource('attack-arcs', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('arc-glow-outer', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('traveling-dots', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('dot-trails', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       });
@@ -156,7 +206,19 @@ export default function ThreatFlatMap() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Target pressure circles (rendered first, behind arcs)
+      map.addSource('source-dots', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('target-dots', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // ─── LAYER STACK (bottom to top) ───
+
+      // 1. Target pressure circles (subtle background glow)
       map.addLayer({
         id: 'target-pressure-fill',
         type: 'circle',
@@ -165,11 +227,11 @@ export default function ThreatFlatMap() {
           'circle-radius': ['get', 'radius'],
           'circle-color': ['get', 'color'],
           'circle-opacity': ['get', 'opacity'],
-          'circle-blur': 0.5,
+          'circle-blur': 0.6,
         },
       });
 
-      // Source hotspot circles
+      // 2. Source hotspot glow (outer)
       map.addLayer({
         id: 'source-hotspots-glow',
         type: 'circle',
@@ -178,22 +240,45 @@ export default function ThreatFlatMap() {
           'circle-radius': ['get', 'radius'],
           'circle-color': ['get', 'color'],
           'circle-opacity': ['get', 'opacity'],
-          'circle-blur': 0.4,
+          'circle-blur': 0.5,
         },
       });
 
+      // 3. Arc outer glow — widest, most diffuse (creates the "bloom" effect)
       map.addLayer({
-        id: 'source-hotspots-core',
-        type: 'circle',
-        source: 'source-hotspots',
+        id: 'arc-glow-outer-layer',
+        type: 'line',
+        source: 'arc-glow-outer',
         paint: {
-          'circle-radius': ['*', ['get', 'radius'], 0.4],
-          'circle-color': ['get', 'color'],
-          'circle-opacity': ['min', ['*', ['get', 'opacity'], 1.8], 1],
+          'line-color': ['get', 'color'],
+          'line-width': ['get', 'glowWidth'],
+          'line-opacity': ['get', 'glowOpacity'],
+          'line-blur': 6,
+        },
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round',
         },
       });
 
-      // Arc lines — rendered on top of everything
+      // 4. Arc mid glow — medium width
+      map.addLayer({
+        id: 'attack-arcs-glow',
+        type: 'line',
+        source: 'attack-arcs',
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': ['*', ['get', 'width'], 2.5],
+          'line-opacity': ['*', ['get', 'opacity'], 0.3],
+          'line-blur': 3,
+        },
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round',
+        },
+      });
+
+      // 5. Arc core line — the main visible arc
       map.addLayer({
         id: 'attack-arcs-line',
         type: 'line',
@@ -209,33 +294,90 @@ export default function ThreatFlatMap() {
         },
       });
 
-      // Arc glow effect (wider, more transparent line behind)
+      // 6. Arc bright center — thin bright line for "hot core" effect
       map.addLayer({
-        id: 'attack-arcs-glow',
+        id: 'attack-arcs-core',
         type: 'line',
         source: 'attack-arcs',
         paint: {
-          'line-color': ['get', 'color'],
-          'line-width': ['*', ['get', 'width'], 3],
-          'line-opacity': ['*', ['get', 'opacity'], 0.25],
-          'line-blur': 3,
+          'line-color': ['get', 'lightColor'],
+          'line-width': ['*', ['get', 'width'], 0.4],
+          'line-opacity': ['*', ['get', 'opacity'], 0.7],
         },
         layout: {
           'line-cap': 'round',
           'line-join': 'round',
         },
-      }, 'attack-arcs-line'); // Insert below the main arc line
+      });
 
-      // Source endpoint dots (on top of arcs)
+      // 7. Dot trail — short glowing line segment behind the traveling dot
       map.addLayer({
-        id: 'arc-source-dots',
-        type: 'circle',
-        source: 'attack-arcs',
-        filter: ['==', ['geometry-type'], 'Point'],
+        id: 'dot-trail-layer',
+        type: 'line',
+        source: 'dot-trails',
         paint: {
-          'circle-radius': 4,
+          'line-color': ['get', 'color'],
+          'line-width': ['get', 'width'],
+          'line-opacity': ['get', 'opacity'],
+          'line-blur': 1,
+        },
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round',
+        },
+      });
+
+      // 8. Traveling dot — animated circle moving along the arc
+      map.addLayer({
+        id: 'traveling-dots-glow',
+        type: 'circle',
+        source: 'traveling-dots',
+        paint: {
+          'circle-radius': ['get', 'glowRadius'],
           'circle-color': ['get', 'color'],
-          'circle-opacity': 0.9,
+          'circle-opacity': ['*', ['get', 'opacity'], 0.4],
+          'circle-blur': 0.5,
+        },
+      });
+
+      map.addLayer({
+        id: 'traveling-dots-core',
+        type: 'circle',
+        source: 'traveling-dots',
+        paint: {
+          'circle-radius': ['get', 'radius'],
+          'circle-color': ['get', 'lightColor'],
+          'circle-opacity': ['get', 'opacity'],
+        },
+      });
+
+      // 9. Source endpoint dots
+      map.addLayer({
+        id: 'source-dots-layer',
+        type: 'circle',
+        source: 'source-dots',
+        paint: {
+          'circle-radius': 5,
+          'circle-color': ['get', 'color'],
+          'circle-opacity': ['get', 'opacity'],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': ['get', 'lightColor'],
+          'circle-stroke-opacity': ['*', ['get', 'opacity'], 0.6],
+        },
+      });
+
+      // 10. Target endpoint dots (diamond-like with stroke)
+      map.addLayer({
+        id: 'target-dots-layer',
+        type: 'circle',
+        source: 'target-dots',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': ['get', 'color'],
+          'circle-opacity': ['*', ['get', 'opacity'], 0.8],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-opacity': ['*', ['get', 'opacity'], 0.5],
         },
       });
 
@@ -251,7 +393,10 @@ export default function ThreatFlatMap() {
     };
   }, []);
 
-  // Update map data when arcs/hotspots change
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ANIMATION LOOP
+  // Updates arc opacity fade, traveling dot positions, and trail segments
+  // ═══════════════════════════════════════════════════════════════════════════
   const updateMapData = useCallback(() => {
     const map = mapRef.current;
     if (!map || !sourcesAdded.current) return;
@@ -260,26 +405,37 @@ export default function ThreatFlatMap() {
 
     // ─── Build arc features ───
     const arcFeatures: GeoJSON.Feature[] = [];
-    const sourcePointFeatures: GeoJSON.Feature[] = [];
+    const glowFeatures: GeoJSON.Feature[] = [];
+    const dotFeatures: GeoJSON.Feature[] = [];
+    const trailFeatures: GeoJSON.Feature[] = [];
+    const srcDotFeatures: GeoJSON.Feature[] = [];
+    const tgtDotFeatures: GeoJSON.Feature[] = [];
 
     for (const arc of activeArcs) {
       const age = now - arc.timestamp;
-      const opacity = Math.max(0.15, 1 - (age / 12000)); // Fade over 12s
-      const width = arc.severity === 'critical' ? 3 : arc.severity === 'high' ? 2.5 : 1.5;
+      const opacity = Math.max(0.1, 1 - (age / 14000)); // Fade over 14s
+      
+      // Increased widths for Planar display
+      const width = arc.severity === 'critical' ? 4.5 
+        : arc.severity === 'high' ? 3.5 
+        : 2.5;
 
-      // Compute the curved arc path in geographic coordinates
+      const lightColor = lightenColor(arc.color, 0.5);
+
+      // Compute the curved arc path — increased curvature (0.35)
       const path = computeArcPath(
         arc.startLng, arc.startLat,
         arc.endLng, arc.endLat,
-        40, // segments
-        0.25 // curvature
+        50, // more segments for smoother curve
+        0.35 // increased curvature for dramatic arcs
       );
 
-      // Arc line feature
+      // ── Arc line feature (core + glow) ──
       arcFeatures.push({
         type: 'Feature',
         properties: {
           color: arc.color,
+          lightColor: lightColor,
           width: width,
           opacity: opacity,
           id: arc.id,
@@ -290,8 +446,84 @@ export default function ThreatFlatMap() {
         },
       });
 
-      // Source point (start of arc)
-      sourcePointFeatures.push({
+      // ── Outer glow feature (wider, more diffuse) ──
+      glowFeatures.push({
+        type: 'Feature',
+        properties: {
+          color: arc.color,
+          glowWidth: width * 5,
+          glowOpacity: opacity * 0.15,
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: path,
+        },
+      });
+
+      // ── Traveling dot — moves from source to target ──
+      // Each arc gets a dot that travels at DOT_SPEED
+      // The dot loops: once it reaches the end, it restarts
+      const travelTime = age / 1000; // seconds since arc appeared
+      const dotT = (travelTime * DOT_SPEED) % 1.0; // 0→1 looping
+
+      const dotPos = getPointOnArc(path, dotT);
+      const dotRadius = arc.severity === 'critical' ? 6 : arc.severity === 'high' ? 5 : 4;
+
+      dotFeatures.push({
+        type: 'Feature',
+        properties: {
+          color: arc.color,
+          lightColor: lightColor,
+          radius: dotRadius,
+          glowRadius: dotRadius * 2.5,
+          opacity: opacity * 0.9,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: dotPos,
+        },
+      });
+
+      // ── Dot trail — short line segment behind the dot ──
+      const trailStart = Math.max(0, dotT - DOT_TRAIL_LENGTH);
+      const trailPoints: [number, number][] = [];
+      const trailSteps = 8;
+      for (let i = 0; i <= trailSteps; i++) {
+        const tt = trailStart + (dotT - trailStart) * (i / trailSteps);
+        trailPoints.push(getPointOnArc(path, tt));
+      }
+
+      if (trailPoints.length >= 2) {
+        trailFeatures.push({
+          type: 'Feature',
+          properties: {
+            color: lightColor,
+            width: width * 0.8,
+            opacity: opacity * 0.6,
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: trailPoints,
+          },
+        });
+      }
+
+      // ── Source endpoint dot ──
+      srcDotFeatures.push({
+        type: 'Feature',
+        properties: {
+          color: arc.color,
+          lightColor: lightColor,
+          opacity: opacity,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [arc.startLng, arc.startLat],
+        },
+      });
+
+      // ── Target endpoint dot ──
+      tgtDotFeatures.push({
         type: 'Feature',
         properties: {
           color: arc.color,
@@ -299,7 +531,7 @@ export default function ThreatFlatMap() {
         },
         geometry: {
           type: 'Point',
-          coordinates: [arc.startLng, arc.startLat],
+          coordinates: [arc.endLng, arc.endLat],
         },
       });
     }
@@ -308,7 +540,7 @@ export default function ThreatFlatMap() {
     const hotspotFeatures: GeoJSON.Feature[] = sourceHotspots.map((h: any) => ({
       type: 'Feature' as const,
       properties: {
-        radius: Math.max(6, h.radius * 20),
+        radius: Math.max(8, h.radius * 24),
         color: h.color,
         opacity: Math.min(0.7, h.intensity * 0.5),
       },
@@ -322,7 +554,7 @@ export default function ThreatFlatMap() {
     const targetFeatures: GeoJSON.Feature[] = targetPressures.map((t: any) => ({
       type: 'Feature' as const,
       properties: {
-        radius: Math.max(8, t.maxRadius * 12),
+        radius: Math.max(10, t.maxRadius * 14),
         color: t.color,
         opacity: Math.min(0.5, t.pressure * 0.3),
       },
@@ -332,46 +564,42 @@ export default function ThreatFlatMap() {
       },
     }));
 
-    // Update all sources
+    // ─── Update all sources ───
     const arcSource = map.getSource('attack-arcs') as maplibregl.GeoJSONSource;
+    const glowSource = map.getSource('arc-glow-outer') as maplibregl.GeoJSONSource;
+    const dotSource = map.getSource('traveling-dots') as maplibregl.GeoJSONSource;
+    const trailSource = map.getSource('dot-trails') as maplibregl.GeoJSONSource;
     const hotspotSource = map.getSource('source-hotspots') as maplibregl.GeoJSONSource;
     const targetSource = map.getSource('target-pressures') as maplibregl.GeoJSONSource;
+    const srcDotSource = map.getSource('source-dots') as maplibregl.GeoJSONSource;
+    const tgtDotSource = map.getSource('target-dots') as maplibregl.GeoJSONSource;
 
-    if (arcSource) {
-      // Combine arc lines and source points into one collection
-      arcSource.setData({
-        type: 'FeatureCollection',
-        features: [...arcFeatures, ...sourcePointFeatures],
-      });
-    }
-    if (hotspotSource) {
-      hotspotSource.setData({
-        type: 'FeatureCollection',
-        features: hotspotFeatures,
-      });
-    }
-    if (targetSource) {
-      targetSource.setData({
-        type: 'FeatureCollection',
-        features: targetFeatures,
-      });
-    }
+    if (arcSource) arcSource.setData({ type: 'FeatureCollection', features: arcFeatures });
+    if (glowSource) glowSource.setData({ type: 'FeatureCollection', features: glowFeatures });
+    if (dotSource) dotSource.setData({ type: 'FeatureCollection', features: dotFeatures });
+    if (trailSource) trailSource.setData({ type: 'FeatureCollection', features: trailFeatures });
+    if (hotspotSource) hotspotSource.setData({ type: 'FeatureCollection', features: hotspotFeatures });
+    if (targetSource) targetSource.setData({ type: 'FeatureCollection', features: targetFeatures });
+    if (srcDotSource) srcDotSource.setData({ type: 'FeatureCollection', features: srcDotFeatures });
+    if (tgtDotSource) tgtDotSource.setData({ type: 'FeatureCollection', features: tgtDotFeatures });
   }, [activeArcs, sourceHotspots, targetPressures]);
 
-  // Animate — re-render periodically for opacity fade
+  // Animation loop using requestAnimationFrame for smooth dot movement
   useEffect(() => {
     let running = true;
 
-    const interval = setInterval(() => {
-      if (running) updateMapData();
-    }, 100); // ~10fps for smooth fading
+    const animate = () => {
+      if (!running) return;
+      updateMapData();
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
 
-    // Initial render
-    updateMapData();
+    // Start animation
+    animFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       running = false;
-      clearInterval(interval);
+      cancelAnimationFrame(animFrameRef.current);
     };
   }, [updateMapData]);
 
@@ -392,7 +620,7 @@ export default function ThreatFlatMap() {
                 className="w-5 h-[2px] rounded-full"
                 style={{ 
                   backgroundColor: item.color,
-                  boxShadow: `0 0 4px ${item.color}66`,
+                  boxShadow: `0 0 6px ${item.color}88`,
                 }}
               />
               <span className="font-data text-[9px] text-[var(--color-cp-text-tertiary)] opacity-70">
