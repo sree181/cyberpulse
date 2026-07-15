@@ -15,39 +15,37 @@ import { Deck } from '@deck.gl/core';
 import { ArcLayer, ScatterplotLayer } from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Dark vector tile style
+// Stadia Alidade Smooth Dark — better land/water contrast than CARTO Dark Matter
 const DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   name: 'CyberPulse Flat Map',
   sources: {
-    'carto-dark': {
+    'stadia-dark': {
       type: 'raster',
       tiles: [
-        'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
-        'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
-        'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
+        'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png',
       ],
       tileSize: 256,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      maxzoom: 18,
+      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxzoom: 20,
     },
   },
   layers: [
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#040a12' },
+      paint: { 'background-color': '#080e18' },
     },
     {
-      id: 'carto-dark',
+      id: 'stadia-dark',
       type: 'raster',
-      source: 'carto-dark',
+      source: 'stadia-dark',
       minzoom: 0,
-      maxzoom: 18,
+      maxzoom: 20,
       paint: {
-        'raster-opacity': 0.75,
-        'raster-saturation': -0.2,
-        'raster-brightness-max': 0.6,
+        'raster-opacity': 0.85,
+        'raster-saturation': -0.1,
+        'raster-contrast': 0.05,
       },
     },
   ],
@@ -244,7 +242,7 @@ export default function ThreatFlatMap() {
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg">
       {/* Maplibre GL + Deck.gl container */}
-      <div ref={containerRef} className="w-full h-full" style={{ background: '#040a12' }} />
+      <div ref={containerRef} className="w-full h-full" style={{ background: '#080e18' }} />
 
       {/* Attack Type Legend — bottom left */}
       <div className="absolute bottom-3 left-4 z-10">

@@ -13,40 +13,37 @@ import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Dark vector tile style matching the dashboard aesthetic
+// Stadia Alidade Smooth Dark — better land/water contrast than CARTO Dark Matter
 const DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   name: 'CyberPulse Dark',
   sources: {
-    'osm-tiles': {
+    'stadia-dark': {
       type: 'raster',
       tiles: [
-        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png',
       ],
       tileSize: 256,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      maxzoom: 18,
+      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxzoom: 20,
     },
   },
   layers: [
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#050d18' },
+      paint: { 'background-color': '#0a0f1a' },
     },
     {
-      id: 'osm-tiles',
+      id: 'stadia-dark',
       type: 'raster',
-      source: 'osm-tiles',
+      source: 'stadia-dark',
       minzoom: 0,
-      maxzoom: 18,
+      maxzoom: 20,
       paint: {
-        'raster-opacity': 0.85,
-        'raster-saturation': -0.3,
-        'raster-contrast': 0.1,
-        'raster-brightness-max': 0.7,
+        'raster-opacity': 0.9,
+        'raster-saturation': -0.1,
+        'raster-contrast': 0.05,
       },
     },
   ],
