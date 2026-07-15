@@ -1,77 +1,64 @@
 /**
- * ThreatFlatMap — 2D Flat World Map with Attack Arcs
+ * ThreatFlatMap — 2D Flat World Map with GPU-Accelerated Attack Arcs
  * 
- * Uses Natural Earth 110m country outlines (via world-atlas/topojson)
- * rendered as filled SVG polygons with a dark theme.
- * Attack arcs are drawn on top as animated SVG curves.
+ * Uses Maplibre GL JS for the base map with CARTO Dark Matter tiles,
+ * and Deck.gl ArcLayer for rendering attack trajectories on the GPU.
  * 
- * Inspired by Kaspersky CyberMap / Checkpoint ThreatMap.
+ * Replaces the previous D3 + SVG implementation for better performance
+ * at 4K/8K resolutions on the Planar wall display.
  */
-import { useMemo, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
-import * as topojson from 'topojson-client';
-import worldData from 'world-atlas/countries-110m.json';
+import maplibregl from 'maplibre-gl';
+import { Deck } from '@deck.gl/core';
+import { ArcLayer, ScatterplotLayer } from '@deck.gl/layers';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Convert TopoJSON to GeoJSON features once at module level
-const worldGeo = topojson.feature(
-  worldData as any,
-  (worldData as any).objects.countries
-) as any;
+// Dark vector tile style
+const DARK_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  name: 'CyberPulse Flat Map',
+  sources: {
+    'carto-dark': {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
+        'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
+        'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
+      ],
+      tileSize: 256,
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      maxzoom: 18,
+    },
+  },
+  layers: [
+    {
+      id: 'background',
+      type: 'background',
+      paint: { 'background-color': '#040a12' },
+    },
+    {
+      id: 'carto-dark',
+      type: 'raster',
+      source: 'carto-dark',
+      minzoom: 0,
+      maxzoom: 18,
+      paint: {
+        'raster-opacity': 0.75,
+        'raster-saturation': -0.2,
+        'raster-brightness-max': 0.6,
+      },
+    },
+  ],
+};
 
-// Mercator projection: lat/lng → x/y (0-1 range)
-function latLngToXY(lat: number, lng: number): [number, number] {
-  const x = (lng + 180) / 360;
-  const latRad = (Math.max(-85, Math.min(85, lat)) * Math.PI) / 180;
-  const mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));
-  const y = 0.5 - mercN / (2 * Math.PI);
-  return [x, y];
-}
-
-// Convert GeoJSON coordinates to SVG path string using Mercator projection
-function geoToSvgPath(geometry: any, width: number, height: number): string {
-  const paths: string[] = [];
-  
-  const projectRing = (ring: number[][]) => {
-    return ring.map(([lng, lat]) => {
-      const [x, y] = latLngToXY(lat, lng);
-      return `${x * width},${y * height}`;
-    });
-  };
-
-  if (geometry.type === 'Polygon') {
-    for (const ring of geometry.coordinates) {
-      const points = projectRing(ring);
-      if (points.length > 0) {
-        paths.push(`M${points[0]} L${points.slice(1).join(' L')} Z`);
-      }
-    }
-  } else if (geometry.type === 'MultiPolygon') {
-    for (const polygon of geometry.coordinates) {
-      for (const ring of polygon) {
-        const points = projectRing(ring);
-        if (points.length > 0) {
-          paths.push(`M${points[0]} L${points.slice(1).join(' L')} Z`);
-        }
-      }
-    }
-  }
-  
-  return paths.join(' ');
-}
-
-// Generate a quadratic bezier arc control point
-function getArcControlPoint(x1: number, y1: number, x2: number, y2: number, height: number): [number, number] {
-  const midX = (x1 + x2) / 2;
-  const midY = (y1 + y2) / 2;
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const arcHeight = Math.min(dist * 0.3, height * 0.15);
-  const perpX = -dy / dist;
-  const perpY = dx / dist;
-  const sign = perpY < 0 ? 1 : -1;
-  return [midX + perpX * arcHeight * sign, midY + perpY * arcHeight * sign];
+// Parse hex color to RGBA array [r, g, b, a]
+function hexToRGBA(hex: string, alpha = 255): [number, number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return [r, g, b, alpha];
 }
 
 // Attack type legend
@@ -86,273 +73,178 @@ const ATTACK_TYPE_LEGEND = [
 export default function ThreatFlatMap() {
   const { activeArcs, sourceHotspots, targetPressures } = useThreatData();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 1200, height: 600 });
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const deckRef = useRef<Deck | null>(null);
+  const animFrameRef = useRef<number>(0);
 
-  // Responsive sizing
+  // Initialize Maplibre GL map and Deck.gl overlay
   useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setDimensions({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        });
-      }
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: DARK_STYLE,
+      center: [20, 20],
+      zoom: 1.5,
+      interactive: false, // Passive display
+      attributionControl: false,
+      fadeDuration: 0,
+      maxZoom: 6,
+      minZoom: 1,
     });
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
+
+    // Create Deck.gl instance overlaid on the map
+    const deck = new Deck({
+      parent: containerRef.current,
+      style: {
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+      },
+      viewState: {
+        longitude: 20,
+        latitude: 20,
+        zoom: 1.5,
+        pitch: 0,
+        bearing: 0,
+      },
+      controller: false,
+      layers: [],
+    });
+
+    mapRef.current = map;
+    deckRef.current = deck;
+
+    // Sync Deck.gl viewState with Maplibre (in case of future interaction)
+    map.on('move', () => {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      const pitch = map.getPitch();
+      const bearing = map.getBearing();
+      deck.setProps({
+        viewState: {
+          longitude: center.lng,
+          latitude: center.lat,
+          zoom,
+          pitch,
+          bearing,
+        },
+      });
+    });
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      deck.finalize();
+      map.remove();
+      mapRef.current = null;
+      deckRef.current = null;
+    };
   }, []);
 
-  const { width, height } = dimensions;
+  // Update Deck.gl layers when data changes
+  const updateLayers = useCallback(() => {
+    if (!deckRef.current) return;
 
-  // Pre-compute country SVG paths
-  const countryPaths = useMemo(() => {
-    return worldGeo.features.map((feature: any) => ({
-      id: feature.id || feature.properties?.name || Math.random().toString(),
-      name: feature.properties?.name || '',
-      path: geoToSvgPath(feature.geometry, width, height),
-    }));
-  }, [width, height]);
+    const now = Date.now();
 
-  // Convert arcs to SVG paths
-  const arcPaths = useMemo(() => {
-    return activeArcs.map((arc) => {
-      let [x1, y1] = latLngToXY(arc.startLat, arc.startLng);
-      let [x2, y2] = latLngToXY(arc.endLat, arc.endLng);
-
-      x1 *= width;
-      y1 *= height;
-      x2 *= width;
-      y2 *= height;
-
-      // Skip arcs that cross the date line
-      const wrapDist = Math.abs(arc.startLng - arc.endLng);
-      if (wrapDist > 180) return null;
-
-      const [cpx, cpy] = getArcControlPoint(x1, y1, x2, y2, height);
-
-      // Age-based opacity
-      const age = Date.now() - arc.timestamp;
-      const maxAge = 10000;
-      const opacity = Math.max(0.3, 1 - (age / maxAge) * 0.7);
-
-      return {
-        id: arc.id,
-        path: `M ${x1} ${y1} Q ${cpx} ${cpy} ${x2} ${y2}`,
-        color: arc.color,
-        opacity,
-        severity: arc.severity,
-        x1, y1, x2, y2,
-        arc,
-      };
-    }).filter(Boolean) as Array<{
-      id: string;
-      path: string;
-      color: string;
-      opacity: number;
-      severity: string;
-      x1: number; y1: number; x2: number; y2: number;
-      arc: ArcData;
-    }>;
-  }, [activeArcs, width, height]);
-
-  // Source hotspots as dots
-  const hotspotDots = useMemo(() => {
-    return sourceHotspots.map((h) => {
-      const [x, y] = latLngToXY(h.lat, h.lng);
-      return {
-        x: x * width,
-        y: y * height,
-        color: h.color,
-        radius: Math.max(4, h.radius * 12),
-        country: h.country,
-        intensity: h.intensity,
-      };
+    // Arc layer — GPU-instanced attack trajectories
+    const arcLayer = new ArcLayer({
+      id: 'attack-arcs',
+      data: activeArcs,
+      getSourcePosition: (d: ArcData) => [d.startLng, d.startLat],
+      getTargetPosition: (d: ArcData) => [d.endLng, d.endLat],
+      getSourceColor: (d: ArcData) => {
+        const age = now - d.timestamp;
+        const alpha = Math.max(80, 255 - Math.floor((age / 10000) * 175));
+        return hexToRGBA(d.color, alpha);
+      },
+      getTargetColor: (d: ArcData) => {
+        const age = now - d.timestamp;
+        const alpha = Math.max(50, 200 - Math.floor((age / 10000) * 150));
+        return hexToRGBA(d.color, alpha);
+      },
+      getWidth: (d: ArcData) => {
+        if (d.severity === 'critical') return 4;
+        if (d.severity === 'high') return 3;
+        return 2;
+      },
+      getHeight: 0.4,
+      greatCircle: true,
+      widthMinPixels: 1,
+      widthMaxPixels: 6,
+      updateTriggers: {
+        getSourceColor: [now],
+        getTargetColor: [now],
+      },
     });
-  }, [sourceHotspots, width, height]);
 
-  // Target pressure rings
-  const targetDots = useMemo(() => {
-    return targetPressures.map((t) => {
-      const [x, y] = latLngToXY(t.lat, t.lng);
-      return {
-        x: x * width,
-        y: y * height,
-        color: t.color,
-        radius: Math.max(5, t.maxRadius * 6),
-        pressure: t.pressure,
-      };
+    // Source hotspots — scatterplot
+    const sourceLayer = new ScatterplotLayer({
+      id: 'source-hotspots',
+      data: sourceHotspots,
+      getPosition: (d: any) => [d.lng, d.lat],
+      getRadius: (d: any) => Math.max(20000, d.radius * 80000),
+      getFillColor: (d: any) => hexToRGBA(d.color, Math.floor(d.intensity * 120)),
+      getLineColor: (d: any) => hexToRGBA(d.color, 200),
+      lineWidthMinPixels: 1,
+      stroked: true,
+      filled: true,
+      radiusMinPixels: 4,
+      radiusMaxPixels: 30,
     });
-  }, [targetPressures, width, height]);
+
+    // Target pressure points
+    const targetLayer = new ScatterplotLayer({
+      id: 'target-pressure',
+      data: targetPressures,
+      getPosition: (d: any) => [d.lng, d.lat],
+      getRadius: (d: any) => Math.max(15000, d.maxRadius * 40000),
+      getFillColor: (d: any) => hexToRGBA(d.color, Math.floor(d.pressure * 80)),
+      getLineColor: (d: any) => hexToRGBA(d.color, Math.floor(d.pressure * 180)),
+      lineWidthMinPixels: 1,
+      stroked: true,
+      filled: true,
+      radiusMinPixels: 5,
+      radiusMaxPixels: 25,
+    });
+
+    deckRef.current.setProps({
+      layers: [targetLayer, sourceLayer, arcLayer],
+    });
+  }, [activeArcs, sourceHotspots, targetPressures]);
+
+  // Animate — re-render layers periodically for opacity fade
+  useEffect(() => {
+    let running = true;
+
+    const animate = () => {
+      if (!running) return;
+      updateLayers();
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start animation loop (throttled to ~15fps for layer updates)
+    const interval = setInterval(() => {
+      updateLayers();
+    }, 66); // ~15fps is enough for opacity fading
+
+    // Initial render
+    updateLayers();
+
+    return () => {
+      running = false;
+      clearInterval(interval);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [updateLayers]);
 
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden rounded-lg">
-      {/* Dark map background */}
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        className="absolute inset-0"
-        style={{ background: '#040a12' }}
-      >
-        {/* Graticule (grid lines) */}
-        <g opacity="0.15">
-          {/* Latitude lines */}
-          {[-60, -30, 0, 30, 60].map(lat => {
-            const [, y] = latLngToXY(lat, 0);
-            return (
-              <line
-                key={`lat-${lat}`}
-                x1={0} y1={y * height}
-                x2={width} y2={y * height}
-                stroke="#3a6080"
-                strokeWidth="0.5"
-                strokeDasharray="4 6"
-              />
-            );
-          })}
-          {/* Longitude lines */}
-          {[-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150].map(lng => {
-            const [x] = latLngToXY(0, lng);
-            return (
-              <line
-                key={`lng-${lng}`}
-                x1={x * width} y1={0}
-                x2={x * width} y2={height}
-                stroke="#3a6080"
-                strokeWidth="0.5"
-                strokeDasharray="4 6"
-              />
-            );
-          })}
-        </g>
-
-        {/* Country shapes — filled polygons */}
-        <g>
-          {countryPaths.map((country: { id: string; name: string; path: string }) => (
-            <path
-              key={country.id}
-              d={country.path}
-              fill="#0f2035"
-              stroke="#1a3a55"
-              strokeWidth="0.5"
-              opacity="0.9"
-            />
-          ))}
-        </g>
-
-        {/* Target pressure rings (pulsing) */}
-        {targetDots.map((t, i) => (
-          <g key={`target-${i}`}>
-            <circle
-              cx={t.x} cy={t.y} r={t.radius}
-              fill="none"
-              stroke={t.color}
-              strokeWidth="1"
-              opacity="0.4"
-            >
-              <animate
-                attributeName="r"
-                values={`${t.radius};${t.radius * 2.5};${t.radius}`}
-                dur={`${2 + (1 - t.pressure) * 2}s`}
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="opacity"
-                values="0.5;0.1;0.5"
-                dur={`${2 + (1 - t.pressure) * 2}s`}
-                repeatCount="indefinite"
-              />
-            </circle>
-            <circle
-              cx={t.x} cy={t.y} r="3"
-              fill={t.color}
-              opacity="0.7"
-            />
-          </g>
-        ))}
-
-        {/* Source hotspot glows */}
-        {hotspotDots.map((h, i) => (
-          <g key={`hotspot-${i}`}>
-            <circle
-              cx={h.x} cy={h.y} r={h.radius}
-              fill={h.color}
-              opacity={h.intensity * 0.3}
-              filter="url(#mapGlow)"
-            />
-            <circle
-              cx={h.x} cy={h.y} r="3.5"
-              fill={h.color}
-              opacity="0.9"
-            />
-          </g>
-        ))}
-
-        {/* Attack arcs */}
-        {arcPaths.map((a) => (
-          <g key={a.id}>
-            {/* Glow trail */}
-            <path
-              d={a.path}
-              fill="none"
-              stroke={a.color}
-              strokeWidth={a.severity === 'critical' ? 3.5 : a.severity === 'high' ? 2.5 : 1.5}
-              opacity={a.opacity * 0.35}
-              strokeLinecap="round"
-              filter="url(#mapGlow)"
-            />
-            {/* Main arc */}
-            <path
-              d={a.path}
-              fill="none"
-              stroke={a.color}
-              strokeWidth={a.severity === 'critical' ? 2 : a.severity === 'high' ? 1.5 : 1}
-              opacity={a.opacity}
-              strokeLinecap="round"
-              strokeDasharray="8 4"
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                values="0;-24"
-                dur="1.5s"
-                repeatCount="indefinite"
-              />
-            </path>
-            {/* Source dot */}
-            <circle
-              cx={a.x1} cy={a.y1} r="3.5"
-              fill={a.color}
-              opacity={a.opacity}
-            >
-              <animate
-                attributeName="r"
-                values="3.5;5;3.5"
-                dur="2s"
-                repeatCount="indefinite"
-              />
-            </circle>
-            {/* Target dot */}
-            <circle
-              cx={a.x2} cy={a.y2} r="3"
-              fill={a.color}
-              opacity={a.opacity * 0.8}
-            />
-          </g>
-        ))}
-
-        {/* SVG filters */}
-        <defs>
-          <filter id="mapGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-      </svg>
+    <div className="relative w-full h-full overflow-hidden rounded-lg">
+      {/* Maplibre GL + Deck.gl container */}
+      <div ref={containerRef} className="w-full h-full" style={{ background: '#040a12' }} />
 
       {/* Attack Type Legend — bottom left */}
       <div className="absolute bottom-3 left-4 z-10">

@@ -249,3 +249,8 @@
 - [x] Create modal overlay drill-down with rich attack intelligence (attack count, top IPs, attack types, MITRE tactics)
 - [x] Auto-dismiss drill-down modal after 20s
 - [x] Touch-friendly close button at bottom of modal
+
+## Visualization Stack Upgrade (July 2026)
+- [x] Swap #1: Replace Google Maps in AttackLocationMap with Maplibre GL JS (CARTO Dark Matter tiles)
+- [x] Swap #2: Replace D3 SVG ThreatFlatMap with Maplibre GL + Deck.gl ArcLayer (GPU-accelerated)
+- [x] Visual verification passed — both map views rendering correctly

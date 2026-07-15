@@ -1,39 +1,64 @@
 /**
- * AttackLocationMap — Auto-cycling Google Map showing recent attack source locations
+ * AttackLocationMap — Auto-cycling Maplibre GL map showing recent attack source locations
  * 
- * Displays a dark-themed Google Map that automatically cycles through
+ * Displays a dark-themed vector map that automatically cycles through
  * the most recent attack source locations every 8 seconds.
- * Shows a marker at each attack source with a brief info overlay.
+ * Shows a pulsing marker at each attack source with a brief info overlay.
  * 
  * Designed for passive wall display — no interaction required.
+ * Uses Maplibre GL JS for GPU-accelerated vector rendering.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
-import { MapView } from '@/components/Map';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Dark map style matching the dashboard aesthetic
-const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#0C2340' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#0C2340' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#6a8ab5' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#1a3a5c' }] },
-  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#5a7a9a' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#0a1e38' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#152d4a' }] },
-  { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#1a3a5c' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#050d18' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3a5a7a' }] },
-];
+// Dark vector tile style matching the dashboard aesthetic
+const DARK_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  name: 'CyberPulse Dark',
+  sources: {
+    'osm-tiles': {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+      ],
+      tileSize: 256,
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      maxzoom: 18,
+    },
+  },
+  layers: [
+    {
+      id: 'background',
+      type: 'background',
+      paint: { 'background-color': '#050d18' },
+    },
+    {
+      id: 'osm-tiles',
+      type: 'raster',
+      source: 'osm-tiles',
+      minzoom: 0,
+      maxzoom: 18,
+      paint: {
+        'raster-opacity': 0.85,
+        'raster-saturation': -0.3,
+        'raster-contrast': 0.1,
+        'raster-brightness-max': 0.7,
+      },
+    },
+  ],
+};
 
 const CYCLE_INTERVAL = 8000; // 8 seconds per location
 
 export default function AttackLocationMap() {
   const { activeArcs } = useThreatData();
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markerRef = useRef<maplibregl.Marker | null>(null);
   const cycleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentArc, setCurrentArc] = useState<ArcData | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -43,6 +68,39 @@ export default function AttackLocationMap() {
   useEffect(() => {
     arcsRef.current = activeArcs;
   }, [activeArcs]);
+
+  // Initialize Maplibre GL map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: DARK_STYLE,
+      center: [20, 30],
+      zoom: 3,
+      interactive: false, // Passive display — no interaction
+      attributionControl: false,
+      fadeDuration: 0,
+    });
+
+    map.on('load', () => {
+      mapRef.current = map;
+
+      // Show first arc immediately if available
+      const arcs = arcsRef.current;
+      if (arcs.length > 0) {
+        const arc = arcs[0];
+        setCurrentArc(arc);
+        panToArc(arc);
+      }
+    });
+
+    return () => {
+      if (cycleTimerRef.current) clearInterval(cycleTimerRef.current);
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
 
   // Auto-cycle through attack locations
   useEffect(() => {
@@ -68,24 +126,22 @@ export default function AttackLocationMap() {
   const panToArc = useCallback((arc: ArcData) => {
     if (!mapRef.current) return;
 
-    const position = { lat: arc.startLat, lng: arc.startLng };
+    const lngLat: [number, number] = [arc.startLng, arc.startLat];
 
-    // Smooth pan to new location
-    mapRef.current.panTo(position);
-    mapRef.current.setZoom(6);
+    // Smooth fly to new location
+    mapRef.current.flyTo({
+      center: lngLat,
+      zoom: 6,
+      duration: 1500,
+      essential: true,
+    });
 
-    // Update or create marker
+    // Remove existing marker
     if (markerRef.current) {
-      markerRef.current.position = position;
-      markerRef.current.title = `${arc.attackType} from ${arc.sourceIp}`;
-      // Update marker content
-      const content = createMarkerContent(arc);
-      markerRef.current.content = content;
+      markerRef.current.remove();
     }
-  }, []);
 
-  // Create custom marker element
-  const createMarkerContent = (arc: ArcData): HTMLElement => {
+    // Create pulsing marker element
     const el = document.createElement('div');
     el.innerHTML = `
       <div style="
@@ -111,50 +167,18 @@ export default function AttackLocationMap() {
         "></div>
       </div>
     `;
-    return el;
-  };
 
-  // Handle map ready
-  const handleMapReady = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat(lngLat)
+      .addTo(mapRef.current);
 
-    map.setOptions({
-      styles: DARK_MAP_STYLES,
-      disableDefaultUI: true,
-      zoomControl: false,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: false,
-      gestureHandling: 'none', // No interaction — passive display
-      keyboardShortcuts: false,
-    });
-
-    // Create initial marker (hidden until first arc)
-    const initialMarker = new google.maps.marker.AdvancedMarkerElement({
-      map,
-      position: { lat: 0, lng: 0 },
-      title: '',
-    });
-    markerRef.current = initialMarker;
-
-    // Show first arc immediately if available
-    const arcs = arcsRef.current;
-    if (arcs.length > 0) {
-      const arc = arcs[0];
-      setCurrentArc(arc);
-      panToArc(arc);
-    }
-  }, [panToArc]);
+    markerRef.current = marker;
+  }, []);
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      {/* Google Map */}
-      <MapView
-        className="w-full h-full"
-        initialCenter={{ lat: 30, lng: 20 }}
-        initialZoom={3}
-        onMapReady={handleMapReady}
-      />
+      {/* Maplibre GL Map */}
+      <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Info overlay — bottom of map panel */}
       {currentArc && (
