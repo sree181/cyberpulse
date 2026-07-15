@@ -2,20 +2,20 @@
  * ThreatFlatMap — 2D Flat World Map with GPU-Accelerated Attack Arcs
  * 
  * Uses Maplibre GL JS for the base map with CARTO Dark Matter tiles (brightness-boosted),
- * and Deck.gl ArcLayer for rendering attack trajectories on the GPU.
+ * and Deck.gl ArcLayer via MapboxOverlay for perfectly synchronized rendering.
  * 
- * Replaces the previous D3 + SVG implementation for better performance
- * at 4K/8K resolutions on the Planar wall display.
+ * MapboxOverlay ensures Deck.gl layers are rendered in the same coordinate system
+ * as the Maplibre map, so arcs start exactly at source and end exactly at target.
  */
 import { useEffect, useRef, useCallback } from 'react';
 import { useThreatData, type ArcData } from '@/contexts/ThreatContext';
 import { BRANDING } from '@/lib/branding';
 import maplibregl from 'maplibre-gl';
-import { Deck } from '@deck.gl/core';
+import { MapboxOverlay } from '@deck.gl/mapbox';
 import { ArcLayer, ScatterplotLayer } from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// CARTO Dark Matter with brightness boost — no auth required, better contrast than default
+// CARTO Dark Matter with brightness boost — no auth required, better contrast
 const DARK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   name: 'CyberPulse Flat Map',
@@ -76,10 +76,9 @@ export default function ThreatFlatMap() {
   const { activeArcs, sourceHotspots, targetPressures } = useThreatData();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const deckRef = useRef<Deck | null>(null);
-  const animFrameRef = useRef<number>(0);
+  const overlayRef = useRef<MapboxOverlay | null>(null);
 
-  // Initialize Maplibre GL map and Deck.gl overlay
+  // Initialize Maplibre GL map with MapboxOverlay (Deck.gl)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -96,65 +95,35 @@ export default function ThreatFlatMap() {
       renderWorldCopies: false, // Prevent map from repeating horizontally
     });
 
-    // Create Deck.gl instance overlaid on the map
-    const deck = new Deck({
-      parent: containerRef.current,
-      style: {
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-      },
-      viewState: {
-        longitude: 20,
-        latitude: 20,
-        zoom: 1.5,
-        pitch: 0,
-        bearing: 0,
-      },
-      controller: false,
+    // Create MapboxOverlay — this properly syncs Deck.gl with Maplibre's camera
+    const overlay = new MapboxOverlay({
+      interleaved: false, // Overlaid mode — Deck.gl renders on top
       layers: [],
     });
 
-    mapRef.current = map;
-    deckRef.current = deck;
-
-    // Sync Deck.gl viewState with Maplibre (in case of future interaction)
-    map.on('move', () => {
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      const pitch = map.getPitch();
-      const bearing = map.getBearing();
-      deck.setProps({
-        viewState: {
-          longitude: center.lng,
-          latitude: center.lat,
-          zoom,
-          pitch,
-          bearing,
-        },
-      });
+    map.on('load', () => {
+      // Add the overlay as a map control — ensures coordinate sync
+      map.addControl(overlay as any);
     });
 
+    mapRef.current = map;
+    overlayRef.current = overlay;
+
     return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      deck.finalize();
+      overlay.finalize();
       map.remove();
       mapRef.current = null;
-      deckRef.current = null;
+      overlayRef.current = null;
     };
   }, []);
 
   // Update Deck.gl layers when data changes
   const updateLayers = useCallback(() => {
-    if (!deckRef.current) return;
+    if (!overlayRef.current) return;
 
     const now = Date.now();
 
     // Arc layer — GPU-instanced attack trajectories
-    // Height reduced to 0.15 for flat, low-profile arcs that stay within the map
     const arcLayer = new ArcLayer({
       id: 'attack-arcs',
       data: activeArcs,
@@ -175,7 +144,7 @@ export default function ThreatFlatMap() {
         if (d.severity === 'high') return 2.5;
         return 1.5;
       },
-      getHeight: 0.12, // Low-profile arcs — stay close to the map surface
+      getHeight: 0.15, // Low-profile arcs
       greatCircle: true,
       widthMinPixels: 1,
       widthMaxPixels: 4,
@@ -215,7 +184,7 @@ export default function ThreatFlatMap() {
       radiusMaxPixels: 25,
     });
 
-    deckRef.current.setProps({
+    overlayRef.current.setProps({
       layers: [targetLayer, sourceLayer, arcLayer],
     });
   }, [activeArcs, sourceHotspots, targetPressures]);
@@ -224,10 +193,9 @@ export default function ThreatFlatMap() {
   useEffect(() => {
     let running = true;
 
-    // Start animation loop (throttled to ~15fps for layer updates)
     const interval = setInterval(() => {
       if (running) updateLayers();
-    }, 66); // ~15fps is enough for opacity fading
+    }, 66); // ~15fps for opacity fading
 
     // Initial render
     updateLayers();
@@ -235,13 +203,12 @@ export default function ThreatFlatMap() {
     return () => {
       running = false;
       clearInterval(interval);
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [updateLayers]);
 
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg">
-      {/* Maplibre GL + Deck.gl container */}
+      {/* Maplibre GL + Deck.gl MapboxOverlay container */}
       <div ref={containerRef} className="w-full h-full" style={{ background: '#0a1628' }} />
 
       {/* Attack Type Legend — bottom left */}
